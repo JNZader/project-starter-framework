@@ -62,22 +62,19 @@ list_available() {
 list_installed() {
     echo -e "${CYAN}=== Installed Skills ===${NC}"
     echo ""
-    for skill in "$SKILLS_DIR/"*/; do
-        if [[ -d "$skill" ]]; then
-            name=$(basename "$skill")
-            if [[ "$name" != "_TEMPLATE" ]]; then
-                echo "  - $name"
-            fi
-        fi
+    # Skills tipo carpeta (Gentleman-Skills)
+    find "$SKILLS_DIR" -type f -name "SKILL.md" | while read -r skill; do
+        rel="${skill#$SKILLS_DIR/}"
+        name="${rel%/SKILL.md}"
+        [[ "$name" == "_TEMPLATE" ]] && continue
+        echo "  - $name"
     done
-    # También listar .md sueltos
-    for skill in "$SKILLS_DIR/"*.md; do
-        if [[ -f "$skill" ]]; then
-            name=$(basename "$skill" .md)
-            if [[ "$name" != "_TEMPLATE" ]]; then
-                echo "  - $name"
-            fi
-        fi
+
+    # Skills tipo archivo .md
+    find "$SKILLS_DIR" -type f -name "*.md" ! -name "_TEMPLATE.md" ! -name "SKILL.md" | while read -r skill; do
+        rel="${skill#$SKILLS_DIR/}"
+        name="${rel%.md}"
+        echo "  - $name"
     done
 }
 
@@ -126,9 +123,22 @@ remove_skill() {
         rm -f "$skill_path.md"
         echo -e "${GREEN}✓ Removed skill: $skill_name${NC}"
     else
-        echo -e "${RED}Skill '$skill_name' not found${NC}"
-        exit 1
+        # Buscar por nombre en subcarpetas
+        local file_match
+        file_match=$(find "$SKILLS_DIR" -type f \( -name "$skill_name.md" -o -path "*/$skill_name/SKILL.md" \) | head -n 1)
+        if [[ -n "$file_match" ]]; then
+            if [[ "$(basename "$file_match")" == "SKILL.md" ]]; then
+                rm -rf "$(dirname "$file_match")"
+            else
+                rm -f "$file_match"
+            fi
+            echo -e "${GREEN}✓ Removed skill: $skill_name${NC}"
+            return 0
+        fi
     fi
+
+    echo -e "${RED}Skill '$skill_name' not found${NC}"
+    exit 1
 }
 
 # =============================================================================

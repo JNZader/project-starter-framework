@@ -49,22 +49,22 @@ HEADER
 
     # Agregar agentes disponibles
     echo -e "## Agentes Disponibles\n" >> "$PROJECT_DIR/CLAUDE.md"
-    for agent in "$AI_CONFIG_DIR/agents/"*.md; do
-        if [[ -f "$agent" && "$(basename "$agent")" != "_TEMPLATE.md" ]]; then
-            name=$(grep "^name:" "$agent" | head -1 | sed 's/name: *//')
-            desc=$(grep "^description:" "$agent" | head -1 | sed 's/description: *//')
-            echo "- **$name**: $desc" >> "$PROJECT_DIR/CLAUDE.md"
-        fi
-    done
+    while IFS= read -r -d '' agent; do
+        [[ "$(basename "$agent")" == "_TEMPLATE.md" ]] && continue
+        name=$(grep "^name:" "$agent" | head -1 | sed 's/name: *//')
+        [[ -z "$name" ]] && continue
+        desc=$(grep "^description:" "$agent" | head -1 | sed 's/description: *//')
+        echo "- **$name**: $desc" >> "$PROJECT_DIR/CLAUDE.md"
+    done < <(find "$AI_CONFIG_DIR/agents" -type f -name "*.md" -print0)
 
     # Agregar skills disponibles
     echo -e "\n## Skills Disponibles\n" >> "$PROJECT_DIR/CLAUDE.md"
-    for skill in "$AI_CONFIG_DIR/skills/"*.md; do
-        if [[ -f "$skill" && "$(basename "$skill")" != "_TEMPLATE.md" ]]; then
-            name=$(grep "^name:" "$skill" | head -1 | sed 's/name: *//')
-            echo "- $name" >> "$PROJECT_DIR/CLAUDE.md"
-        fi
-    done
+    while IFS= read -r -d '' skill; do
+        [[ "$(basename "$skill")" == "_TEMPLATE.md" ]] && continue
+        name=$(grep "^name:" "$skill" | head -1 | sed 's/name: *//')
+        [[ -z "$name" ]] && continue
+        echo "- $name" >> "$PROJECT_DIR/CLAUDE.md"
+    done < <(find "$AI_CONFIG_DIR/skills" -type f -name "*.md" -print0)
 
     echo -e "${GREEN}✓ Generated CLAUDE.md${NC}"
 }
@@ -81,13 +81,14 @@ generate_opencode() {
 HEADER
 
     # Agregar cada agente
-    for agent in "$AI_CONFIG_DIR/agents/"*.md; do
-        if [[ -f "$agent" && "$(basename "$agent")" != "_TEMPLATE.md" ]]; then
+    while IFS= read -r -d '' agent; do
+        [[ "$(basename "$agent")" == "_TEMPLATE.md" ]] && continue
+        if grep -q "^name:" "$agent"; then
             echo -e "\n---\n" >> "$PROJECT_DIR/AGENTS.md"
             # Copiar contenido sin frontmatter YAML
             sed '1,/^---$/d; /^---$/,$!d; /^---$/d' "$agent" >> "$PROJECT_DIR/AGENTS.md"
         fi
-    done
+    done < <(find "$AI_CONFIG_DIR/agents" -type f -name "*.md" -print0)
 
     echo -e "${GREEN}✓ Generated AGENTS.md${NC}"
 }

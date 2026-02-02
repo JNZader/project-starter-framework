@@ -22,91 +22,29 @@
 .ai-config/
 ├── README.md                    # Esta documentación
 │
-├── agents/                      # 78+ Agentes organizados por categoría
+├── agents/                      # 70+ Agentes organizados por categoría
 │   ├── _TEMPLATE.md             # Template para crear agentes
-│   │
-│   ├── business/                # Análisis de negocio y producto
-│   │   ├── api-designer.md      # Diseño de APIs
-│   │   ├── business-analyst.md  # Análisis de negocio
-│   │   ├── product-strategist.md # Estrategia de producto
-│   │   ├── project-manager.md   # Gestión de proyectos
-│   │   ├── requirements-analyst.md # Análisis de requisitos
-│   │   └── technical-writer.md  # Escritura técnica
-│   │
-│   ├── creative/                # Diseño y UX
-│   │   └── ux-designer.md       # Diseño UX/UI
-│   │
-│   ├── data-ai/                 # Data Science y AI
-│   │   ├── ai-engineer.md       # Ingeniería AI
-│   │   ├── analytics-engineer.md # Analytics
-│   │   ├── data-engineer.md     # Ingeniería de datos
-│   │   ├── data-scientist.md    # Data science
-│   │   ├── mlops-engineer.md    # MLOps
-│   │   └── prompt-engineer.md   # Prompt engineering
-│   │
-│   ├── development/             # Desarrollo de software
-│   │   ├── angular-expert.md    # Angular
-│   │   ├── backend-architect.md # Arquitectura backend
-│   │   ├── database-specialist.md # Bases de datos
-│   │   ├── frontend-specialist.md # Frontend general
-│   │   ├── fullstack-engineer.md # Full-stack
-│   │   ├── golang-pro.md        # Go
-│   │   ├── java-enterprise.md   # Java/Spring
-│   │   ├── javascript-pro.md    # JavaScript
-│   │   ├── nextjs-pro.md        # Next.js
-│   │   ├── python-pro.md        # Python
-│   │   ├── react-pro.md         # React
-│   │   ├── rust-pro.md          # Rust
-│   │   ├── typescript-pro.md    # TypeScript
-│   │   └── vue-specialist.md    # Vue.js
-│   │
-│   ├── infrastructure/          # DevOps e Infraestructura
-│   │   ├── cloud-architect.md   # Arquitectura cloud
-│   │   ├── deployment-manager.md # Gestión de deployments
-│   │   ├── devops-engineer.md   # DevOps
-│   │   ├── incident-responder.md # Respuesta a incidentes
-│   │   ├── kubernetes-expert.md # Kubernetes
-│   │   ├── monitoring-specialist.md # Monitoreo
-│   │   └── performance-engineer.md # Performance
-│   │
-│   ├── quality/                 # Testing y Calidad
-│   │   ├── accessibility-auditor.md # Accesibilidad
-│   │   ├── code-reviewer.md     # Code review
-│   │   ├── dependency-manager.md # Gestión de dependencias
-│   │   ├── e2e-test-specialist.md # Tests E2E
-│   │   ├── performance-tester.md # Tests de performance
-│   │   ├── security-auditor.md  # Auditoría de seguridad
-│   │   └── test-engineer.md     # Testing general
-│   │
-│   ├── specialized/             # Especializados
-│   │   ├── agent-generator.md   # Generación de agentes
-│   │   ├── blockchain-developer.md # Blockchain
-│   │   ├── code-migrator.md     # Migraciones de código
-│   │   ├── context-manager.md   # Gestión de contexto
-│   │   ├── documentation-writer.md # Documentación
-│   │   ├── ecommerce-expert.md  # E-commerce
-│   │   ├── embedded-engineer.md # Sistemas embebidos
-│   │   ├── error-detective.md   # Debugging avanzado
-│   │   ├── fintech-specialist.md # Fintech
-│   │   ├── game-developer.md    # Desarrollo de juegos
-│   │   ├── healthcare-dev.md    # Healthcare/HIPAA
-│   │   ├── mobile-developer.md  # Desarrollo móvil
-│   │   ├── workflow-optimizer.md # Optimización de flujos
-│   │   └── solo-dev-planner-modular/ # Solo dev planning
-│   │
-│   ├── orchestrator.md          # Orquestador de agentes
-│   ├── code-reviewer.md         # Code review (root)
-│   ├── test-runner.md           # Test runner (root)
-│   └── wave-executor.md         # Executor de oleadas
+│   ├── business/                # Análisis de negocio y producto (6 agentes)
+│   ├── creative/                # Diseño y UX (1 agente)
+│   ├── data-ai/                 # Data Science y AI (6 agentes)
+│   ├── development/             # Desarrollo de software (14+ agentes)
+│   ├── infrastructure/          # DevOps e Infraestructura (7 agentes)
+│   ├── quality/                 # Testing y Calidad (8+ agentes)
+│   ├── specialized/             # Especializados (20+ agentes)
+│   └── orchestrator.md          # Orquestador central
 │
 ├── skills/                      # Skills (Gentleman-Skills compatible)
 │   ├── _TEMPLATE.md             # Template para crear skills
-│   ├── frontend-design.md       # Diseño frontend distintivo
-│   ├── claude-md-improver.md    # Mejora de CLAUDE.md
-│   ├── claude-automation-recommender.md # Recomendaciones
-│   ├── ci-local-guide.md        # Guía CI-Local
-│   ├── wave-workflow.md         # Flujo de oleadas
-│   ├── git-workflow.md          # Git workflow
+│   ├── frontend/                # UI/Frontend
+│   ├── backend/                 # Backend & APIs
+│   ├── database/                # Databases & Storage
+│   ├── infrastructure/          # DevOps/Infra
+│   ├── data-ai/                 # Data/AI/ML
+│   ├── testing/                 # Testing & QA
+│   ├── mobile/                  # Mobile
+│   ├── workflow/                # Workflow & Tools
+│   ├── docs/                    # Documentation & Templates
+│   ├── other/                   # Misc/IoT/Systems
 │   └── references/              # Documentación de referencia
 │       ├── hooks-patterns.md
 │       ├── mcp-servers.md

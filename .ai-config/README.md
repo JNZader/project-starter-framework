@@ -1,0 +1,396 @@
+# AI Configuration (Agnóstico)
+
+> Configuración centralizada de agentes, skills y hooks para múltiples AI CLIs.
+
+---
+
+## Compatibilidad
+
+| CLI | Soporte | Configuración |
+|-----|---------|---------------|
+| **Claude Code** | ✅ Completo | `.claude/` auto-generado |
+| **OpenCode** | ✅ Completo | `AGENTS.md` auto-generado |
+| **Aider** | ✅ Parcial | `.aider.conf.yml` |
+| **Cursor** | ✅ Parcial | `.cursorrules` |
+| **Continue.dev** | ✅ Parcial | `config.json` |
+
+---
+
+## Estructura
+
+```
+.ai-config/
+├── README.md                    # Esta documentación
+│
+├── agents/                      # 78+ Agentes organizados por categoría
+│   ├── _TEMPLATE.md             # Template para crear agentes
+│   │
+│   ├── business/                # Análisis de negocio y producto
+│   │   ├── api-designer.md      # Diseño de APIs
+│   │   ├── business-analyst.md  # Análisis de negocio
+│   │   ├── product-strategist.md # Estrategia de producto
+│   │   ├── project-manager.md   # Gestión de proyectos
+│   │   ├── requirements-analyst.md # Análisis de requisitos
+│   │   └── technical-writer.md  # Escritura técnica
+│   │
+│   ├── creative/                # Diseño y UX
+│   │   └── ux-designer.md       # Diseño UX/UI
+│   │
+│   ├── data-ai/                 # Data Science y AI
+│   │   ├── ai-engineer.md       # Ingeniería AI
+│   │   ├── analytics-engineer.md # Analytics
+│   │   ├── data-engineer.md     # Ingeniería de datos
+│   │   ├── data-scientist.md    # Data science
+│   │   ├── mlops-engineer.md    # MLOps
+│   │   └── prompt-engineer.md   # Prompt engineering
+│   │
+│   ├── development/             # Desarrollo de software
+│   │   ├── angular-expert.md    # Angular
+│   │   ├── backend-architect.md # Arquitectura backend
+│   │   ├── database-specialist.md # Bases de datos
+│   │   ├── frontend-specialist.md # Frontend general
+│   │   ├── fullstack-engineer.md # Full-stack
+│   │   ├── golang-pro.md        # Go
+│   │   ├── java-enterprise.md   # Java/Spring
+│   │   ├── javascript-pro.md    # JavaScript
+│   │   ├── nextjs-pro.md        # Next.js
+│   │   ├── python-pro.md        # Python
+│   │   ├── react-pro.md         # React
+│   │   ├── rust-pro.md          # Rust
+│   │   ├── typescript-pro.md    # TypeScript
+│   │   └── vue-specialist.md    # Vue.js
+│   │
+│   ├── infrastructure/          # DevOps e Infraestructura
+│   │   ├── cloud-architect.md   # Arquitectura cloud
+│   │   ├── deployment-manager.md # Gestión de deployments
+│   │   ├── devops-engineer.md   # DevOps
+│   │   ├── incident-responder.md # Respuesta a incidentes
+│   │   ├── kubernetes-expert.md # Kubernetes
+│   │   ├── monitoring-specialist.md # Monitoreo
+│   │   └── performance-engineer.md # Performance
+│   │
+│   ├── quality/                 # Testing y Calidad
+│   │   ├── accessibility-auditor.md # Accesibilidad
+│   │   ├── code-reviewer.md     # Code review
+│   │   ├── dependency-manager.md # Gestión de dependencias
+│   │   ├── e2e-test-specialist.md # Tests E2E
+│   │   ├── performance-tester.md # Tests de performance
+│   │   ├── security-auditor.md  # Auditoría de seguridad
+│   │   └── test-engineer.md     # Testing general
+│   │
+│   ├── specialized/             # Especializados
+│   │   ├── agent-generator.md   # Generación de agentes
+│   │   ├── blockchain-developer.md # Blockchain
+│   │   ├── code-migrator.md     # Migraciones de código
+│   │   ├── context-manager.md   # Gestión de contexto
+│   │   ├── documentation-writer.md # Documentación
+│   │   ├── ecommerce-expert.md  # E-commerce
+│   │   ├── embedded-engineer.md # Sistemas embebidos
+│   │   ├── error-detective.md   # Debugging avanzado
+│   │   ├── fintech-specialist.md # Fintech
+│   │   ├── game-developer.md    # Desarrollo de juegos
+│   │   ├── healthcare-dev.md    # Healthcare/HIPAA
+│   │   ├── mobile-developer.md  # Desarrollo móvil
+│   │   ├── workflow-optimizer.md # Optimización de flujos
+│   │   └── solo-dev-planner-modular/ # Solo dev planning
+│   │
+│   ├── orchestrator.md          # Orquestador de agentes
+│   ├── code-reviewer.md         # Code review (root)
+│   ├── test-runner.md           # Test runner (root)
+│   └── wave-executor.md         # Executor de oleadas
+│
+├── skills/                      # Skills (Gentleman-Skills compatible)
+│   ├── _TEMPLATE.md             # Template para crear skills
+│   ├── frontend-design.md       # Diseño frontend distintivo
+│   ├── claude-md-improver.md    # Mejora de CLAUDE.md
+│   ├── claude-automation-recommender.md # Recomendaciones
+│   ├── ci-local-guide.md        # Guía CI-Local
+│   ├── wave-workflow.md         # Flujo de oleadas
+│   ├── git-workflow.md          # Git workflow
+│   └── references/              # Documentación de referencia
+│       ├── hooks-patterns.md
+│       ├── mcp-servers.md
+│       ├── plugins-reference.md
+│       ├── skills-reference.md
+│       └── subagent-templates.md
+│
+├── hooks/                       # Hooks de eventos
+│   ├── _TEMPLATE.md             # Template para crear hooks
+│   └── block-dangerous-commands.md # Bloqueo de comandos peligrosos
+│
+└── prompts/                     # System prompts reutilizables
+    └── base.md                  # Prompt base del proyecto
+```
+
+---
+
+## Auto-Invoke System (Arquitectura Alan/Prowler)
+
+Basado en la arquitectura propuesta por [Gentleman Programming](https://github.com/Gentleman-Programming/Gentleman-Skills).
+
+### Componentes
+
+| Archivo | Propósito |
+|---------|-----------|
+| `AUTO_INVOKE.md` | Tabla de mapeo acción → skill (cuándo cargar qué) |
+| `SKILLS_SUMMARY.md` | Resumen auto-generado de skills disponibles |
+| `sync-skills.sh` | Script para sincronizar skills y crear symlinks |
+
+### Cómo funciona
+
+1. **Detección automática**: Cuando el usuario pide algo, el orquestador consulta `AUTO_INVOKE.md`
+2. **Carga de skill**: Se carga el skill correspondiente según la acción y carpeta (scope)
+3. **Cross-references**: Cada skill tiene `## Related Skills` para cargar skills complementarios
+
+### Ejemplo
+
+```
+Usuario: "Crea un componente de tabla con paginación"
+
+Orquestador:
+1. Detecta "componente" → Carga frontend-web
+2. Detecta "tabla" → Carga mantine-ui (tiene DataTable)
+3. Si hay data fetching → Carga tanstack-query
+4. Ejecuta con contexto de los 3 skills
+```
+
+### Scripts disponibles
+
+```bash
+# Listar skills con metadata
+./scripts/sync-skills.sh list
+
+# Validar formato de skills
+./scripts/sync-skills.sh validate
+
+# Crear symlinks multi-IDE (CLAUDE.md, GEMINI.md, etc.)
+./scripts/sync-skills.sh symlinks
+
+# Generar resumen de skills
+./scripts/sync-skills.sh summary
+
+# Todo junto
+./scripts/sync-skills.sh all
+```
+
+---
+
+## Quick Start
+
+### 1. Sincronizar con tu CLI
+
+```bash
+# Generar configuración para tu CLI
+./scripts/sync-ai-config.sh claude    # Para Claude Code
+./scripts/sync-ai-config.sh opencode  # Para OpenCode
+./scripts/sync-ai-config.sh all       # Para todos
+```
+
+### 2. Agregar skill de Gentleman-Skills
+
+```bash
+# Listar skills disponibles
+./scripts/add-skill.sh list
+
+# Instalar skill específico
+./scripts/add-skill.sh gentleman react-19
+./scripts/add-skill.sh gentleman typescript
+```
+
+### 3. Crear agente personalizado
+
+```bash
+# Copiar template
+cp .ai-config/agents/_TEMPLATE.md .ai-config/agents/mi-agente.md
+
+# Editar y sincronizar
+./scripts/sync-ai-config.sh
+```
+
+---
+
+## Agentes por Categoría
+
+### Business (6 agentes)
+| Agente | Uso |
+|--------|-----|
+| `api-designer` | Diseño REST, GraphQL, OpenAPI |
+| `business-analyst` | Análisis de procesos y workflows |
+| `product-strategist` | Estrategia y roadmap de producto |
+| `project-manager` | Sprint planning y coordinación |
+| `requirements-analyst` | Requisitos y user stories |
+| `technical-writer` | Documentación técnica |
+
+### Development (14 agentes)
+| Agente | Lenguaje/Framework |
+|--------|-------------------|
+| `angular-expert` | Angular 17+ |
+| `backend-architect` | Arquitectura backend |
+| `database-specialist` | SQL/NoSQL |
+| `frontend-specialist` | Frontend general |
+| `fullstack-engineer` | Full-stack |
+| `golang-pro` | Go |
+| `java-enterprise` | Java/Spring Boot |
+| `javascript-pro` | JavaScript/Node.js |
+| `nextjs-pro` | Next.js 14+ |
+| `python-pro` | Python |
+| `react-pro` | React |
+| `rust-pro` | Rust |
+| `typescript-pro` | TypeScript |
+| `vue-specialist` | Vue.js 3 |
+
+### Infrastructure (7 agentes)
+| Agente | Uso |
+|--------|-----|
+| `cloud-architect` | AWS, GCP, Azure |
+| `deployment-manager` | Deployments y releases |
+| `devops-engineer` | CI/CD, containers |
+| `incident-responder` | Troubleshooting producción |
+| `kubernetes-expert` | K8s y cloud-native |
+| `monitoring-specialist` | Observabilidad |
+| `performance-engineer` | Optimización |
+
+### Quality (7 agentes)
+| Agente | Uso |
+|--------|-----|
+| `accessibility-auditor` | WCAG compliance |
+| `code-reviewer` | Code review sistemático |
+| `dependency-manager` | Seguridad de dependencias |
+| `e2e-test-specialist` | Playwright/Cypress |
+| `performance-tester` | Load testing |
+| `security-auditor` | Seguridad OWASP |
+| `test-engineer` | Testing general |
+
+### Data & AI (6 agentes)
+| Agente | Uso |
+|--------|-----|
+| `ai-engineer` | LLMs, ML production |
+| `analytics-engineer` | dbt, data modeling |
+| `data-engineer` | ETL, pipelines |
+| `data-scientist` | ML, estadística |
+| `mlops-engineer` | ML pipelines |
+| `prompt-engineer` | Prompt optimization |
+
+### Specialized (12+ agentes)
+Incluye blockchain, mobile, game dev, healthcare, fintech, e-commerce, y más.
+
+---
+
+## Skills Incluidos
+
+| Skill | Descripción |
+|-------|-------------|
+| `frontend-design` | Diseño frontend con estética distintiva, evita "AI slop" |
+| `claude-md-improver` | Auditoría y mejora de archivos CLAUDE.md |
+| `claude-automation-recommender` | Recomendaciones de automatización para Claude Code |
+| `ci-local-guide` | Guía completa de CI-Local |
+| `wave-workflow` | Flujo de trabajo con oleadas paralelas |
+| `git-workflow` | Guía de Git workflow y branching |
+
+---
+
+## Gentleman-Skills Integration
+
+Compatible con [Gentleman-Skills](https://github.com/Gentleman-Programming/Gentleman-Skills):
+
+```bash
+# Listar skills disponibles
+./scripts/add-skill.sh list
+
+# Instalar skill
+./scripts/add-skill.sh gentleman react-19
+./scripts/add-skill.sh gentleman typescript
+./scripts/add-skill.sh gentleman playwright
+
+# Ver instalados
+./scripts/add-skill.sh installed
+
+# Remover skill
+./scripts/add-skill.sh remove react-19
+```
+
+### Skills Populares (Gentleman-Skills)
+
+| Skill | Uso |
+|-------|-----|
+| `react-19` | React 19 patterns |
+| `typescript` | TypeScript best practices |
+| `playwright` | E2E testing |
+| `angular` | Angular patterns |
+| `vercel-ai-sdk-5` | AI integrations |
+| `tailwindcss-4` | Tailwind CSS |
+
+---
+
+## Crear Contenido
+
+### Agentes
+
+Ver `.ai-config/agents/_TEMPLATE.md` para el formato completo.
+
+```markdown
+---
+name: mi-agente
+description: Descripción del agente
+trigger: Cuándo usar este agente
+tools: [Bash, Read, Write, Edit]
+config:
+  model: sonnet
+  max_turns: 10
+---
+
+# Instrucciones del agente
+...
+```
+
+### Skills
+
+Compatible con Gentleman-Skills format:
+
+```markdown
+---
+name: mi-skill
+description: >
+  Descripción.
+  Trigger: contexto de uso
+metadata:
+  author: tu-usuario
+  version: "1.0"
+---
+
+## When to Use
+- Condición 1
+- Condición 2
+
+## Critical Patterns
+...
+```
+
+### Hooks
+
+```markdown
+---
+event: PreToolUse | PostToolUse | Stop
+tools: [Bash, Write]  # opcional: filtrar por herramienta
+---
+
+# Lógica del hook
+...
+```
+
+---
+
+## Sincronización Automática
+
+El script `sync-ai-config.sh` genera archivos específicos para cada CLI:
+
+| CLI | Archivo generado |
+|-----|------------------|
+| Claude Code | `CLAUDE.md` |
+| OpenCode | `AGENTS.md` |
+| Aider | `.aider.conf.yml` |
+| Cursor | `.cursorrules` |
+
+---
+
+*Compatible con Gentleman-Skills v1.0 • 78+ agentes incluidos*

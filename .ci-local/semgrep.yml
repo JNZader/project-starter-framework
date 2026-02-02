@@ -1,0 +1,109 @@
+# =============================================================================
+# Semgrep: Universal Security & Quality Rules
+# =============================================================================
+# Reglas genéricas para cualquier proyecto
+# Agrega reglas específicas según tu stack
+# =============================================================================
+
+rules:
+  # ===== SECRETS (todos los lenguajes) =====
+  - id: hardcoded-secret-generic
+    patterns:
+      - pattern-either:
+          - pattern: $VAR = "..."
+          - pattern: "$VAR": "..."
+    metavariable-regex:
+      metavariable: $VAR
+      regex: (?i)(password|secret|api_key|apikey|token|credentials|auth)
+    metavariable-pattern:
+      metavariable: $VAR
+      patterns:
+        - pattern-not: "..."  # No vacío
+    message: "Possible hardcoded secret. Use environment variables."
+    severity: ERROR
+    languages: [java, kotlin, javascript, typescript, python, go, rust]
+
+  # ===== SQL INJECTION (multi-lenguaje) =====
+  - id: sql-string-concat
+    pattern-either:
+      - pattern: |
+          "SELECT " + $USER_INPUT
+      - pattern: |
+          "DELETE " + $USER_INPUT
+      - pattern: |
+          "UPDATE " + $USER_INPUT
+      - pattern: |
+          "INSERT " + $USER_INPUT
+      - pattern: |
+          f"SELECT {$USER_INPUT}"
+      - pattern: |
+          `SELECT ${$USER_INPUT}`
+    message: "SQL injection risk: use parameterized queries"
+    severity: ERROR
+    languages: [java, kotlin, javascript, typescript, python]
+
+  # ===== JAVA/KOTLIN =====
+  - id: java-unsafe-reflection
+    pattern: Class.forName($USER_INPUT)
+    message: "Unsafe reflection with user input"
+    severity: WARNING
+    languages: [java, kotlin]
+
+  # ===== JAVASCRIPT/TYPESCRIPT =====
+  - id: js-eval-usage
+    pattern-either:
+      - pattern: eval($X)
+      - pattern: new Function($X)
+    message: "Avoid eval() - security risk"
+    severity: ERROR
+    languages: [javascript, typescript]
+
+  - id: js-innerhtml
+    pattern: $X.innerHTML = $Y
+    message: "innerHTML can cause XSS. Use textContent or sanitize."
+    severity: WARNING
+    languages: [javascript, typescript]
+
+  # ===== PYTHON =====
+  - id: python-exec
+    pattern-either:
+      - pattern: exec($X)
+      - pattern: eval($X)
+    message: "Avoid exec/eval - security risk"
+    severity: ERROR
+    languages: [python]
+
+  - id: python-subprocess-shell
+    pattern: subprocess.$FUNC(..., shell=True, ...)
+    message: "shell=True is dangerous with user input"
+    severity: WARNING
+    languages: [python]
+
+  # ===== GO =====
+  - id: go-sql-format
+    pattern: |
+      fmt.Sprintf("SELECT ... %s ...", $USER_INPUT)
+    message: "SQL injection risk: use parameterized queries"
+    severity: ERROR
+    languages: [go]
+
+  # ===== RUST =====
+  - id: rust-unsafe-block
+    pattern: |
+      unsafe { ... }
+    message: "Review unsafe block carefully"
+    severity: INFO
+    languages: [rust]
+
+  # ===== TESTS (multi-lenguaje) =====
+  - id: test-todo-skip
+    pattern-either:
+      - pattern: "@Disabled"
+      - pattern: "@Ignore"
+      - pattern: "it.skip(...)"
+      - pattern: "describe.skip(...)"
+      - pattern: "@pytest.mark.skip"
+      - pattern: "t.Skip()"
+    message: "Skipped test - ensure it's intentional"
+    severity: INFO
+    languages: [java, kotlin, javascript, typescript, python, go]

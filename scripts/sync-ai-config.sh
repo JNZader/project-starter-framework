@@ -1,0 +1,212 @@
+#!/bin/bash
+# =============================================================================
+# SYNC-AI-CONFIG: Genera configuración para diferentes AI CLIs
+# =============================================================================
+# Uso:
+#   ./scripts/sync-ai-config.sh claude    # Solo Claude Code
+#   ./scripts/sync-ai-config.sh opencode  # Solo OpenCode
+#   ./scripts/sync-ai-config.sh cursor    # Solo Cursor
+#   ./scripts/sync-ai-config.sh all       # Todos
+# =============================================================================
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+AI_CONFIG_DIR="$PROJECT_DIR/.ai-config"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+echo -e "${CYAN}=== Sync AI Config ===${NC}"
+
+# =============================================================================
+# Funciones de generación
+# =============================================================================
+
+generate_claude() {
+    echo -e "${YELLOW}Generating Claude Code config...${NC}"
+
+    # Crear directorio .claude si no existe
+    mkdir -p "$PROJECT_DIR/.claude"
+
+    # Generar CLAUDE.md combinando prompts y agentes
+    cat > "$PROJECT_DIR/CLAUDE.md" << 'HEADER'
+# Claude Code Instructions
+
+> Auto-generated from .ai-config/
+
+HEADER
+
+    # Agregar prompt base
+    if [[ -f "$AI_CONFIG_DIR/prompts/base.md" ]]; then
+        cat "$AI_CONFIG_DIR/prompts/base.md" >> "$PROJECT_DIR/CLAUDE.md"
+        echo -e "\n---\n" >> "$PROJECT_DIR/CLAUDE.md"
+    fi
+
+    # Agregar agentes disponibles
+    echo -e "## Agentes Disponibles\n" >> "$PROJECT_DIR/CLAUDE.md"
+    for agent in "$AI_CONFIG_DIR/agents/"*.md; do
+        if [[ -f "$agent" && "$(basename "$agent")" != "_TEMPLATE.md" ]]; then
+            name=$(grep "^name:" "$agent" | head -1 | sed 's/name: *//')
+            desc=$(grep "^description:" "$agent" | head -1 | sed 's/description: *//')
+            echo "- **$name**: $desc" >> "$PROJECT_DIR/CLAUDE.md"
+        fi
+    done
+
+    # Agregar skills disponibles
+    echo -e "\n## Skills Disponibles\n" >> "$PROJECT_DIR/CLAUDE.md"
+    for skill in "$AI_CONFIG_DIR/skills/"*.md; do
+        if [[ -f "$skill" && "$(basename "$skill")" != "_TEMPLATE.md" ]]; then
+            name=$(grep "^name:" "$skill" | head -1 | sed 's/name: *//')
+            echo "- $name" >> "$PROJECT_DIR/CLAUDE.md"
+        fi
+    done
+
+    echo -e "${GREEN}✓ Generated CLAUDE.md${NC}"
+}
+
+generate_opencode() {
+    echo -e "${YELLOW}Generating OpenCode config...${NC}"
+
+    # Generar AGENTS.md para OpenCode
+    cat > "$PROJECT_DIR/AGENTS.md" << 'HEADER'
+# OpenCode Agents
+
+> Auto-generated from .ai-config/
+
+HEADER
+
+    # Agregar cada agente
+    for agent in "$AI_CONFIG_DIR/agents/"*.md; do
+        if [[ -f "$agent" && "$(basename "$agent")" != "_TEMPLATE.md" ]]; then
+            echo -e "\n---\n" >> "$PROJECT_DIR/AGENTS.md"
+            # Copiar contenido sin frontmatter YAML
+            sed '1,/^---$/d; /^---$/,$!d; /^---$/d' "$agent" >> "$PROJECT_DIR/AGENTS.md"
+        fi
+    done
+
+    echo -e "${GREEN}✓ Generated AGENTS.md${NC}"
+}
+
+generate_cursor() {
+    echo -e "${YELLOW}Generating Cursor config...${NC}"
+
+    # Generar .cursorrules
+    cat > "$PROJECT_DIR/.cursorrules" << 'HEADER'
+# Cursor Rules
+# Auto-generated from .ai-config/
+
+HEADER
+
+    # Agregar prompt base
+    if [[ -f "$AI_CONFIG_DIR/prompts/base.md" ]]; then
+        # Extraer solo las reglas importantes
+        grep -A 100 "## Reglas Críticas" "$AI_CONFIG_DIR/prompts/base.md" | head -50 >> "$PROJECT_DIR/.cursorrules"
+    fi
+
+    echo -e "${GREEN}✓ Generated .cursorrules${NC}"
+}
+
+generate_aider() {
+    echo -e "${YELLOW}Generating Aider config...${NC}"
+
+    # Generar .aider.conf.yml
+    cat > "$PROJECT_DIR/.aider.conf.yml" << 'EOF'
+# Aider Configuration
+# Auto-generated from .ai-config/
+
+# Model settings
+model: claude-3-5-sonnet
+
+# Git settings
+auto-commits: false
+dirty-commits: false
+
+# Conventions
+EOF
+
+    # Agregar convenciones del prompt base
+    echo "conventions:" >> "$PROJECT_DIR/.aider.conf.yml"
+    echo "  - No AI attribution in commits" >> "$PROJECT_DIR/.aider.conf.yml"
+    echo "  - Conventional commits format" >> "$PROJECT_DIR/.aider.conf.yml"
+    echo "  - Run CI-Local before push" >> "$PROJECT_DIR/.aider.conf.yml"
+
+    echo -e "${GREEN}✓ Generated .aider.conf.yml${NC}"
+}
+
+generate_continue() {
+    echo -e "${YELLOW}Generating Continue.dev config...${NC}"
+
+    mkdir -p "$HOME/.continue"
+
+    # Generar config.json básico si no existe
+    if [[ ! -f "$HOME/.continue/config.json" ]]; then
+        cat > "$HOME/.continue/config.json" << 'EOF'
+{
+  "models": [
+    {
+      "title": "Claude Sonnet",
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022"
+    }
+  ],
+  "customCommands": [
+    {
+      "name": "review",
+      "description": "Code review",
+      "prompt": "Review this code for quality, security, and best practices."
+    }
+  ]
+}
+EOF
+        echo -e "${GREEN}✓ Generated ~/.continue/config.json${NC}"
+    else
+        echo -e "${YELLOW}  ~/.continue/config.json already exists, skipping${NC}"
+    fi
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+
+case "${1:-all}" in
+    claude)
+        generate_claude
+        ;;
+    opencode)
+        generate_opencode
+        ;;
+    cursor)
+        generate_cursor
+        ;;
+    aider)
+        generate_aider
+        ;;
+    continue)
+        generate_continue
+        ;;
+    all)
+        generate_claude
+        generate_opencode
+        generate_cursor
+        generate_aider
+        ;;
+    *)
+        echo "Usage: $0 {claude|opencode|cursor|aider|continue|all}"
+        exit 1
+        ;;
+esac
+
+echo -e ""
+echo -e "${GREEN}✓ AI config sync complete!${NC}"
+echo -e ""
+echo -e "Generated files:"
+[[ -f "$PROJECT_DIR/CLAUDE.md" ]] && echo "  - CLAUDE.md (Claude Code)"
+[[ -f "$PROJECT_DIR/AGENTS.md" ]] && echo "  - AGENTS.md (OpenCode)"
+[[ -f "$PROJECT_DIR/.cursorrules" ]] && echo "  - .cursorrules (Cursor)"
+[[ -f "$PROJECT_DIR/.aider.conf.yml" ]] && echo "  - .aider.conf.yml (Aider)"
+echo ""

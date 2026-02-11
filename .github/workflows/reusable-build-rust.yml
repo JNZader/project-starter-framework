@@ -1,0 +1,95 @@
+# ===========================================
+# Reusable Workflow: Rust Build
+# ===========================================
+# Minimal CI for Rust projects.
+#
+# Usage:
+#   jobs:
+#     build:
+#       uses: JNZader/project-starter-framework/.github/workflows/reusable-build-rust.yml@main
+# ===========================================
+
+name: Rust Build (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      toolchain:
+        description: 'Rust toolchain (stable, beta, nightly)'
+        required: false
+        default: 'stable'
+        type: string
+      run-tests:
+        description: 'Run tests'
+        required: false
+        default: false
+        type: boolean
+      run-clippy:
+        description: 'Run clippy linter'
+        required: false
+        default: true
+        type: boolean
+      run-fmt:
+        description: 'Check formatting'
+        required: false
+        default: true
+        type: boolean
+      working-directory:
+        description: 'Working directory'
+        required: false
+        default: '.'
+        type: string
+      cargo-args:
+        description: 'Additional cargo arguments'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust ${{ inputs.toolchain }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ inputs.toolchain }}
+          components: clippy, rustfmt
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ inputs.working-directory }}
+
+      - name: Check formatting
+        if: inputs.run-fmt
+        run: cargo fmt --all -- --check
+
+      - name: Build
+        run: cargo build --release ${{ inputs.cargo-args }}
+
+      - name: Clippy
+        if: inputs.run-clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+        continue-on-error: true
+
+      - name: Test
+        if: inputs.run-tests
+        run: cargo test --all-features ${{ inputs.cargo-args }}
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-binary
+          path: ${{ inputs.working-directory }}/target/release/*
+          retention-days: 7
+          if-no-files-found: ignore

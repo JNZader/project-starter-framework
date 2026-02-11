@@ -1,0 +1,29 @@
+# ===========================================
+# CI for Node.js/TypeScript Projects
+# ===========================================
+# Copy to: .github/workflows/ci.yml
+# ===========================================
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      run_tests:
+        description: 'Run tests'
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    uses: JNZader/project-starter-framework/.github/workflows/reusable-build-node.yml@main
+    with:
+      node-version: '20'  # Change to: 18, 20, 22
+      package-manager: 'npm'  # Change to: npm, yarn, pnpm
+      run-lint: true
+      run-tests: ${{ github.event.inputs.run_tests == 'true' }}

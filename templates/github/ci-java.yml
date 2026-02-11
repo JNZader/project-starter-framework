@@ -1,0 +1,32 @@
+# ===========================================
+# CI for Java/Gradle Projects
+# ===========================================
+# Copy to: .github/workflows/ci.yml
+#
+# This uses reusable workflows from project-starter-framework.
+# Runs only on PRs to main and manual triggers to save minutes.
+# ===========================================
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      run_tests:
+        description: 'Run tests (uses more minutes)'
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    uses: JNZader/project-starter-framework/.github/workflows/reusable-build-java.yml@main
+    with:
+      java-version: '21'  # Change to your version: 17, 21, 25
+      run-spotless: true
+      run-tests: ${{ github.event.inputs.run_tests == 'true' }}
+      # gradle-args: '-x :some:module:test'  # Exclude modules if needed

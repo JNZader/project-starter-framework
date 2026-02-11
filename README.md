@@ -98,9 +98,26 @@ project-starter-framework/
 │   └── Sessions/
 │       └── TEMPLATE.md           # Template de sesión diaria
 │
-├── .github/                      # GitHub templates
+├── .github/                      # GitHub config
+│   ├── workflows/                # Reusable workflows (CI mínimo)
+│   │   ├── reusable-build-java.yml
+│   │   ├── reusable-build-node.yml
+│   │   ├── reusable-build-python.yml
+│   │   ├── reusable-build-go.yml
+│   │   ├── reusable-docker.yml
+│   │   └── reusable-release.yml
 │   ├── PULL_REQUEST_TEMPLATE.md
 │   └── ISSUE_TEMPLATE/
+│
+├── templates/                    # CI templates para copiar
+│   ├── github/                   # GitHub Actions templates
+│   │   ├── ci-java.yml
+│   │   ├── ci-node.yml
+│   │   └── ci-python.yml
+│   ├── gitlab/                   # GitLab CI templates
+│   │   ├── gitlab-ci-java.yml
+│   │   └── gitlab-ci-node.yml
+│   └── README.md                 # Documentación de templates
 │
 ├── scripts/                      # Automatización
 │   ├── init-project.ps1/sh       # Setup inicial
@@ -357,6 +374,65 @@ Crear en `scripts/` con versiones `.sh` y `.ps1`.
 - [Memory Templates](.project/Memory/README.md) - Cómo usar la memoria
 - [Scripts Reference](scripts/README.md) - Todos los scripts
 - [Waves Guide](.project/Memory/WAVES.md) - Cómo usar oleadas
+
+---
+
+## CI Templates (Ahorro de Minutos)
+
+El framework incluye **workflows reutilizables** para minimizar el consumo de minutos de CI.
+
+### Filosofía
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  CI LOCAL (completo)                 CI REMOTO (mínimo)             │
+│  ─────────────────                   ─────────────────              │
+│  • Tests                             • Solo build                   │
+│  • Lint                              • Solo en PRs/tags             │
+│  • Security scans                    • Sin schedules                │
+│  • Docker simulation                 • ~3 min por ejecución         │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Uso en tu proyecto
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: JNZader/project-starter-framework/.github/workflows/reusable-build-java.yml@main
+    with:
+      java-version: '21'
+      run-tests: false  # Tests localmente!
+```
+
+### Workflows Disponibles
+
+| Workflow | Stack | Minutos |
+|----------|-------|---------|
+| `reusable-build-java.yml` | Java/Gradle | ~3 min |
+| `reusable-build-node.yml` | Node.js | ~2 min |
+| `reusable-build-python.yml` | Python | ~2 min |
+| `reusable-build-go.yml` | Go | ~2 min |
+| `reusable-docker.yml` | Docker | ~5 min |
+| `reusable-release.yml` | Semantic Release | ~2 min |
+
+### Templates pre-configurados
+
+```bash
+# Copiar template a tu proyecto
+cp templates/github/ci-java.yml .github/workflows/ci.yml
+cp templates/gitlab/gitlab-ci-java.yml .gitlab-ci.yml
+```
+
+Ver [templates/README.md](templates/README.md) para documentación completa.
 
 ---
 

@@ -1,0 +1,119 @@
+# ===========================================
+# Reusable Workflow: Node.js Build
+# ===========================================
+# Minimal CI for Node.js/TypeScript projects.
+#
+# Usage:
+#   jobs:
+#     build:
+#       uses: JNZader/project-starter-framework/.github/workflows/reusable-build-node.yml@main
+#       with:
+#         node-version: '20'
+# ===========================================
+
+name: Node.js Build (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: 'Node.js version'
+        required: false
+        default: '20'
+        type: string
+      package-manager:
+        description: 'Package manager (npm, yarn, pnpm)'
+        required: false
+        default: 'npm'
+        type: string
+      build-script:
+        description: 'Build script name'
+        required: false
+        default: 'build'
+        type: string
+      run-tests:
+        description: 'Run tests'
+        required: false
+        default: false
+        type: boolean
+      run-lint:
+        description: 'Run linting'
+        required: false
+        default: true
+        type: boolean
+      working-directory:
+        description: 'Working directory'
+        required: false
+        default: '.'
+        type: string
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js ${{ inputs.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: ${{ inputs.package-manager }}
+
+      - name: Install (npm)
+        if: inputs.package-manager == 'npm'
+        run: npm ci
+
+      - name: Install (yarn)
+        if: inputs.package-manager == 'yarn'
+        run: yarn install --frozen-lockfile
+
+      - name: Install (pnpm)
+        if: inputs.package-manager == 'pnpm'
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        if: inputs.run-lint
+        run: |
+          if [ "${{ inputs.package-manager }}" = "pnpm" ]; then
+            pnpm run lint || true
+          elif [ "${{ inputs.package-manager }}" = "yarn" ]; then
+            yarn lint || true
+          else
+            npm run lint || true
+          fi
+        continue-on-error: true
+
+      - name: Build
+        run: |
+          if [ "${{ inputs.package-manager }}" = "pnpm" ]; then
+            pnpm run ${{ inputs.build-script }}
+          elif [ "${{ inputs.package-manager }}" = "yarn" ]; then
+            yarn ${{ inputs.build-script }}
+          else
+            npm run ${{ inputs.build-script }}
+          fi
+
+      - name: Test
+        if: inputs.run-tests
+        run: |
+          if [ "${{ inputs.package-manager }}" = "pnpm" ]; then
+            pnpm test
+          elif [ "${{ inputs.package-manager }}" = "yarn" ]; then
+            yarn test
+          else
+            npm test
+          fi

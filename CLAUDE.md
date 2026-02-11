@@ -12,42 +12,6 @@
 
 - **Nombre:** [NOMBRE_PROYECTO]
 - **Stack:** [STACK]
-- **VibeKanban:** Usar MCP tools para gestionar tareas
-
-## Workflow: Oleadas Paralelas
-
-Este proyecto usa **oleadas de tareas paralelas**:
-
-1. Analizar dependencias de tareas
-2. Agrupar tareas sin dependencias en oleadas
-3. Ejecutar oleada completa en paralelo
-4. Merge all → siguiente oleada
-
-### Comandos de Oleadas
-
-```bash
-# Ver oleada actual
-./scripts/new-wave.sh --list
-
-# Crear nueva oleada
-./scripts/new-wave.sh "T-001 T-002 T-003"
-
-# Crear branches para tareas
-./scripts/new-wave.sh --create-branches
-
-# Completar oleada
-./scripts/new-wave.sh --complete
-```
-
-## Branching Strategy
-
-```
-main (producción)
-  ↑ PR
-develop (integración)
-  ↑ PR
-feature/t-xxx-descripcion (trabajo)
-```
 
 ## CI Local
 
@@ -59,14 +23,15 @@ Antes de push, ejecutar CI local:
 ./.ci-local/ci-local.sh shell   # Debug en entorno CI
 ```
 
-## Memoria del Proyecto
+## Branching Strategy
 
-Leer al inicio de cada sesión:
-
-- `.project/Memory/CONTEXT.md` - Estado actual
-- `.project/Memory/DECISIONS.md` - ADRs
-- `.project/Memory/BLOCKERS.md` - Problemas conocidos
-- `.project/Memory/WAVES.md` - Oleadas de trabajo
+```
+main (producción)
+  ↑ PR
+develop (integración)
+  ↑ PR
+feature/descripcion (trabajo)
+```
 
 ## Convenciones
 
@@ -84,18 +49,21 @@ chore(scope): maintenance
 ### Branches
 
 ```
-feature/t-xxx-descripcion
-fix/t-xxx-descripcion
-docs/t-xxx-descripcion
+feature/descripcion
+fix/descripcion
+docs/descripcion
 ```
 
 ## Archivos en .gitignore
 
 - CLAUDE.md está en .gitignore (no commitear)
-- .project/Memory/*.md pueden commitearse si se desea
 
 ## Comandos Frecuentes
 
 ```bash
+# CI Local
+./.ci-local/ci-local.sh quick   # Validación rápida
+./.ci-local/ci-local.sh full    # CI completo
+
 # [Agregar comandos específicos del proyecto]
 ```

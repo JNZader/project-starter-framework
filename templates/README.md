@@ -34,6 +34,11 @@ jobs:
 | `github/ci-rust.yml` | Rust | `.github/workflows/ci.yml` |
 | `github/ci-monorepo.yml` | Multi-servicio | `.github/workflows/ci.yml` |
 
+Todos incluyen:
+- **Concurrency control**: Cancela runs anteriores del mismo PR
+- **Path filtering**: Ignora cambios en docs/markdown
+- **Manual trigger**: Opción para ejecutar tests bajo demanda
+
 ### Reusable Workflows
 
 | Workflow | Descripción | Minutos aprox |
@@ -54,6 +59,8 @@ jobs:
 |----------|-------|----------|
 | `gitlab/gitlab-ci-java.yml` | Java/Gradle | `.gitlab-ci.yml` |
 | `gitlab/gitlab-ci-node.yml` | Node.js | `.gitlab-ci.yml` |
+| `gitlab/gitlab-ci-python.yml` | Python | `.gitlab-ci.yml` |
+| `gitlab/gitlab-ci-go.yml` | Go | `.gitlab-ci.yml` |
 | `gitlab/gitlab-ci-rust.yml` | Rust | `.gitlab-ci.yml` |
 
 ## Instalación Rápida

@@ -6,12 +6,13 @@
 
 ## Disponibles
 
-| Script | Descripción |
-|--------|-------------|
-| `init-project.sh/ps1` | Setup inicial del proyecto |
-| `new-wave.sh/ps1` | Gestión de oleadas de tareas |
-| `sync-ai-config.sh/ps1` | Sincroniza config de AI CLIs |
-| `add-skill.sh` | Agrega skills de Gentleman-Skills |
+| Script | Descripción | Windows |
+|--------|-------------|---------|
+| `init-project.sh/ps1` | Setup inicial del proyecto | ✓ |
+| `new-wave.sh/ps1` | Gestión de oleadas de tareas | ✓ |
+| `sync-ai-config.sh/ps1` | Sincroniza config de AI CLIs | ✓ |
+| `add-skill.sh/ps1` | Agrega skills de Gentleman-Skills | ✓ |
+| `sync-skills.sh/ps1` | Valida y sincroniza skills | ✓ |
 
 ---
 
@@ -112,6 +113,29 @@ Agrega skills de [Gentleman-Skills](https://github.com/Gentleman-Programming/Gen
 | `angular` | Angular patterns |
 | `vercel-ai-sdk-5` | AI integrations |
 | `tailwindcss-4` | Tailwind CSS |
+
+---
+
+## sync-skills
+
+Valida formato de skills y genera archivos multi-IDE:
+
+```bash
+# Listar todos los skills
+./scripts/sync-skills.sh list
+
+# Validar formato
+./scripts/sync-skills.sh validate
+
+# Generar archivos multi-IDE (CLAUDE.md, AGENTS.md, etc.)
+./scripts/sync-skills.sh symlinks
+
+# Generar resumen de skills
+./scripts/sync-skills.sh summary
+
+# Todo junto
+./scripts/sync-skills.sh all
+```
 
 ---
 

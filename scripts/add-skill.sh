@@ -83,6 +83,13 @@ list_installed() {
 
 add_gentleman_skill() {
     local skill_name="$1"
+
+    # Security: validate skill name to prevent path traversal
+    if [[ ! "$skill_name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo -e "${RED}Error: Invalid skill name format. Use only alphanumeric, dash, underscore.${NC}"
+        exit 1
+    fi
+
     clone_gentleman
 
     # Buscar en curated primero, luego community

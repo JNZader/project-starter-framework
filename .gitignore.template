@@ -29,6 +29,26 @@ Thumbs.db
 .env.*.local
 *.env
 
+# Credentials & Keys
+.npmrc
+credentials.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+.aws/
+.ssh/
+.gcp/
+service-account*.json
+
+# AI Config (per-project)
+AGENTS.md
+GEMINI.md
+.cursorrules
+.aider.conf.yml
+
 # Logs
 *.log
 logs/

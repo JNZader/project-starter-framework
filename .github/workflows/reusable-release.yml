@@ -52,6 +52,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+
+      - name: Cache semantic-release
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: semantic-release-${{ runner.os }}-${{ hashFiles('.releaserc*') }}
+          restore-keys: semantic-release-${{ runner.os }}-
 
       - name: Install semantic-release
         run: |

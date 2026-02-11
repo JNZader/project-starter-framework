@@ -38,7 +38,7 @@ function Detect-Stack {
     }
 
     # Java + Gradle
-    if (Test-Path "$ProjectDir/build.gradle" -or Test-Path "$ProjectDir/build.gradle.kts") {
+    if ((Test-Path "$ProjectDir/build.gradle") -or (Test-Path "$ProjectDir/build.gradle.kts")) {
         $stack.Type = "java-gradle"
         $stack.BuildTool = "gradle"
         $stack.Dockerfile = "java.Dockerfile"
@@ -88,7 +88,7 @@ function Detect-Stack {
     }
 
     # Python
-    if (Test-Path "$ProjectDir/pyproject.toml" -or Test-Path "$ProjectDir/setup.py" -or Test-Path "$ProjectDir/requirements.txt") {
+    if ((Test-Path "$ProjectDir/pyproject.toml") -or (Test-Path "$ProjectDir/setup.py") -or (Test-Path "$ProjectDir/requirements.txt")) {
         $stack.Type = "python"
         $stack.BuildTool = if (Test-Path "$ProjectDir/poetry.lock") { "poetry" } `
                           elseif (Test-Path "$ProjectDir/Pipfile") { "pipenv" } `
@@ -150,8 +150,11 @@ function Ensure-DockerImage($stack) {
             $buildArgs = "--build-arg JAVA_VERSION=$($stack.JavaVersion)"
         }
 
-        $cmd = "docker build $buildArgs -f `"$dockerfile`" -t $imageName `"$ScriptDir/docker`""
-        Invoke-Expression $cmd
+        # Use Start-Process to avoid Invoke-Expression security risks
+        $dockerArgs = @("build")
+        if ($buildArgs) { $dockerArgs += $buildArgs.Split(' ') }
+        $dockerArgs += @("-f", $dockerfile, "-t", $imageName, "$ScriptDir/docker")
+        & docker @dockerArgs
     }
 }
 

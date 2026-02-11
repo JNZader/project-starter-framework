@@ -97,6 +97,10 @@ project-starter-framework/
 │
 ├── .releaserc                    # Config semantic-release
 ├── CLAUDE.md                     # Instrucciones Claude Code
+├── CONTRIBUTING.md               # Guía de contribución
+├── CHANGELOG.md                  # Historial de versiones
+├── SECURITY.md                   # Política de seguridad
+├── LICENSE                       # Licencia MIT
 └── .gitignore.template           # Template de .gitignore
 ```
 

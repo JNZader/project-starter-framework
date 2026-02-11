@@ -44,12 +44,13 @@ detect_stack() {
         COMPILE_CMD="./gradlew classes testClasses --no-daemon"
         TEST_CMD="./gradlew test --no-daemon"
 
-        # Detectar versión Java
+        # Detectar versión Java (compatible con macOS y Linux)
         if [[ -f "$PROJECT_DIR/build.gradle.kts" ]]; then
-            JAVA_VERSION=$(grep -oP 'languageVersion\s*=\s*JavaLanguageVersion\.of\(\K\d+' "$PROJECT_DIR/build.gradle.kts" 2>/dev/null || echo "21")
+            JAVA_VERSION=$(grep -E 'languageVersion\s*=\s*JavaLanguageVersion\.of\(' "$PROJECT_DIR/build.gradle.kts" 2>/dev/null | grep -o '[0-9]\+' | head -1 || echo "21")
         elif [[ -f "$PROJECT_DIR/build.gradle" ]]; then
-            JAVA_VERSION=$(grep -oP 'sourceCompatibility\s*=\s*.\K\d+' "$PROJECT_DIR/build.gradle" 2>/dev/null || echo "21")
+            JAVA_VERSION=$(grep -E 'sourceCompatibility\s*=' "$PROJECT_DIR/build.gradle" 2>/dev/null | grep -o '[0-9]\+' | head -1 || echo "21")
         fi
+        [[ -z "$JAVA_VERSION" ]] && JAVA_VERSION="21"
         return
     fi
 
@@ -280,7 +281,7 @@ case "$MODE" in
     shell)
         ensure_docker_image
         echo -e "\n${YELLOW}Opening shell in CI environment...${NC}"
-        local image_name=$(get_image_name)
+        image_name=$(get_image_name)
         docker run --rm -it \
             -v "$PROJECT_DIR:/home/runner/work" \
             -e CI=true \

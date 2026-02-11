@@ -32,6 +32,7 @@ jobs:
 | `github/ci-node.yml` | Node.js | `.github/workflows/ci.yml` |
 | `github/ci-python.yml` | Python | `.github/workflows/ci.yml` |
 | `github/ci-rust.yml` | Rust | `.github/workflows/ci.yml` |
+| `github/ci-monorepo.yml` | Multi-servicio | `.github/workflows/ci.yml` |
 
 ### Reusable Workflows
 
@@ -159,3 +160,58 @@ Con esta configuración:
 **Free tier mensual:**
 - GitHub: 2,000 min → ~600+ PRs
 - GitLab: 400 min → ~130+ PRs
+
+## Dependency Management
+
+### Renovate
+
+Para actualización automática de dependencias con Renovate:
+
+```bash
+cp templates/renovate.json renovate.json
+```
+
+Características:
+- Updates semanales (lunes 9am)
+- Automerge para patches
+- Agrupa dependencias por ecosistema
+- Alertas de vulnerabilidad con automerge
+
+### Dependabot
+
+Alternativa nativa de GitHub:
+
+```bash
+cp templates/dependabot.yml .github/dependabot.yml
+# Descomentar secciones según tu stack
+```
+
+## Semantic Release
+
+### .releaserc
+
+Configuración para semantic-release:
+
+```bash
+cp .releaserc tu-proyecto/.releaserc
+```
+
+Incluye:
+- Conventional commits
+- CHANGELOG automático
+- Release notes generadas
+- Tags semánticos
+
+## Monorepo
+
+Para proyectos con múltiples servicios:
+
+```bash
+cp templates/github/ci-monorepo.yml .github/workflows/ci.yml
+```
+
+Características:
+- Detección de cambios por directorio
+- Build selectivo (solo lo que cambió)
+- Soporte para frontend + backend
+- Trigger manual por servicio

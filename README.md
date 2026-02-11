@@ -81,8 +81,10 @@ project-starter-framework/
 │       └── reusable-release.yml
 │
 ├── templates/                    # CI templates para copiar
-│   ├── github/                   # GitHub Actions (java, node, python, rust)
-│   └── gitlab/                   # GitLab CI (java, node, rust)
+│   ├── github/                   # GitHub Actions (java, node, python, rust, monorepo)
+│   ├── gitlab/                   # GitLab CI (java, node, rust)
+│   ├── renovate.json             # Config Renovate (dependency updates)
+│   └── dependabot.yml            # Config Dependabot (alternativa)
 │
 ├── optional/                     # Módulos opcionales
 │   ├── vibekanban/               # Oleadas paralelas + memoria
@@ -93,6 +95,7 @@ project-starter-framework/
 │   ├── sync-ai-config.ps1/sh     # Sincronizar AI config
 │   └── add-skill.sh              # Agregar Gentleman-Skills
 │
+├── .releaserc                    # Config semantic-release
 ├── CLAUDE.md                     # Instrucciones Claude Code
 └── .gitignore.template           # Template de .gitignore
 ```
@@ -145,6 +148,11 @@ jobs:
 | `reusable-build-rust.yml` | Rust | ~3 min |
 | `reusable-docker.yml` | Docker | ~5 min |
 | `reusable-release.yml` | Semantic Release | ~2 min |
+
+**Templates adicionales:**
+- `ci-monorepo.yml` - Multi-servicio con detección de cambios
+- `renovate.json` / `dependabot.yml` - Actualización de dependencias
+- `.releaserc` - Semantic versioning automático
 
 ### 3. AI Config (Core)
 

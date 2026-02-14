@@ -252,6 +252,3 @@ Operations:
 ## Related Skills
 
 - `gateway-spring`: Spring Cloud Gateway implementation
-- `apigen-architecture`: Overall system architecture
-
-

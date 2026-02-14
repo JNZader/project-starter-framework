@@ -271,6 +271,4 @@ jacocoTestCoverageVerification {
 
 ## Related Skills
 
-- `apigen-architecture`: Arquitectura general
 - `spring-boot-4`: Dependencias Spring
-

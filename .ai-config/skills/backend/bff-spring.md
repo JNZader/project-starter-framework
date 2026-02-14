@@ -362,6 +362,3 @@ class DashboardBffControllerTest {
 
 - `bff-concepts`: BFF pattern concepts
 - `spring-boot-4`: Spring Boot 4.0 patterns
-- `apigen-architecture`: Overall system architecture
-
-

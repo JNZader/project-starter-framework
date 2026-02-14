@@ -253,6 +253,3 @@ Always:
 ## Related Skills
 
 - `exceptions-spring`: Spring Boot exception handling
-- `apigen-architecture`: Overall system architecture
-
-

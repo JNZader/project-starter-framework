@@ -237,6 +237,3 @@ BFF Controller:
 ## Related Skills
 
 - `bff-spring`: Spring Boot BFF implementation
-- `apigen-architecture`: Overall system architecture
-
-

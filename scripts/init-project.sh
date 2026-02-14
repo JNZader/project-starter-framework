@@ -147,29 +147,46 @@ echo -e "${YELLOW}[6/8] Módulos opcionales...${NC}"
 
 FRAMEWORK_DIR=""
 # Detectar si estamos en el framework o en un proyecto que lo copió
-if [[ -d "optional/vibekanban" ]]; then
+if [[ -d "optional/vibekanban" || -d "optional/obsidian-brain" ]]; then
     FRAMEWORK_DIR="."
 fi
 
 if [[ -n "$FRAMEWORK_DIR" ]]; then
     echo -e "  ${CYAN}¿Instalar módulo de memoria del proyecto?${NC}"
-    echo -e "    1) vibekanban - Oleadas paralelas + memoria estructurada"
-    echo -e "    2) simple     - Solo un archivo NOTES.md"
-    echo -e "    3) ninguno    - Sin memoria de proyecto"
+    echo -e "    1) obsidian-brain  - Vault Obsidian + Kanban + memoria estructurada (RECOMENDADO)"
+    echo -e "    2) vibekanban      - Oleadas paralelas + memoria (legacy)"
+    echo -e "    3) simple          - Solo un archivo NOTES.md"
+    echo -e "    4) ninguno         - Sin memoria de proyecto"
     echo -e ""
-    read -p "  Opción [1/2/3]: " MEMORY_CHOICE
+    read -p "  Opción [1/2/3/4]: " MEMORY_CHOICE
 
     case "$MEMORY_CHOICE" in
         1)
+            if [[ -d "$FRAMEWORK_DIR/optional/obsidian-brain/.project" ]]; then
+                cp -r "$FRAMEWORK_DIR/optional/obsidian-brain/.project" .
+                cp -r "$FRAMEWORK_DIR/optional/obsidian-brain/.obsidian" .
+                cp "$FRAMEWORK_DIR/optional/obsidian-brain/new-wave.sh" scripts/ 2>/dev/null || true
+                cp "$FRAMEWORK_DIR/optional/obsidian-brain/new-wave.ps1" scripts/ 2>/dev/null || true
+                chmod +x scripts/new-wave.sh 2>/dev/null || true
+                # Append gitignore snippet
+                if [[ -f "$FRAMEWORK_DIR/optional/obsidian-brain/.obsidian-gitignore-snippet.txt" ]]; then
+                    echo "" >> .gitignore
+                    cat "$FRAMEWORK_DIR/optional/obsidian-brain/.obsidian-gitignore-snippet.txt" >> .gitignore
+                fi
+                echo -e "${GREEN}  ✓ Obsidian Brain instalado${NC}"
+                echo -e "  ${CYAN}Nota: Instala plugins Kanban, Dataview y Templater desde Obsidian${NC}"
+            fi
+            ;;
+        2)
             if [[ -d "$FRAMEWORK_DIR/optional/vibekanban/.project" ]]; then
                 cp -r "$FRAMEWORK_DIR/optional/vibekanban/.project" .
                 cp "$FRAMEWORK_DIR/optional/vibekanban/new-wave.sh" scripts/ 2>/dev/null || true
                 cp "$FRAMEWORK_DIR/optional/vibekanban/new-wave.ps1" scripts/ 2>/dev/null || true
                 chmod +x scripts/new-wave.sh 2>/dev/null || true
-                echo -e "${GREEN}  ✓ VibeKanban instalado${NC}"
+                echo -e "${GREEN}  ✓ VibeKanban instalado (legacy)${NC}"
             fi
             ;;
-        2)
+        3)
             if [[ -d "$FRAMEWORK_DIR/optional/memory-simple/.project" ]]; then
                 cp -r "$FRAMEWORK_DIR/optional/memory-simple/.project" .
                 echo -e "${GREEN}  ✓ Memory simple instalado${NC}"

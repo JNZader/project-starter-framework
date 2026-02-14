@@ -175,3 +175,4 @@ VibeKanban (todo) → Wave created → Work → PR merged → VibeKanban (done)
 Wave progress is tracked in:
 - `.project/Memory/WAVES.md` - All waves history
 - `.project/Memory/CONTEXT.md` - Current state summary
+- `.project/Memory/KANBAN.md` - Visual task board (Obsidian Brain)

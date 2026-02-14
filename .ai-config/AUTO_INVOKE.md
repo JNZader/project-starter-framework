@@ -161,6 +161,7 @@
 | `traefik-proxy` | Auto | `traefik/`, `proxy/`, `ingress/` |
 | `vector-db` | Auto | `vectorstore/`, `embeddings/`, `rag/` |
 | `vitest-testing` | Auto | `tests/`, `__tests__/`, `*.test.*` |
+| `obsidian-brain-workflow` | Manual | `.project/`, `.obsidian/` |
 | `wave-workflow` | Manual | General |
 | `websockets` | Auto | `src/`, `ws/`, `realtime/` |
 | `woodpecker-ci` | Manual | General |

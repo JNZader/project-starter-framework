@@ -131,16 +131,37 @@ CLAUDE.md
 # =============================================================================
 Write-Host "[6/8] Módulos opcionales..." -ForegroundColor Yellow
 
-if (Test-Path "optional/vibekanban") {
+if ((Test-Path "optional/obsidian-brain") -or (Test-Path "optional/vibekanban")) {
     Write-Host "  ¿Instalar módulo de memoria del proyecto?" -ForegroundColor Cyan
-    Write-Host "    1) vibekanban - Oleadas paralelas + memoria estructurada"
-    Write-Host "    2) simple     - Solo un archivo NOTES.md"
-    Write-Host "    3) ninguno    - Sin memoria de proyecto"
+    Write-Host "    1) obsidian-brain  - Vault Obsidian + Kanban + memoria estructurada (RECOMENDADO)"
+    Write-Host "    2) vibekanban      - Oleadas paralelas + memoria (legacy)"
+    Write-Host "    3) simple          - Solo un archivo NOTES.md"
+    Write-Host "    4) ninguno         - Sin memoria de proyecto"
     Write-Host ""
-    $choice = Read-Host "  Opción [1/2/3]"
+    $choice = Read-Host "  Opción [1/2/3/4]"
 
     switch ($choice) {
         "1" {
+            if (Test-Path "optional/obsidian-brain/.project") {
+                Copy-Item -Recurse "optional/obsidian-brain/.project" "." -Force
+                Copy-Item -Recurse "optional/obsidian-brain/.obsidian" "." -Force
+                if (Test-Path "optional/obsidian-brain/new-wave.ps1") {
+                    Copy-Item "optional/obsidian-brain/new-wave.ps1" "scripts/" -Force
+                }
+                if (Test-Path "optional/obsidian-brain/new-wave.sh") {
+                    Copy-Item "optional/obsidian-brain/new-wave.sh" "scripts/" -Force
+                }
+                # Append gitignore snippet
+                $snippetPath = "optional/obsidian-brain/.obsidian-gitignore-snippet.txt"
+                if (Test-Path $snippetPath) {
+                    Add-Content -Path ".gitignore" -Value ""
+                    Get-Content $snippetPath | Add-Content -Path ".gitignore"
+                }
+                Write-Host "  Done: Obsidian Brain instalado" -ForegroundColor Green
+                Write-Host "  Nota: Instala plugins Kanban, Dataview y Templater desde Obsidian" -ForegroundColor Cyan
+            }
+        }
+        "2" {
             if (Test-Path "optional/vibekanban/.project") {
                 Copy-Item -Recurse "optional/vibekanban/.project" "." -Force
                 if (Test-Path "optional/vibekanban/new-wave.ps1") {
@@ -149,10 +170,10 @@ if (Test-Path "optional/vibekanban") {
                 if (Test-Path "optional/vibekanban/new-wave.sh") {
                     Copy-Item "optional/vibekanban/new-wave.sh" "scripts/" -Force
                 }
-                Write-Host "  Done: VibeKanban instalado" -ForegroundColor Green
+                Write-Host "  Done: VibeKanban instalado (legacy)" -ForegroundColor Green
             }
         }
-        "2" {
+        "3" {
             if (Test-Path "optional/memory-simple/.project") {
                 Copy-Item -Recurse "optional/memory-simple/.project" "." -Force
                 Write-Host "  Done: Memory simple instalado" -ForegroundColor Green
@@ -182,7 +203,7 @@ switch ($Stack) {
     "rust"         { $TemplateSuffix = "rust" }
 }
 
-if ((Test-Path "optional/vibekanban") -and $TemplateSuffix -ne "") {
+if (((Test-Path "optional/obsidian-brain") -or (Test-Path "optional/vibekanban")) -and $TemplateSuffix -ne "") {
     Write-Host "  ¿Qué CI remoto usar?" -ForegroundColor Cyan
     Write-Host "    1) GitHub Actions"
     Write-Host "    2) GitLab CI"

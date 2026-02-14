@@ -1,17 +1,34 @@
 # Optional Modules
 
-> Módulos opcionales que puedes agregar a tu proyecto.
+> Modulos opcionales que puedes agregar a tu proyecto.
 
-## Módulos Disponibles
+## Modulos Disponibles
 
-| Módulo | Descripción | Cuándo usar |
+| Modulo | Descripcion | Cuando usar |
 |--------|-------------|-------------|
-| `vibekanban/` | Oleadas paralelas + memoria estructurada | Proyectos grandes, equipos, metodología estricta |
-| `memory-simple/` | Solo un archivo NOTES.md | Proyectos pequeños, solo necesitas notas |
+| `obsidian-brain/` | Vault Obsidian + Kanban + Dataview + memoria estructurada **(RECOMENDADO)** | Proyectos de cualquier tamano, workflow visual, queries automaticas |
+| `vibekanban/` | Oleadas paralelas + memoria estructurada **(legacy)** | Proyectos existentes que ya lo usan |
+| `memory-simple/` | Solo un archivo NOTES.md | Proyectos pequenos, solo necesitas notas |
 
-## Instalación
+## Instalacion
 
-### VibeKanban (completo)
+### Obsidian Brain (recomendado)
+
+```bash
+# Copiar estructura de memoria y config Obsidian
+cp -r optional/obsidian-brain/.project tu-proyecto/
+cp -r optional/obsidian-brain/.obsidian tu-proyecto/
+
+# Copiar scripts de oleadas
+cp optional/obsidian-brain/new-wave.* tu-proyecto/scripts/
+
+# Agregar lineas al .gitignore
+cat optional/obsidian-brain/.obsidian-gitignore-snippet.txt >> tu-proyecto/.gitignore
+```
+
+Luego instalar plugins desde Obsidian: Kanban, Dataview, Templater.
+
+### VibeKanban (legacy)
 
 ```bash
 # Copiar estructura de memoria
@@ -33,5 +50,5 @@ Si no necesitas memoria de proyecto, simplemente no copies nada de `optional/`.
 
 El framework funciona perfectamente solo con:
 - `.ci-local/` - CI local
-- `.ai-config/` - Configuración AI
+- `.ai-config/` - Configuracion AI
 - `templates/` - CI templates

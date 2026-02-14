@@ -41,6 +41,11 @@
       "groupName": "Python dependencies"
     },
     {
+      "description": "Go dependencies",
+      "matchManagers": ["gomod"],
+      "groupName": "Go dependencies"
+    },
+    {
       "description": "Rust dependencies",
       "matchManagers": ["cargo"],
       "groupName": "Rust dependencies"

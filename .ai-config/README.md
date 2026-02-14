@@ -22,7 +22,7 @@
 .ai-config/
 ├── README.md                    # Esta documentación
 │
-├── agents/                      # 70+ Agentes organizados por categoría
+├── agents/                      # 79 Agentes organizados por categoría
 │   ├── _TEMPLATE.md             # Template para crear agentes
 │   ├── business/                # Análisis de negocio y producto (6 agentes)
 │   ├── creative/                # Diseño y UX (1 agente)
@@ -44,7 +44,7 @@
 │   ├── mobile/                  # Mobile
 │   ├── workflow/                # Workflow & Tools
 │   ├── docs/                    # Documentation & Templates
-│   ├── other/                   # Misc/IoT/Systems
+│   ├── systems-iot/             # Sistemas/IoT
 │   └── references/              # Documentación de referencia
 │       ├── hooks-patterns.md
 │       ├── mcp-servers.md
@@ -188,11 +188,12 @@ cp .ai-config/agents/_TEMPLATE.md .ai-config/agents/mi-agente.md
 | `monitoring-specialist` | Observabilidad |
 | `performance-engineer` | Optimización |
 
-### Quality (7 agentes)
+### Quality (8 agentes)
 | Agente | Uso |
 |--------|-----|
 | `accessibility-auditor` | WCAG compliance |
 | `code-reviewer` | Code review sistemático |
+| `code-reviewer-compact` | Code review rápido (sonnet) |
 | `dependency-manager` | Seguridad de dependencias |
 | `e2e-test-specialist` | Playwright/Cypress |
 | `performance-tester` | Load testing |
@@ -331,4 +332,4 @@ El script `sync-ai-config.sh` genera archivos específicos para cada CLI:
 
 ---
 
-*Compatible con Gentleman-Skills v1.0 • 78+ agentes incluidos*
+*Compatible con Gentleman-Skills v1.0 • 79 agentes • 79 skills incluidos*

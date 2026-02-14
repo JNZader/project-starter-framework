@@ -4,7 +4,7 @@
 
 param(
     [Parameter(Position=0)]
-    [ValidateSet("claude", "opencode", "cursor", "aider", "all")]
+    [ValidateSet("claude", "opencode", "cursor", "aider", "continue", "all")]
     [string]$Target = "all"
 )
 
@@ -119,12 +119,45 @@ conventions:
     Write-Host "Done: Generated .aider.conf.yml" -ForegroundColor Green
 }
 
+function Generate-Continue {
+    Write-Host "Generating Continue.dev config..." -ForegroundColor Yellow
+
+    $continueDir = Join-Path $env:USERPROFILE ".continue"
+    New-Item -ItemType Directory -Path $continueDir -Force | Out-Null
+
+    $configPath = Join-Path $continueDir "config.json"
+    if (-not (Test-Path $configPath)) {
+        @"
+{
+  "models": [
+    {
+      "title": "Claude Sonnet",
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022"
+    }
+  ],
+  "customCommands": [
+    {
+      "name": "review",
+      "description": "Code review",
+      "prompt": "Review this code for quality, security, and best practices."
+    }
+  ]
+}
+"@ | Out-File -FilePath $configPath -Encoding utf8
+        Write-Host "Done: Generated $configPath" -ForegroundColor Green
+    } else {
+        Write-Host "  $configPath already exists, skipping" -ForegroundColor Yellow
+    }
+}
+
 # Main
 switch ($Target) {
     "claude" { Generate-Claude }
     "opencode" { Generate-OpenCode }
     "cursor" { Generate-Cursor }
     "aider" { Generate-Aider }
+    "continue" { Generate-Continue }
     "all" {
         Generate-Claude
         Generate-OpenCode

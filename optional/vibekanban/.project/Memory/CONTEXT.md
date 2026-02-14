@@ -41,7 +41,7 @@ proyecto/
 
 ### Tareas en Progreso (VibeKanban)
 
-> Sincronizar con: `./scripts/sync-vibekanban.sh`
+> Sincronizar con: `./scripts/new-wave.sh --list`
 
 | ID | Titulo | Branch | Estado |
 |----|--------|--------|--------|

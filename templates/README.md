@@ -31,6 +31,7 @@ jobs:
 | `github/ci-java.yml` | Java/Gradle | `.github/workflows/ci.yml` |
 | `github/ci-node.yml` | Node.js | `.github/workflows/ci.yml` |
 | `github/ci-python.yml` | Python | `.github/workflows/ci.yml` |
+| `github/ci-go.yml` | Go | `.github/workflows/ci.yml` |
 | `github/ci-rust.yml` | Rust | `.github/workflows/ci.yml` |
 | `github/ci-monorepo.yml` | Multi-servicio | `.github/workflows/ci.yml` |
 
@@ -62,6 +63,7 @@ Todos incluyen:
 | `gitlab/gitlab-ci-python.yml` | Python | `.gitlab-ci.yml` |
 | `gitlab/gitlab-ci-go.yml` | Go | `.gitlab-ci.yml` |
 | `gitlab/gitlab-ci-rust.yml` | Rust | `.gitlab-ci.yml` |
+| `gitlab/gitlab-ci-monorepo.yml` | Multi-servicio | `.gitlab-ci.yml` |
 
 ## Woodpecker CI
 

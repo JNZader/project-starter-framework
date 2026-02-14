@@ -18,7 +18,7 @@ Set-Location $ProjectDir
 # =============================================================================
 # 1. Verificar repo git
 # =============================================================================
-Write-Host "[1/7] Verificando repositorio Git..." -ForegroundColor Yellow
+Write-Host "[1/8] Verificando repositorio Git..." -ForegroundColor Yellow
 if (-not (Test-Path ".git")) {
     Write-Host "  No es un repo git. Inicializando..." -ForegroundColor Yellow
     git init
@@ -31,7 +31,7 @@ if (-not (Test-Path ".git")) {
 # =============================================================================
 # 2. Configurar git hooks
 # =============================================================================
-Write-Host "[2/7] Configurando git hooks..." -ForegroundColor Yellow
+Write-Host "[2/8] Configurando git hooks..." -ForegroundColor Yellow
 if (Test-Path ".ci-local/hooks") {
     git config core.hooksPath .ci-local/hooks
     Write-Host "  Done: Hooks configurados" -ForegroundColor Green
@@ -42,7 +42,7 @@ if (Test-Path ".ci-local/hooks") {
 # =============================================================================
 # 3. Detectar stack
 # =============================================================================
-Write-Host "[3/7] Detectando stack tecnológico..." -ForegroundColor Yellow
+Write-Host "[3/8] Detectando stack tecnológico..." -ForegroundColor Yellow
 
 $Stack = "unknown"
 if ((Test-Path "build.gradle") -or (Test-Path "build.gradle.kts")) {
@@ -68,7 +68,7 @@ if ($Stack -ne "unknown") {
 # =============================================================================
 # 4. Verificar dependencias
 # =============================================================================
-Write-Host "[4/7] Verificando dependencias..." -ForegroundColor Yellow
+Write-Host "[4/8] Verificando dependencias..." -ForegroundColor Yellow
 
 try {
     $null = docker info 2>$null
@@ -86,7 +86,7 @@ if (Get-Command semgrep -ErrorAction SilentlyContinue) {
 # =============================================================================
 # 5. Crear .gitignore si no existe
 # =============================================================================
-Write-Host "[5/7] Verificando .gitignore..." -ForegroundColor Yellow
+Write-Host "[5/8] Verificando .gitignore..." -ForegroundColor Yellow
 if (-not (Test-Path ".gitignore")) {
     @"
 # CI Local
@@ -129,7 +129,7 @@ CLAUDE.md
 # =============================================================================
 # 6. Módulos opcionales
 # =============================================================================
-Write-Host "[6/7] Módulos opcionales..." -ForegroundColor Yellow
+Write-Host "[6/8] Módulos opcionales..." -ForegroundColor Yellow
 
 if (Test-Path "optional/vibekanban") {
     Write-Host "  ¿Instalar módulo de memoria del proyecto?" -ForegroundColor Cyan
@@ -167,9 +167,73 @@ if (Test-Path "optional/vibekanban") {
 }
 
 # =============================================================================
-# 7. Configurar CLAUDE.md
+# 7. CI Provider
 # =============================================================================
-Write-Host "[7/7] Configurando CLAUDE.md..." -ForegroundColor Yellow
+Write-Host "[7/8] Configurando CI remoto..." -ForegroundColor Yellow
+
+# Map stack to template suffix
+$TemplateSuffix = ""
+switch ($Stack) {
+    "java-gradle"  { $TemplateSuffix = "java" }
+    "java-maven"   { $TemplateSuffix = "java" }
+    "node"         { $TemplateSuffix = "node" }
+    "python"       { $TemplateSuffix = "python" }
+    "go"           { $TemplateSuffix = "go" }
+    "rust"         { $TemplateSuffix = "rust" }
+}
+
+if ((Test-Path "optional/vibekanban") -and $TemplateSuffix -ne "") {
+    Write-Host "  ¿Qué CI remoto usar?" -ForegroundColor Cyan
+    Write-Host "    1) GitHub Actions"
+    Write-Host "    2) GitLab CI"
+    Write-Host "    3) Woodpecker CI"
+    Write-Host "    4) Solo CI-Local (sin CI remoto)"
+    Write-Host ""
+    $ciChoice = Read-Host "  Opción [1/2/3/4]"
+
+    switch ($ciChoice) {
+        "1" {
+            New-Item -ItemType Directory -Path ".github/workflows" -Force | Out-Null
+            $src = "templates/github/ci-${TemplateSuffix}.yml"
+            if (Test-Path $src) {
+                Copy-Item $src ".github/workflows/ci.yml" -Force
+                Write-Host "  Done: GitHub Actions configurado (.github/workflows/ci.yml)" -ForegroundColor Green
+            } else {
+                Write-Host "  Warning: Template $src no encontrado" -ForegroundColor Yellow
+            }
+        }
+        "2" {
+            $src = "templates/gitlab/gitlab-ci-${TemplateSuffix}.yml"
+            if (Test-Path $src) {
+                Copy-Item $src ".gitlab-ci.yml" -Force
+                Write-Host "  Done: GitLab CI configurado (.gitlab-ci.yml)" -ForegroundColor Green
+            } else {
+                Write-Host "  Warning: Template $src no encontrado" -ForegroundColor Yellow
+            }
+        }
+        "3" {
+            $src = "templates/woodpecker/woodpecker-${TemplateSuffix}.yml"
+            if (Test-Path $src) {
+                Copy-Item $src ".woodpecker.yml" -Force
+                Write-Host "  Done: Woodpecker CI configurado (.woodpecker.yml)" -ForegroundColor Green
+            } else {
+                Write-Host "  Warning: Template $src no encontrado" -ForegroundColor Yellow
+            }
+        }
+        default {
+            Write-Host "  Done: Solo CI-Local (sin CI remoto)" -ForegroundColor Green
+        }
+    }
+} elseif ($TemplateSuffix -eq "") {
+    Write-Host "  Warning: Stack no detectado, configura CI remoto manualmente" -ForegroundColor Yellow
+} else {
+    Write-Host "  Done: CI remoto ya configurado o no disponible" -ForegroundColor Green
+}
+
+# =============================================================================
+# 8. Configurar CLAUDE.md
+# =============================================================================
+Write-Host "[8/8] Configurando CLAUDE.md..." -ForegroundColor Yellow
 
 $ProjectName = Split-Path -Leaf $ProjectDir
 

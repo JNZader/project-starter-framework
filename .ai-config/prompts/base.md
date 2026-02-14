@@ -8,7 +8,7 @@
 
 - **Nombre:** [NOMBRE_PROYECTO]
 - **Stack:** [STACK]
-- **Metodología:** Oleadas paralelas con VibeKanban
+- **Metodología:** [VibeKanban/Kanban/Scrum/Libre]
 
 ## Reglas Críticas
 
@@ -44,34 +44,28 @@
 ## Workflow
 
 ```
-1. Leer .project/Memory/CONTEXT.md (estado actual)
-2. Verificar oleada actual en WAVES.md
-3. Trabajar en tarea
-4. Validar con CI-Local
-5. Commit + Push
-6. Actualizar estado
+1. Leer contexto del proyecto (si existe .project/Memory/)
+2. Trabajar en tarea
+3. Validar con CI-Local
+4. Commit + Push
 ```
 
 ## Archivos de Referencia
 
 | Archivo | Propósito |
 |---------|-----------|
-| `.project/Memory/CONTEXT.md` | Estado del proyecto |
-| `.project/Memory/DECISIONS.md` | ADRs |
-| `.project/Memory/WAVES.md` | Oleadas de trabajo |
-| `CLAUDE.md` | Instrucciones específicas |
+| `CLAUDE.md` | Instrucciones especificas |
+| `.project/Memory/CONTEXT.md` | Estado del proyecto (si VibeKanban) |
+| `.project/Memory/DECISIONS.md` | ADRs (si VibeKanban) |
+| `.project/Memory/WAVES.md` | Oleadas de trabajo (si VibeKanban) |
 
 ## Comandos Frecuentes
 
 ```bash
 # CI Local
-./.ci-local/ci-local.sh quick   # Validación rápida
+./.ci-local/ci-local.sh quick   # Validacion rapida
 ./.ci-local/ci-local.sh full    # CI completo
 
-# Oleadas
-./scripts/new-wave.sh --list    # Ver oleada actual
-./scripts/new-wave.sh "T-001 T-002"  # Nueva oleada
-
 # Git
-git checkout feature/t-xxx      # Cambiar a tarea
+git checkout feature/descripcion  # Cambiar a feature branch
 ```

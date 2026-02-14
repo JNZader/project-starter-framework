@@ -15,7 +15,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 SKILLS_DIR="$PROJECT_DIR/.ai-config/skills"
 GENTLEMAN_REPO="https://github.com/Gentleman-Programming/Gentleman-Skills.git"
-TEMP_DIR="/tmp/gentleman-skills"
+TEMP_DIR="${TMPDIR:-/tmp}/gentleman-skills"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'

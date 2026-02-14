@@ -22,7 +22,33 @@ Los componentes se copian a nuevos proyectos usando `scripts/init-project.sh`.
 .github/workflows/  # Reusable workflows para GitHub Actions
 templates/          # Templates CI para copiar a proyectos
 scripts/            # Automatización (init, sync, add-skill)
-optional/           # VibeKanban y memory-simple (opcionales)
+optional/           # Obsidian Brain, VibeKanban (legacy) y memory-simple
+```
+
+## Project Memory (Obsidian Brain)
+
+Modulo recomendado para memoria de proyecto. Se instala con `init-project.sh` opcion 1.
+Funciona como markdown plano sin Obsidian. Con Obsidian agrega Kanban visual, queries Dataview y templates Templater.
+
+### Al iniciar sesion (leer en orden):
+1. `.project/Memory/CONTEXT.md` - Estado actual del proyecto
+2. `.project/Memory/KANBAN.md` - Tareas activas (board visual)
+3. `.project/Memory/BLOCKERS.md` - Problemas abiertos
+
+### Durante la sesion:
+- Mover tareas en KANBAN.md entre secciones H2 (Backlog/En Progreso/Review/Completado)
+- Documentar decisiones en DECISIONS.md con inline fields: `type:: adr`, `status::`, `date::`
+- Documentar blockers en BLOCKERS.md con inline fields: `type:: blocker`, `status::`, `impact::`
+
+### Al finalizar sesion:
+- Actualizar CONTEXT.md con estado actual
+- Mover tareas completadas en KANBAN.md
+
+### Oleadas (Waves):
+```bash
+./scripts/new-wave.sh --list              # Ver oleada actual
+./scripts/new-wave.sh "T-001 T-002"       # Crear oleada
+./scripts/new-wave.sh --complete          # Completar oleada
 ```
 
 ## Comandos Principales

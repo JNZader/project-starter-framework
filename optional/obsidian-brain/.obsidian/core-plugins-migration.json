@@ -6,7 +6,7 @@
   "outgoing-link": true,
   "tag-pane": true,
   "daily-notes": true,
-  "templates": true,
+  "templates": false,
   "outline": true,
   "file-recovery": true,
   "page-preview": true,
@@ -16,5 +16,6 @@
   "markdown-importer": true,
   "word-count": true,
   "switcher": true,
-  "starred": true
+  "starred": true,
+  "bookmarks": true
 }

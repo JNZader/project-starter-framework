@@ -6,7 +6,6 @@
   "outgoing-link",
   "tag-pane",
   "daily-notes",
-  "templates",
   "outline",
   "file-recovery",
   "page-preview",
@@ -14,5 +13,6 @@
   "command-palette",
   "editor-status",
   "markdown-importer",
-  "word-count"
+  "word-count",
+  "bookmarks"
 ]

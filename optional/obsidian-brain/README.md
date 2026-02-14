@@ -34,15 +34,22 @@ cat optional/obsidian-brain/.obsidian-gitignore-snippet.txt >> tu-proyecto/.giti
 proyecto/                          <- Vault root
 ├── .obsidian/                     <- Config Obsidian (pre-configurada)
 │   ├── app.json                   <- Settings (relative links, ignore filters)
-│   ├── appearance.json            <- Tema y fuente
+│   ├── appearance.json            <- Tema, fuente, CSS snippets habilitados
+│   ├── bookmarks.json             <- Acceso rapido a CONTEXT, KANBAN, DASHBOARD
 │   ├── core-plugins.json          <- Core plugins habilitados
 │   ├── core-plugins-migration.json
 │   ├── community-plugins.json     <- Kanban + Dataview + Templater
+│   ├── daily-notes.json           <- Auto-crear sesiones en Sessions/
+│   ├── graph.json                 <- Filtros y colores para graph view
+│   ├── hotkeys.json               <- Ctrl+T = insertar template Templater
+│   ├── snippets/
+│   │   └── project-memory.css     <- Estilos para inline fields y Kanban
 │   └── plugins/
 │       ├── obsidian-kanban/data.json
 │       ├── dataview/data.json
 │       └── templater-obsidian/data.json
 ├── .project/
+│   ├── Attachments/               <- Imagenes y archivos adjuntos
 │   ├── Memory/
 │   │   ├── CONTEXT.md             <- Estado actual del proyecto
 │   │   ├── DECISIONS.md           <- ADRs con inline fields Dataview
@@ -71,6 +78,15 @@ Los `data.json` estan pre-configurados. Solo necesitas instalar los plugins desd
 3. Habilitar los 3 plugins
 
 La configuracion se aplica automaticamente desde los `data.json` ya incluidos.
+
+### Pre-configurado
+
+- **Ctrl+T** - Insertar template Templater (sesion, ADR, blocker)
+- **Daily Notes** - Al hacer click en "Open today's daily note", crea sesion en `.project/Sessions/` usando el template de Templater
+- **Bookmarks** - CONTEXT, KANBAN, DASHBOARD, DECISIONS, BLOCKERS en acceso rapido
+- **Graph View** - Memory files en azul, Sessions en violeta, build artifacts filtrados
+- **CSS Snippet** - `project-memory.css` activo: resalta inline fields y status badges
+- **Core templates desactivado** - Se usa Templater en su lugar (mas potente, sin conflicto)
 
 ### Seguridad
 
@@ -137,6 +153,19 @@ KANBAN.md es para el dia a dia. WAVES.md es el historial de oleadas:
 ./scripts/new-wave.sh --complete
 ```
 
+## Inline Fields vs Frontmatter
+
+Obsidian Brain usa dos formatos de metadata segun el tipo de archivo:
+
+- **Inline fields** (`key:: value`) - Para ADRs y Blockers dentro de DECISIONS.md y BLOCKERS.md.
+  Se usan porque multiples entradas conviven en el mismo archivo. Dataview los detecta como campos
+  de la seccion H2/H3 donde aparecen.
+
+- **YAML frontmatter** (`key: value` en bloque `---`) - Para archivos individuales como sesiones
+  (un archivo por dia). Obsidian los muestra en el panel de propiedades.
+
+No mezclar: usar inline fields dentro de secciones, frontmatter al inicio de archivos individuales.
+
 ## Inline Fields (Dataview)
 
 Los archivos usan inline fields para queries automaticas. Formato: `key:: value`
@@ -185,9 +214,15 @@ Estos campos permiten a Dataview generar tablas automaticas en DASHBOARD.md. Sin
 
 ### Se commitea
 - `.obsidian/app.json` - Settings compartidos
-- `.obsidian/appearance.json` - Tema
+- `.obsidian/appearance.json` - Tema y CSS snippets
+- `.obsidian/bookmarks.json` - Bookmarks compartidos
 - `.obsidian/core-plugins.json` - Core plugins
+- `.obsidian/core-plugins-migration.json` - Migration flags
 - `.obsidian/community-plugins.json` - Lista de plugins
+- `.obsidian/daily-notes.json` - Config de daily notes
+- `.obsidian/graph.json` - Config del graph view
+- `.obsidian/hotkeys.json` - Atajos de teclado
+- `.obsidian/snippets/*.css` - CSS snippets del proyecto
 - `.obsidian/plugins/*/data.json` - Configuracion de plugins
 
 ### Se ignora (.gitignore)

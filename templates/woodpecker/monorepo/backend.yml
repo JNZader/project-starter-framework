@@ -1,0 +1,24 @@
+# ===========================================
+# Woodpecker CI - Monorepo: Backend
+# ===========================================
+# Copy to: .woodpecker/backend.yml
+#
+# Woodpecker natively supports multiple pipeline files in .woodpecker/.
+# Each .yml becomes an independent workflow.
+#
+# Only runs when files in packages/backend/ change.
+# ===========================================
+
+when:
+  - event: tag
+  - event: manual
+  - path: "packages/backend/**"
+
+steps:
+  - name: build
+    image: eclipse-temurin:21-jdk
+    commands:
+      - cd packages/backend
+      - chmod +x gradlew
+      - ./gradlew classes --no-daemon
+      - ./gradlew spotlessCheck --no-daemon || true

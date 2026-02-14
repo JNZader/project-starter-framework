@@ -63,21 +63,47 @@ Todos incluyen:
 | `gitlab/gitlab-ci-go.yml` | Go | `.gitlab-ci.yml` |
 | `gitlab/gitlab-ci-rust.yml` | Rust | `.gitlab-ci.yml` |
 
+## Woodpecker CI
+
+### Templates disponibles
+
+| Template | Stack | Copiar a |
+|----------|-------|----------|
+| `woodpecker/woodpecker-java.yml` | Java/Gradle | `.woodpecker.yml` |
+| `woodpecker/woodpecker-node.yml` | Node.js | `.woodpecker.yml` |
+| `woodpecker/woodpecker-python.yml` | Python | `.woodpecker.yml` |
+| `woodpecker/woodpecker-go.yml` | Go | `.woodpecker.yml` |
+| `woodpecker/woodpecker-rust.yml` | Rust | `.woodpecker.yml` |
+
+### Monorepo
+
+Woodpecker soporta monorepos nativamente: cada `.yml` en `.woodpecker/` es un workflow independiente.
+
+```bash
+# Copiar directorio completo
+cp -r templates/woodpecker/monorepo/ .woodpecker/
+# Ajustar paths y stacks según tu proyecto
+```
+
 ## Instalación Rápida
 
 ### Opción 1: Copiar template
 
 ```bash
-# Java project
+# GitHub Actions - Java project
 cp templates/github/ci-java.yml .github/workflows/ci.yml
 
-# Editar para tu proyecto
+# GitLab CI - Java project
+cp templates/gitlab/gitlab-ci-java.yml .gitlab-ci.yml
+
+# Woodpecker CI - Java project
+cp templates/woodpecker/woodpecker-java.yml .woodpecker.yml
 ```
 
 ### Opción 2: Script automático
 
 ```bash
-# El script init-project.sh ya configura todo
+# El script init-project.sh ya configura todo (incluye selección de CI provider)
 ./scripts/init-project.sh
 ```
 
@@ -167,6 +193,7 @@ Con esta configuración:
 **Free tier mensual:**
 - GitHub: 2,000 min → ~600+ PRs
 - GitLab: 400 min → ~130+ PRs
+- Woodpecker: Self-hosted, sin limite de minutos
 
 ## Dependency Management
 

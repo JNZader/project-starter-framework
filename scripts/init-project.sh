@@ -29,7 +29,7 @@ cd "$PROJECT_DIR"
 # =============================================================================
 # 1. Verificar que es un repo git
 # =============================================================================
-echo -e "${YELLOW}[1/7] Verificando repositorio Git...${NC}"
+echo -e "${YELLOW}[1/8] Verificando repositorio Git...${NC}"
 if [[ ! -d ".git" ]]; then
     echo -e "${YELLOW}  No es un repo git. Inicializando...${NC}"
     git init
@@ -42,7 +42,7 @@ fi
 # =============================================================================
 # 2. Configurar git hooks
 # =============================================================================
-echo -e "${YELLOW}[2/7] Configurando git hooks...${NC}"
+echo -e "${YELLOW}[2/8] Configurando git hooks...${NC}"
 if [[ -d ".ci-local/hooks" ]]; then
     git config core.hooksPath .ci-local/hooks
     chmod +x .ci-local/hooks/* 2>/dev/null || true
@@ -55,7 +55,7 @@ fi
 # =============================================================================
 # 3. Detectar stack
 # =============================================================================
-echo -e "${YELLOW}[3/7] Detectando stack tecnológico...${NC}"
+echo -e "${YELLOW}[3/8] Detectando stack tecnológico...${NC}"
 
 STACK="unknown"
 if [[ -f "build.gradle" || -f "build.gradle.kts" ]]; then
@@ -81,7 +81,7 @@ fi
 # =============================================================================
 # 4. Verificar dependencias
 # =============================================================================
-echo -e "${YELLOW}[4/7] Verificando dependencias...${NC}"
+echo -e "${YELLOW}[4/8] Verificando dependencias...${NC}"
 
 # Docker
 if command -v docker &> /dev/null && docker info &> /dev/null; then
@@ -100,7 +100,7 @@ fi
 # =============================================================================
 # 5. Crear .gitignore si no existe
 # =============================================================================
-echo -e "${YELLOW}[5/7] Verificando .gitignore...${NC}"
+echo -e "${YELLOW}[5/8] Verificando .gitignore...${NC}"
 if [[ ! -f ".gitignore" ]]; then
     cat > .gitignore << 'EOF'
 # CI Local
@@ -143,7 +143,7 @@ fi
 # =============================================================================
 # 6. Módulos opcionales
 # =============================================================================
-echo -e "${YELLOW}[6/7] Módulos opcionales...${NC}"
+echo -e "${YELLOW}[6/8] Módulos opcionales...${NC}"
 
 FRAMEWORK_DIR=""
 # Detectar si estamos en el framework o en un proyecto que lo copió
@@ -184,9 +184,69 @@ else
 fi
 
 # =============================================================================
-# 7. Actualizar CLAUDE.md
+# 7. CI Provider
 # =============================================================================
-echo -e "${YELLOW}[7/7] Configurando CLAUDE.md...${NC}"
+echo -e "${YELLOW}[7/8] Configurando CI remoto...${NC}"
+
+# Map stack to template suffix
+TEMPLATE_SUFFIX=""
+case "$STACK" in
+    java-gradle|java-maven) TEMPLATE_SUFFIX="java" ;;
+    node)                   TEMPLATE_SUFFIX="node" ;;
+    python)                 TEMPLATE_SUFFIX="python" ;;
+    go)                     TEMPLATE_SUFFIX="go" ;;
+    rust)                   TEMPLATE_SUFFIX="rust" ;;
+esac
+
+if [[ -n "$FRAMEWORK_DIR" && -n "$TEMPLATE_SUFFIX" ]]; then
+    echo -e "  ${CYAN}¿Qué CI remoto usar?${NC}"
+    echo -e "    1) GitHub Actions"
+    echo -e "    2) GitLab CI"
+    echo -e "    3) Woodpecker CI"
+    echo -e "    4) Solo CI-Local (sin CI remoto)"
+    echo -e ""
+    read -p "  Opción [1/2/3/4]: " CI_CHOICE
+
+    case "$CI_CHOICE" in
+        1)
+            mkdir -p .github/workflows
+            if [[ -f "$FRAMEWORK_DIR/templates/github/ci-${TEMPLATE_SUFFIX}.yml" ]]; then
+                cp "$FRAMEWORK_DIR/templates/github/ci-${TEMPLATE_SUFFIX}.yml" .github/workflows/ci.yml
+                echo -e "${GREEN}  ✓ GitHub Actions configurado (.github/workflows/ci.yml)${NC}"
+            else
+                echo -e "${YELLOW}  ⚠ Template github/ci-${TEMPLATE_SUFFIX}.yml no encontrado${NC}"
+            fi
+            ;;
+        2)
+            if [[ -f "$FRAMEWORK_DIR/templates/gitlab/gitlab-ci-${TEMPLATE_SUFFIX}.yml" ]]; then
+                cp "$FRAMEWORK_DIR/templates/gitlab/gitlab-ci-${TEMPLATE_SUFFIX}.yml" .gitlab-ci.yml
+                echo -e "${GREEN}  ✓ GitLab CI configurado (.gitlab-ci.yml)${NC}"
+            else
+                echo -e "${YELLOW}  ⚠ Template gitlab/gitlab-ci-${TEMPLATE_SUFFIX}.yml no encontrado${NC}"
+            fi
+            ;;
+        3)
+            if [[ -f "$FRAMEWORK_DIR/templates/woodpecker/woodpecker-${TEMPLATE_SUFFIX}.yml" ]]; then
+                cp "$FRAMEWORK_DIR/templates/woodpecker/woodpecker-${TEMPLATE_SUFFIX}.yml" .woodpecker.yml
+                echo -e "${GREEN}  ✓ Woodpecker CI configurado (.woodpecker.yml)${NC}"
+            else
+                echo -e "${YELLOW}  ⚠ Template woodpecker/woodpecker-${TEMPLATE_SUFFIX}.yml no encontrado${NC}"
+            fi
+            ;;
+        *)
+            echo -e "${GREEN}  ✓ Solo CI-Local (sin CI remoto)${NC}"
+            ;;
+    esac
+elif [[ -z "$TEMPLATE_SUFFIX" ]]; then
+    echo -e "${YELLOW}  ⚠ Stack no detectado, configura CI remoto manualmente${NC}"
+else
+    echo -e "${GREEN}  ✓ CI remoto ya configurado o no disponible${NC}"
+fi
+
+# =============================================================================
+# 8. Actualizar CLAUDE.md
+# =============================================================================
+echo -e "${YELLOW}[8/8] Configurando CLAUDE.md...${NC}"
 
 PROJECT_NAME=$(basename "$PROJECT_DIR")
 

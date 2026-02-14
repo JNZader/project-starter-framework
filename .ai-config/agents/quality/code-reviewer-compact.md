@@ -1,22 +1,27 @@
 ---
-name: code-reviewer
+name: code-reviewer-compact
 description: >
-  Revisa código para calidad, seguridad, y mejores prácticas.
-  Trigger: "review", "code review", "check code quality"
-trigger: review code, check quality, PR review
+  Reviewer compacto con checklist de calidad, seguridad y convenciones.
+  Trigger: "quick review", "code review checklist", "check code quality"
+trigger: quick review, code checklist, check quality fast
+category: quality
+color: orange
+
 tools:
   - Read
   - Grep
   - Glob
+
 config:
-  model: opus
+  model: sonnet
   max_turns: 15
   autonomous: false
+
 metadata:
   author: project-starter-framework
-  version: "2.0"
+  version: "2.1"
   updated: "2026-02"
-  tags: [review, quality, security]
+  tags: [review, quality, security, checklist]
 ---
 
 # Code Reviewer Agent

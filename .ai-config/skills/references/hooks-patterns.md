@@ -1,3 +1,15 @@
+---
+name: hooks-patterns
+description: >
+  Hooks Recommendations for Claude Code automation: auto-formatting, type checking, protection, and test runner hooks.
+  Trigger: hooks, automation, PostToolUse, PreToolUse, auto-format, hook recommendations
+metadata:
+  author: project-starter-framework
+  version: "2.0"
+  tags: [hooks, automation, claude-code, formatting, protection]
+  updated: "2026-02"
+---
+
 # Hooks Recommendations
 
 Hooks automatically run commands in response to Claude Code events. They're ideal for enforcement and automation that should happen consistently.

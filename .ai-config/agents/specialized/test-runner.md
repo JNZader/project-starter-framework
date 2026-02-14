@@ -4,6 +4,9 @@ description: >
   Ejecuta tests y analiza resultados.
   Trigger: "run tests", "check tests", "test coverage"
 trigger: run tests, execute tests, check coverage, fix failing tests
+category: quality
+color: cyan
+
 tools:
   - Bash
   - Read

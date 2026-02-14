@@ -1,3 +1,15 @@
+---
+name: plugins-reference
+description: >
+  Plugin Recommendations for Claude Code: official plugins, LSP integrations, and community extensions.
+  Trigger: plugin, install plugin, plugin recommendations, LSP, language server
+metadata:
+  author: project-starter-framework
+  version: "2.0"
+  tags: [plugins, claude-code, lsp, extensions]
+  updated: "2026-02"
+---
+
 # Plugin Recommendations
 
 Plugins are installable collections of skills, commands, agents, and hooks. Install via `/plugin install`.

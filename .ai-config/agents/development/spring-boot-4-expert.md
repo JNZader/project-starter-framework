@@ -3,6 +3,9 @@ name: spring-boot-4-expert
 description: >
   Especialista en Spring Boot 4.0, Jakarta EE 10, Java 21+. Migraciones, nuevas features, best practices.
   Trigger: Spring Boot 4, Jakarta EE, migración Spring, Java 21+, virtual threads
+category: development
+color: green
+
 tools:
   - Read
   - Write

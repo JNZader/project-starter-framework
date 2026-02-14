@@ -101,7 +101,6 @@
 | `ci-local-guide` | Manual | General |
 | `claude-automation-recommender` | Manual | General |
 | `claude-md-improver` | Manual | General |
-| `codegen-patterns` | Manual | General |
 | `devops-infra` | Auto | `.github/`, `ci/`, `docker/` |
 | `docker-containers` | Auto | `Dockerfile*`, `docker-compose*` |
 | `docs-spring` | Manual | General |
@@ -164,6 +163,7 @@
 | `vitest-testing` | Auto | `tests/`, `__tests__/`, `*.test.*` |
 | `wave-workflow` | Manual | General |
 | `websockets` | Auto | `src/`, `ws/`, `realtime/` |
+| `woodpecker-ci` | Manual | General |
 | `zod-validation` | Auto | `src/`, `schemas/`, `validators/` |
 | `zustand-state` | Auto | `src/`, `store/`, `stores/` |
 
@@ -183,6 +183,7 @@
 | `requirements-analyst` | Manual | Business |
 | `technical-writer` | Auto | Documentation |
 | `code-reviewer` | Auto | Code review |
+| `code-reviewer-compact` | Manual | Quick review checklist |
 | `ux-designer` | Manual | Creative |
 | `ai-engineer` | Auto | ML/AI |
 | `analytics-engineer` | Manual | Data/AI |
@@ -227,9 +228,9 @@
 | `embedded-engineer` | Manual | Specialized |
 | `error-detective` | Manual | Specialized |
 | `fintech-specialist` | Manual | Specialized |
-| `freelance_project_planner` | Manual | Specialized |
-| `freelance_project_planner_v2` | Manual | Specialized |
-| `freelance_project_planner_v3` | Manual | Specialized |
+| `freelance-project-planner` | Manual | Specialized |
+| `freelance-project-planner-v2` | Manual | Specialized |
+| `freelance-project-planner-v3` | Manual | Specialized |
 | `freelance-project-planner-v4` | Manual | Specialized |
 | `game-developer` | Manual | Specialized |
 | `healthcare-dev` | Manual | Specialized |

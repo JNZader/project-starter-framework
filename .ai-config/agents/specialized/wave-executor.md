@@ -4,6 +4,9 @@ description: >
   Ejecuta tareas de una oleada en paralelo o secuencial.
   Trigger: "execute wave", "work on wave", "process tasks"
 trigger: execute wave, work on oleada, process wave tasks, next task
+category: specialized
+color: yellow
+
 tools:
   - Bash
   - Read

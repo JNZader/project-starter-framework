@@ -1,3 +1,15 @@
+---
+name: subagent-templates
+description: >
+  Subagent Recommendations for Claude Code: code review, security, testing, and utility agent patterns.
+  Trigger: subagent, agent template, code reviewer agent, security reviewer, test writer agent
+metadata:
+  author: project-starter-framework
+  version: "2.0"
+  tags: [subagents, claude-code, agents, automation]
+  updated: "2026-02"
+---
+
 # Subagent Recommendations
 
 Subagents are specialized Claude instances that run in parallel, each with their own context window and tool access. They're ideal for focused reviews, analysis, or generation tasks.

@@ -1,3 +1,15 @@
+---
+name: mcp-servers
+description: >
+  MCP Server Recommendations for extending Claude Code with external tools and services.
+  Trigger: MCP, Model Context Protocol, MCP server, external tools, context7, Playwright MCP, GitHub MCP
+metadata:
+  author: project-starter-framework
+  version: "2.0"
+  tags: [mcp, integrations, claude-code, external-tools]
+  updated: "2026-02"
+---
+
 # MCP Server Recommendations
 
 MCP (Model Context Protocol) servers extend Claude's capabilities by connecting to external tools and services.

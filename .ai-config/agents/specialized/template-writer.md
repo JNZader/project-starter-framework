@@ -3,6 +3,9 @@ name: template-writer
 description: >
   Especialista en templates Mustache para generación de código. Sintaxis, contextos, partials.
   Trigger: creando template, modificando .mustache, template context
+category: specialized
+color: brown
+
 tools:
   - Read
   - Write

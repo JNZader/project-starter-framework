@@ -1,3 +1,15 @@
+---
+name: skills-reference
+description: >
+  Skills Recommendations for Claude Code: official plugin skills, custom project skills, and skill development patterns.
+  Trigger: skill, create skill, skill structure, custom skill, skill template, SKILL.md
+metadata:
+  author: project-starter-framework
+  version: "2.0"
+  tags: [skills, claude-code, customization, templates]
+  updated: "2026-02"
+---
+
 # Skills Recommendations
 
 Skills are packaged expertise with workflows, reference materials, and best practices. Create them in `.claude/skills/<name>/SKILL.md`. Skills can be invoked by Claude automatically when relevant, or by users directly with `/skill-name`.

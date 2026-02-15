@@ -201,6 +201,148 @@ else
 fi
 
 # =============================================================================
+# Helper: Generate dependabot.yml based on detected stack
+# =============================================================================
+generate_dependabot_yml() {
+    local stack="$1"
+    cat << 'HEADER'
+version: 2
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Argentina/Buenos_Aires"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      actions:
+        patterns:
+          - "*"
+HEADER
+
+    case "$stack" in
+        java-gradle)
+            cat << 'GRADLE'
+
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "java"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      java-dependencies:
+        patterns:
+          - "*"
+GRADLE
+            ;;
+        java-maven)
+            cat << 'MAVEN'
+
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "java"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      maven-dependencies:
+        patterns:
+          - "*"
+MAVEN
+            ;;
+        node)
+            cat << 'NODE'
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "javascript"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "@types/*"
+      npm-types:
+        patterns:
+          - "@types/*"
+NODE
+            ;;
+        python)
+            cat << 'PYTHON'
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "chore(deps)"
+PYTHON
+            ;;
+        go)
+            cat << 'GO'
+
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "go"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
+GO
+            ;;
+        rust)
+            cat << 'RUST'
+
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "rust"
+    commit-message:
+      prefix: "chore(deps)"
+RUST
+            ;;
+    esac
+}
+
+# =============================================================================
 # 7. CI Provider
 # =============================================================================
 echo -e "${YELLOW}[7/8] Configurando CI remoto...${NC}"
@@ -227,11 +369,34 @@ if [[ -n "$FRAMEWORK_DIR" && -n "$TEMPLATE_SUFFIX" ]]; then
     case "$CI_CHOICE" in
         1)
             mkdir -p .github/workflows
+            mkdir -p .github/ISSUE_TEMPLATE
+
+            # CI workflow
             if [[ -f "$FRAMEWORK_DIR/templates/github/ci-${TEMPLATE_SUFFIX}.yml" ]]; then
                 cp "$FRAMEWORK_DIR/templates/github/ci-${TEMPLATE_SUFFIX}.yml" .github/workflows/ci.yml
                 echo -e "${GREEN}  ✓ GitHub Actions configurado (.github/workflows/ci.yml)${NC}"
             else
                 echo -e "${YELLOW}  ⚠ Template github/ci-${TEMPLATE_SUFFIX}.yml no encontrado${NC}"
+            fi
+
+            # Dependabot auto-merge workflow
+            if [[ -f "$FRAMEWORK_DIR/templates/github/dependabot-automerge.yml" ]]; then
+                cp "$FRAMEWORK_DIR/templates/github/dependabot-automerge.yml" .github/workflows/dependabot-automerge.yml
+                echo -e "${GREEN}  ✓ Dependabot auto-merge configurado${NC}"
+            fi
+
+            # Generate dependabot.yml with detected stack
+            generate_dependabot_yml "$STACK" > .github/dependabot.yml
+            echo -e "${GREEN}  ✓ Dependabot configurado (.github/dependabot.yml)${NC}"
+
+            # Issue and PR templates
+            if [[ -d "$FRAMEWORK_DIR/.github/ISSUE_TEMPLATE" ]]; then
+                cp "$FRAMEWORK_DIR/.github/ISSUE_TEMPLATE/"*.md .github/ISSUE_TEMPLATE/ 2>/dev/null || true
+                echo -e "${GREEN}  ✓ Issue templates copiados${NC}"
+            fi
+            if [[ -f "$FRAMEWORK_DIR/.github/PULL_REQUEST_TEMPLATE.md" ]]; then
+                cp "$FRAMEWORK_DIR/.github/PULL_REQUEST_TEMPLATE.md" .github/PULL_REQUEST_TEMPLATE.md
+                echo -e "${GREEN}  ✓ PR template copiado${NC}"
             fi
             ;;
         2)
@@ -298,6 +463,13 @@ echo -e "  • pre-commit: AI attribution check + lint + security"
 echo -e "  • commit-msg: Valida mensaje sin AI attribution"
 echo -e "  • pre-push:   CI simulation en Docker"
 echo -e ""
+if [[ -f ".github/dependabot.yml" ]]; then
+echo -e "${GREEN}Dependabot:${NC}"
+echo -e "  • Updates semanales (lunes 9am)"
+echo -e "  • Auto-merge de patches habilitado"
+echo -e "  • Habilitar 'Allow auto-merge' en Settings > General"
+echo -e ""
+fi
 echo -e "${GREEN}Comandos útiles:${NC}"
 echo -e "  ./.ci-local/ci-local.sh quick   # Check rápido"
 echo -e "  ./.ci-local/ci-local.sh full    # CI completo"

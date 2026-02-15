@@ -34,6 +34,7 @@ jobs:
 | `github/ci-go.yml` | Go | `.github/workflows/ci.yml` |
 | `github/ci-rust.yml` | Rust | `.github/workflows/ci.yml` |
 | `github/ci-monorepo.yml` | Multi-servicio | `.github/workflows/ci.yml` |
+| `github/dependabot-automerge.yml` | Auto-merge patches | `.github/workflows/dependabot-automerge.yml` |
 
 Todos incluyen:
 - **Concurrency control**: Cancela runs anteriores del mismo PR
@@ -215,12 +216,33 @@ Características:
 
 ### Dependabot
 
-Alternativa nativa de GitHub:
+Alternativa nativa de GitHub. Se configura automaticamente con `init-project.sh`:
 
 ```bash
+# Automatico: init-project.sh genera dependabot.yml con el stack detectado
+./scripts/init-project.sh
+
+# Manual:
 cp templates/dependabot.yml .github/dependabot.yml
-# Descomentar secciones según tu stack
+# Descomentar secciones segun tu stack
 ```
+
+### Dependabot Auto-Merge
+
+Auto-aprueba y mergea PRs de Dependabot para patch updates:
+
+```bash
+cp templates/github/dependabot-automerge.yml .github/workflows/dependabot-automerge.yml
+```
+
+Requisito: habilitar "Allow auto-merge" en Settings > General del repo.
+
+### Community Files (Issue/PR Templates)
+
+`init-project.sh` copia automaticamente cuando se elige GitHub Actions:
+- `.github/ISSUE_TEMPLATE/bug_report.md`
+- `.github/ISSUE_TEMPLATE/feature_request.md`
+- `.github/PULL_REQUEST_TEMPLATE.md`
 
 ## Semantic Release
 

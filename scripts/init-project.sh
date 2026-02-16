@@ -26,6 +26,15 @@ sed_inplace() {
     fi
 }
 
+# Backup a file before overwriting it
+backup_if_exists() {
+    local file="$1"
+    if [[ -f "$file" ]]; then
+        cp "$file" "${file}.bak"
+        echo -e "${YELLOW}  Backed up existing ${file}${NC}"
+    fi
+}
+
 echo -e "${CYAN}"
 echo "╔════════════════════════════════════════════════════════════╗"
 echo "║           PROJECT STARTER FRAMEWORK v2.0                   ║"
@@ -191,7 +200,9 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
             if [[ -d "$FRAMEWORK_DIR/optional/obsidian-brain/.project" ]]; then
                 cp -r "$FRAMEWORK_DIR/optional/obsidian-brain/.project" .
                 cp -r "$FRAMEWORK_DIR/optional/obsidian-brain/.obsidian" .
+                backup_if_exists "scripts/new-wave.sh"
                 cp "$FRAMEWORK_DIR/optional/obsidian-brain/new-wave.sh" scripts/ 2>/dev/null || true
+                backup_if_exists "scripts/new-wave.ps1"
                 cp "$FRAMEWORK_DIR/optional/obsidian-brain/new-wave.ps1" scripts/ 2>/dev/null || true
                 chmod +x scripts/new-wave.sh 2>/dev/null || true
                 # Append gitignore snippet
@@ -206,7 +217,9 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
         2)
             if [[ -d "$FRAMEWORK_DIR/optional/vibekanban/.project" ]]; then
                 cp -r "$FRAMEWORK_DIR/optional/vibekanban/.project" .
+                backup_if_exists "scripts/new-wave.sh"
                 cp "$FRAMEWORK_DIR/optional/vibekanban/new-wave.sh" scripts/ 2>/dev/null || true
+                backup_if_exists "scripts/new-wave.ps1"
                 cp "$FRAMEWORK_DIR/optional/vibekanban/new-wave.ps1" scripts/ 2>/dev/null || true
                 chmod +x scripts/new-wave.sh 2>/dev/null || true
                 echo -e "${GREEN}  ✓ VibeKanban instalado (legacy)${NC}"
@@ -233,7 +246,9 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
                     fi
                 fi
                 # Copiar script de instalacion
+                backup_if_exists "scripts/install-engram.sh"
                 cp "$FRAMEWORK_DIR/optional/engram/install-engram.sh" scripts/ 2>/dev/null || true
+                backup_if_exists "scripts/install-engram.ps1"
                 cp "$FRAMEWORK_DIR/optional/engram/install-engram.ps1" scripts/ 2>/dev/null || true
                 chmod +x scripts/install-engram.sh 2>/dev/null || true
                 # Append gitignore snippet
@@ -261,7 +276,9 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
                 sed "s/__PROJECT_NAME__/$escaped_name/g" \
                     "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" > .mcp.json
             fi
+            backup_if_exists "scripts/install-engram.sh"
             cp "$FRAMEWORK_DIR/optional/engram/install-engram.sh" scripts/ 2>/dev/null || true
+            backup_if_exists "scripts/install-engram.ps1"
             cp "$FRAMEWORK_DIR/optional/engram/install-engram.ps1" scripts/ 2>/dev/null || true
             chmod +x scripts/install-engram.sh 2>/dev/null || true
             if [[ -f "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" ]]; then
@@ -449,6 +466,7 @@ if [[ -n "$FRAMEWORK_DIR" && -n "$TEMPLATE_SUFFIX" ]]; then
 
             # CI workflow
             if [[ -f "$FRAMEWORK_DIR/templates/github/ci-${TEMPLATE_SUFFIX}.yml" ]]; then
+                backup_if_exists ".github/workflows/ci.yml"
                 cp "$FRAMEWORK_DIR/templates/github/ci-${TEMPLATE_SUFFIX}.yml" .github/workflows/ci.yml
                 echo -e "${GREEN}  ✓ GitHub Actions configurado (.github/workflows/ci.yml)${NC}"
             else
@@ -457,11 +475,13 @@ if [[ -n "$FRAMEWORK_DIR" && -n "$TEMPLATE_SUFFIX" ]]; then
 
             # Dependabot auto-merge workflow
             if [[ -f "$FRAMEWORK_DIR/templates/github/dependabot-automerge.yml" ]]; then
+                backup_if_exists ".github/workflows/dependabot-automerge.yml"
                 cp "$FRAMEWORK_DIR/templates/github/dependabot-automerge.yml" .github/workflows/dependabot-automerge.yml
                 echo -e "${GREEN}  ✓ Dependabot auto-merge configurado${NC}"
             fi
 
             # Generate dependabot.yml with detected stack
+            backup_if_exists ".github/dependabot.yml"
             generate_dependabot_yml "$STACK" > .github/dependabot.yml
             echo -e "${GREEN}  ✓ Dependabot configurado (.github/dependabot.yml)${NC}"
 
@@ -471,6 +491,7 @@ if [[ -n "$FRAMEWORK_DIR" && -n "$TEMPLATE_SUFFIX" ]]; then
                 echo -e "${GREEN}  ✓ Issue templates copiados${NC}"
             fi
             if [[ -f "$FRAMEWORK_DIR/.github/PULL_REQUEST_TEMPLATE.md" ]]; then
+                backup_if_exists ".github/PULL_REQUEST_TEMPLATE.md"
                 cp "$FRAMEWORK_DIR/.github/PULL_REQUEST_TEMPLATE.md" .github/PULL_REQUEST_TEMPLATE.md
                 echo -e "${GREEN}  ✓ PR template copiado${NC}"
             fi
@@ -509,6 +530,7 @@ GHAGGA_WF
             ;;
         2)
             if [[ -f "$FRAMEWORK_DIR/templates/gitlab/gitlab-ci-${TEMPLATE_SUFFIX}.yml" ]]; then
+                backup_if_exists ".gitlab-ci.yml"
                 cp "$FRAMEWORK_DIR/templates/gitlab/gitlab-ci-${TEMPLATE_SUFFIX}.yml" .gitlab-ci.yml
                 echo -e "${GREEN}  ✓ GitLab CI configurado (.gitlab-ci.yml)${NC}"
             else
@@ -517,6 +539,7 @@ GHAGGA_WF
             ;;
         3)
             if [[ -f "$FRAMEWORK_DIR/templates/woodpecker/woodpecker-${TEMPLATE_SUFFIX}.yml" ]]; then
+                backup_if_exists ".woodpecker.yml"
                 cp "$FRAMEWORK_DIR/templates/woodpecker/woodpecker-${TEMPLATE_SUFFIX}.yml" .woodpecker.yml
                 echo -e "${GREEN}  ✓ Woodpecker CI configurado (.woodpecker.yml)${NC}"
             else

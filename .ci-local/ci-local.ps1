@@ -140,21 +140,23 @@ function Ensure-DockerImage($stack) {
         Create-Dockerfile $stack
     }
 
-    $imageExists = docker images -q $imageName 2>$null
-    if (-not $imageExists) {
-        Write-Color "Building CI image for $($stack.Type)..." Yellow
+    # Detect staleness: rebuild if the Dockerfile content has changed since last build
+    $currentHash = (Get-FileHash $dockerfile -Algorithm SHA256).Hash
+    $imageHash = docker inspect --format='{{index .Config.Labels "dockerfile-hash"}}' $imageName 2>$null
+    if ($LASTEXITCODE -ne 0) { $imageHash = "" }
 
-        # Build args para Java
-        $buildArgs = ""
+    if ($currentHash -ne $imageHash) {
+        Write-Color "Image stale or missing, rebuilding for $($stack.Type)..." Yellow
+
+        $dockerArgs = @("build", "--label", "dockerfile-hash=$currentHash")
         if ($stack.JavaVersion) {
-            $buildArgs = "--build-arg JAVA_VERSION=$($stack.JavaVersion)"
+            $dockerArgs += @("--build-arg", "JAVA_VERSION=$($stack.JavaVersion)")
         }
-
-        # Use Start-Process to avoid Invoke-Expression security risks
-        $dockerArgs = @("build")
-        if ($buildArgs) { $dockerArgs += $buildArgs.Split(' ') }
         $dockerArgs += @("-f", $dockerfile, "-t", $imageName, "$ScriptDir/docker")
         & docker @dockerArgs
+        if ($LASTEXITCODE -ne 0) {
+            throw "Docker build failed"
+        }
     }
 }
 
@@ -214,7 +216,8 @@ ENTRYPOINT ["/bin/bash", "-c"]
             $content = @"
 FROM golang:1.23-bookworm
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
-RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.62.0 && \
+    mv /root/go/bin/golangci-lint /usr/local/bin/
 RUN useradd -m -s /bin/bash runner
 USER runner
 WORKDIR /home/runner/work
@@ -328,5 +331,5 @@ switch ($Mode) {
     }
 }
 
-Write-Color "`n✓ CI Local completed successfully!" Green
+Write-Color "`nCI Local completed successfully!" Green
 Write-Color "  Safe to push - CI should pass.`n" Green

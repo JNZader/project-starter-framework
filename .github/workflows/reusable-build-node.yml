@@ -34,7 +34,7 @@ on:
       run-tests:
         description: 'Run tests'
         required: false
-        default: false
+        default: true
         type: boolean
       run-lint:
         description: 'Run linting'
@@ -49,7 +49,7 @@ on:
       lint-fail-on-error:
         description: 'Fail the build if linting fails'
         required: false
-        default: false
+        default: true
         type: boolean
 
 jobs:
@@ -131,3 +131,15 @@ jobs:
           else
             npm test
           fi
+
+      - name: Upload test results
+        if: inputs.run-tests && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-node
+          path: |
+            coverage/
+            junit.xml
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore

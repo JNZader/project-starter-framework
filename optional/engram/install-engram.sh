@@ -6,6 +6,7 @@
 #   ./install-engram.sh              # Instalar ultima version
 #   ./install-engram.sh --check      # Solo verificar si esta instalado
 #   ./install-engram.sh --mcp-config # Generar config MCP
+#   ./install-engram.sh --no-verify  # Instalar sin verificar checksum (NO RECOMENDADO)
 # =============================================================================
 
 set -e
@@ -18,6 +19,7 @@ NC='\033[0m'
 
 REPO="Gentleman-Programming/engram"
 INSTALL_DIR="${ENGRAM_INSTALL_DIR:-$HOME/.local/bin}"
+NO_VERIFY=false
 
 # =============================================================================
 # Helpers
@@ -94,10 +96,13 @@ case "${1:-install}" in
         generate_mcp_config "$2"
         exit 0
         ;;
+    --no-verify)
+        NO_VERIFY=true
+        ;;
     install|"")
         ;;
     *)
-        echo "Uso: $0 [--check|--mcp-config [project-name]]"
+        echo "Uso: $0 [--check|--mcp-config [project-name]|--no-verify]"
         exit 1
         ;;
 esac
@@ -144,11 +149,11 @@ if ! curl -fsSL -o "${TMP_DIR}/${ARCHIVE_NAME}" "$DOWNLOAD_URL"; then
     exit 1
 fi
 
-# Verify checksum if available
+# Verify checksum (mandatory by default)
 CHECKSUM_URL="https://github.com/${REPO}/releases/download/${VERSION}/checksums.txt"
 if curl -fsSL -o "${TMP_DIR}/checksums.txt" "$CHECKSUM_URL" 2>/dev/null; then
-    echo -e "${YELLOW}Verifying checksum...${NC}"
-    cd "$TMP_DIR"
+    echo -e "${CYAN}Verifying checksum...${NC}"
+    pushd "$TMP_DIR" > /dev/null
     if command -v sha256sum &>/dev/null; then
         sha256sum -c checksums.txt --ignore-missing || {
             echo -e "${RED}Checksum verification failed!${NC}"
@@ -160,9 +165,16 @@ if curl -fsSL -o "${TMP_DIR}/checksums.txt" "$CHECKSUM_URL" 2>/dev/null; then
             exit 1
         }
     fi
+    popd > /dev/null
     echo -e "${GREEN}Checksum verified${NC}"
 else
-    echo -e "${YELLOW}Warning: No checksums available, skipping verification${NC}"
+    if [[ "$NO_VERIFY" == "true" ]]; then
+        echo -e "${YELLOW}WARNING: Skipping checksum verification (--no-verify)${NC}"
+    else
+        echo -e "${RED}Error: Could not download checksums. Cannot verify download integrity.${NC}"
+        echo -e "${YELLOW}Use --no-verify flag to skip verification (NOT RECOMMENDED).${NC}"
+        exit 1
+    fi
 fi
 
 # Extraer

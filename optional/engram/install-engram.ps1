@@ -5,11 +5,13 @@
 #   .\install-engram.ps1              # Instalar ultima version
 #   .\install-engram.ps1 -Check       # Solo verificar
 #   .\install-engram.ps1 -McpConfig   # Generar config MCP
+#   .\install-engram.ps1 -NoVerify    # Instalar sin verificar checksum (NO RECOMENDADO)
 # =============================================================================
 
 param(
     [switch]$Check,
     [switch]$McpConfig,
+    [switch]$NoVerify,
     [string]$ProjectName = (Split-Path -Leaf (Get-Location))
 )
 
@@ -89,7 +91,7 @@ New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
 $archivePath = "$tmpDir\engram.zip"
 Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath
 
-# Verify checksum if available
+# Verify checksum (mandatory by default)
 $checksumUrl = "https://github.com/$Repo/releases/download/$version/checksums.txt"
 try {
     $checksums = Invoke-RestMethod -Uri $checksumUrl -ErrorAction Stop
@@ -98,12 +100,20 @@ try {
         $actualHash = (Get-FileHash -Path $archivePath -Algorithm SHA256).Hash.ToLower()
         if ($actualHash -ne $expectedHash.ToLower()) {
             Write-Host "Checksum verification failed!" -ForegroundColor Red
+            Remove-Item -Recurse -Force $tmpDir -ErrorAction SilentlyContinue
             exit 1
         }
         Write-Host "Checksum verified" -ForegroundColor Green
     }
 } catch {
-    Write-Host "Warning: No checksums available, skipping verification" -ForegroundColor Yellow
+    if ($NoVerify) {
+        Write-Host "WARNING: Skipping checksum verification (-NoVerify)" -ForegroundColor Yellow
+    } else {
+        Write-Host "Error: Could not download checksums. Cannot verify download integrity." -ForegroundColor Red
+        Write-Host "Use -NoVerify flag to skip verification (NOT RECOMMENDED)." -ForegroundColor Yellow
+        Remove-Item -Recurse -Force $tmpDir -ErrorAction SilentlyContinue
+        exit 1
+    }
 }
 
 # Extract

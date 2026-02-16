@@ -13,7 +13,28 @@ stages:
   - docker
 
 # ===========================================
-# FRONTEND (Node.js)
+# FRONTEND LINT (Node.js) - Reports failures without blocking pipeline
+# ===========================================
+frontend-lint:
+  stage: build
+  image: node:20-alpine
+  allow_failure: true
+  script:
+    - cd packages/frontend
+    - npm ci
+    - npm run lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - packages/frontend/**/*
+    - if: $CI_COMMIT_TAG
+      changes:
+        - packages/frontend/**/*
+    - when: manual
+      allow_failure: true
+
+# ===========================================
+# FRONTEND BUILD (Node.js)
 # ===========================================
 frontend:
   stage: build
@@ -21,7 +42,6 @@ frontend:
   script:
     - cd packages/frontend
     - npm ci
-    - npm run lint || true
     - npm run build
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -34,7 +54,30 @@ frontend:
       allow_failure: true
 
 # ===========================================
-# BACKEND (Java/Gradle)
+# BACKEND LINT (Java/Gradle) - Reports failures without blocking pipeline
+# ===========================================
+backend-lint:
+  stage: build
+  image: eclipse-temurin:21-jdk
+  allow_failure: true
+  variables:
+    GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  script:
+    - cd packages/backend
+    - chmod +x gradlew
+    - ./gradlew spotlessCheck --no-daemon
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - packages/backend/**/*
+    - if: $CI_COMMIT_TAG
+      changes:
+        - packages/backend/**/*
+    - when: manual
+      allow_failure: true
+
+# ===========================================
+# BACKEND BUILD (Java/Gradle)
 # ===========================================
 backend:
   stage: build
@@ -45,7 +88,6 @@ backend:
     - cd packages/backend
     - chmod +x gradlew
     - ./gradlew classes --no-daemon
-    - ./gradlew spotlessCheck --no-daemon || true
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:

@@ -3,7 +3,7 @@
 # ===========================================
 # Copy to: .woodpecker.yml
 #
-# MINIMAL CI - runs only on tags and manual triggers.
+# MINIMAL CI - runs on push, pull requests, tags, and manual triggers.
 # Run full validation locally: ./.ci-local/ci-local.sh full
 #
 # Caching: Woodpecker does not have declarative cache.
@@ -11,15 +11,24 @@
 # ===========================================
 
 when:
+  - event: push
+    branch: main
+  - event: pull_request
   - event: tag
   - event: manual
 
 steps:
+  - name: lint
+    image: node:20-alpine  # Change: 18, 20, 22
+    commands:
+      - npm ci
+      - npm run lint
+    failure: ignore
+
   - name: build
     image: node:20-alpine  # Change: 18, 20, 22
     commands:
       - npm ci
-      - npm run lint || true
       - npm run build
 
 # ===========================================

@@ -3,7 +3,7 @@
 # ===========================================
 # Copy to: .woodpecker.yml
 #
-# MINIMAL CI - runs only on tags and manual triggers.
+# MINIMAL CI - runs on push, pull requests, tags, and manual triggers.
 # Run full validation locally: ./.ci-local/ci-local.sh full
 #
 # Caching: Woodpecker does not have declarative cache.
@@ -11,17 +11,25 @@
 # ===========================================
 
 when:
+  - event: push
+    branch: main
+  - event: pull_request
   - event: tag
   - event: manual
 
 steps:
-  - name: build
+  - name: lint
     image: rust:1.83-slim
     commands:
       - rustup component add clippy rustfmt
-      - cargo fmt --all -- --check || true
+      - cargo fmt --all -- --check
+      - cargo clippy --all-targets -- -D warnings
+    failure: ignore
+
+  - name: build
+    image: rust:1.83-slim
+    commands:
       - cargo build --release
-      - cargo clippy --all-targets -- -D warnings || true
 
 # ===========================================
 # DOCKER - Only on version tags

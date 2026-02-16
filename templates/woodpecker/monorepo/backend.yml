@@ -10,15 +10,25 @@
 # ===========================================
 
 when:
+  - event: push
+    branch: main
+  - event: pull_request
   - event: tag
   - event: manual
   - path: "packages/backend/**"
 
 steps:
+  - name: lint
+    image: eclipse-temurin:21-jdk
+    commands:
+      - cd packages/backend
+      - chmod +x gradlew
+      - ./gradlew spotlessCheck --no-daemon
+    failure: ignore
+
   - name: build
     image: eclipse-temurin:21-jdk
     commands:
       - cd packages/backend
       - chmod +x gradlew
       - ./gradlew classes --no-daemon
-      - ./gradlew spotlessCheck --no-daemon || true

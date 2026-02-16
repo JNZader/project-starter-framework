@@ -95,8 +95,12 @@ HEADER
         [[ "$(basename "$agent")" == "_TEMPLATE.md" ]] && continue
         if grep -q "^name:" "$agent"; then
             echo -e "\n---\n" >> "$PROJECT_DIR/AGENTS.md"
-            # Strip YAML frontmatter (everything between first and second ---) using awk
-            awk 'BEGIN{n=0} /^---$/{n++; next} n>=2{print}' "$agent" >> "$PROJECT_DIR/AGENTS.md"
+            # Strip YAML frontmatter if present, otherwise include the whole file
+            if head -1 "$agent" | grep -q "^---"; then
+                awk 'BEGIN{n=0} /^---$/{n++; next} n>=2{print}' "$agent" >> "$PROJECT_DIR/AGENTS.md"
+            else
+                cat "$agent" >> "$PROJECT_DIR/AGENTS.md"
+            fi
         fi
     done < <(find "$AI_CONFIG_DIR/agents" -type f -name "*.md" -print0)
 
@@ -152,11 +156,16 @@ EOF
 generate_continue() {
     echo -e "${YELLOW}Generating Continue.dev config...${NC}"
 
+    echo -e "${YELLOW}WARNING: This will modify $HOME/.continue/config.json (global config)${NC}"
+    if [[ -f "$HOME/.continue/config.json" ]]; then
+        echo -e "${YELLOW}  Existing config found. Skipping to avoid overwrite.${NC}"
+        echo -e "${YELLOW}  Delete $HOME/.continue/config.json manually to regenerate.${NC}"
+        return 0
+    fi
+
     mkdir -p "$HOME/.continue"
 
-    # Generar config.json básico si no existe
-    if [[ ! -f "$HOME/.continue/config.json" ]]; then
-        cat > "$HOME/.continue/config.json" << 'EOF'
+    cat > "$HOME/.continue/config.json" << 'EOF'
 {
   "models": [
     {
@@ -174,10 +183,7 @@ generate_continue() {
   ]
 }
 EOF
-        echo -e "${GREEN}✓ Generated ~/.continue/config.json${NC}"
-    else
-        echo -e "${YELLOW}  ~/.continue/config.json already exists, skipping${NC}"
-    fi
+    echo -e "${GREEN}✓ Generated ~/.continue/config.json${NC}"
 }
 
 # =============================================================================

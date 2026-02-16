@@ -28,6 +28,10 @@ sed_inplace() {
     fi
 }
 
+escape_sed() {
+    printf '%s\n' "$1" | sed 's/[&/\]/\\&/g'
+}
+
 # Asegurar que existe el archivo de oleadas
 if [[ ! -f "$WAVES_FILE" ]]; then
     cat > "$WAVES_FILE" << 'EOF'
@@ -79,6 +83,9 @@ create_wave() {
     local today=$(date +%Y-%m-%d)
     local task_count=$(echo "$tasks" | wc -w)
 
+    local escaped_tasks
+    escaped_tasks=$(escape_sed "$tasks")
+
     echo -e "${YELLOW}Creando Oleada $wave_num...${NC}"
     echo -e "  Tareas: $tasks"
     echo -e "  Total: $task_count tareas"
@@ -86,7 +93,7 @@ create_wave() {
     # Actualizar archivo de oleadas
     sed_inplace "s/\*\*Numero:\*\* [0-9]*/\*\*Numero:\*\* $wave_num/" "$WAVES_FILE"
     sed_inplace "s/\*\*Estado:\*\* .*/\*\*Estado:\*\* En progreso/" "$WAVES_FILE"
-    sed_inplace "s/\*\*Tareas:\*\* .*/\*\*Tareas:\*\* $tasks/" "$WAVES_FILE"
+    sed_inplace "s/\*\*Tareas:\*\* .*/\*\*Tareas:\*\* $escaped_tasks/" "$WAVES_FILE"
 
     echo -e "${GREEN}Oleada $wave_num creada${NC}"
     echo ""
@@ -129,10 +136,13 @@ complete_wave() {
     local today=$(date +%Y-%m-%d)
     local tasks=$(grep "^\*\*Tareas:\*\*" "$WAVES_FILE" | head -1 | sed 's/\*\*Tareas:\*\* //')
 
+    local escaped_tasks
+    escaped_tasks=$(escape_sed "$tasks")
+
     echo -e "${YELLOW}Completando Oleada $wave_num...${NC}"
 
     # Agregar al historial
-    sed_inplace "/^|---|/a | $wave_num | $tasks | - | $today | Completada |" "$WAVES_FILE"
+    sed_inplace "/^|---|/a | $wave_num | $escaped_tasks | - | $today | Completada |" "$WAVES_FILE"
 
     # Resetear oleada actual
     sed_inplace "s/\*\*Estado:\*\* .*/\*\*Estado:\*\* Ninguna activa/" "$WAVES_FILE"

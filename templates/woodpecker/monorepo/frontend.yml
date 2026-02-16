@@ -10,15 +10,25 @@
 # ===========================================
 
 when:
+  - event: push
+    branch: main
+  - event: pull_request
   - event: tag
   - event: manual
   - path: "packages/frontend/**"
 
 steps:
+  - name: lint
+    image: node:20-alpine
+    commands:
+      - cd packages/frontend
+      - npm ci
+      - npm run lint
+    failure: ignore
+
   - name: build
     image: node:20-alpine
     commands:
       - cd packages/frontend
       - npm ci
-      - npm run lint || true
       - npm run build

@@ -29,7 +29,7 @@ on:
       run-tests:
         description: 'Run tests'
         required: false
-        default: false
+        default: true
         type: boolean
       run-lint:
         description: 'Run linting (ruff)'
@@ -44,7 +44,7 @@ on:
       lint-fail-on-error:
         description: 'Fail the build if linting fails'
         required: false
-        default: false
+        default: true
         type: boolean
 
 jobs:
@@ -111,11 +111,26 @@ jobs:
       - name: Lint (ruff)
         if: inputs.run-lint
         continue-on-error: ${{ !inputs.lint-fail-on-error }}
-        run: ruff check .
+        env:
+          PKG_MGR: ${{ inputs.package-manager }}
+        run: |
+          if [ "$PKG_MGR" = "uv" ]; then
+            uv run ruff check .
+          else
+            ruff check .
+          fi
 
       - name: Type check
+        if: hashFiles('mypy.ini') != '' || hashFiles('setup.cfg') != '' || hashFiles('pyproject.toml') != ''
         continue-on-error: true
-        run: mypy . --ignore-missing-imports
+        env:
+          PKG_MGR: ${{ inputs.package-manager }}
+        run: |
+          if [ "$PKG_MGR" = "uv" ]; then
+            uv run mypy . --ignore-missing-imports
+          else
+            mypy . --ignore-missing-imports
+          fi
 
       - name: Test
         if: inputs.run-tests
@@ -129,3 +144,16 @@ jobs:
           else
             pytest
           fi
+
+      - name: Upload test results
+        if: inputs.run-tests && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-python
+          path: |
+            htmlcov/
+            .coverage
+            junit.xml
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore

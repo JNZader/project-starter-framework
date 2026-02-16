@@ -31,6 +31,25 @@ before_script:
   - export PATH="$GOPATH/bin:$PATH"
 
 # =============================================================================
+# Lint with golangci-lint - Reports failures without blocking pipeline
+# =============================================================================
+lint:
+  stage: build
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_TAG
+    - when: manual
+      allow_failure: true
+  before_script:
+    - mkdir -p .go
+    - export GOPATH="$CI_PROJECT_DIR/.go"
+    - export PATH="$GOPATH/bin:$PATH"
+    - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+  script:
+    - golangci-lint run --timeout 5m
+
+# =============================================================================
 # Build - On merge requests, tags, or manual
 # =============================================================================
 build:
@@ -49,22 +68,6 @@ build:
     paths:
       - bin/
     expire_in: 1 week
-
-# =============================================================================
-# Lint with golangci-lint
-# =============================================================================
-lint:
-  stage: build
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_TAG
-    - when: manual
-      allow_failure: true
-  before_script:
-    - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-  script:
-    - golangci-lint run --timeout 5m
-  allow_failure: true
 
 # =============================================================================
 # Docker - Only on version tags

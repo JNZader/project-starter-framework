@@ -3,7 +3,7 @@
 # ===========================================
 # Copy to: .woodpecker.yml
 #
-# MINIMAL CI - runs only on tags and manual triggers.
+# MINIMAL CI - runs on push, pull requests, tags, and manual triggers.
 # Run full validation locally: ./.ci-local/ci-local.sh full
 #
 # Caching: Woodpecker does not have declarative cache.
@@ -11,10 +11,22 @@
 # ===========================================
 
 when:
+  - event: push
+    branch: main
+  - event: pull_request
   - event: tag
   - event: manual
 
 steps:
+  - name: lint
+    image: eclipse-temurin:21-jdk  # Change: 17, 21, 25
+    environment:
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.caching=true"
+    commands:
+      - chmod +x gradlew
+      - ./gradlew spotlessCheck --no-daemon
+    failure: ignore
+
   - name: build
     image: eclipse-temurin:21-jdk  # Change: 17, 21, 25
     environment:
@@ -22,7 +34,6 @@ steps:
     commands:
       - chmod +x gradlew
       - ./gradlew classes --no-daemon
-      - ./gradlew spotlessCheck --no-daemon || true
 
 # ===========================================
 # DOCKER - Only on version tags

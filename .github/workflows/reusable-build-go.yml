@@ -24,7 +24,7 @@ on:
       run-tests:
         description: 'Run tests'
         required: false
-        default: false
+        default: true
         type: boolean
       run-lint:
         description: 'Run golangci-lint'
@@ -44,7 +44,7 @@ on:
       lint-fail-on-error:
         description: 'Fail the build if linting fails'
         required: false
-        default: false
+        default: true
         type: boolean
 
 jobs:
@@ -62,6 +62,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validate inputs
+        env:
+          ARGS: ${{ inputs.build-flags }}
+        run: |
+          if echo "$ARGS" | grep -qE '[;|&$`(){}]'; then
+            echo "::error::Invalid characters in input arguments. Shell metacharacters are not allowed."
+            exit 1
+          fi
 
       - name: Setup Go ${{ inputs.go-version }}
         uses: actions/setup-go@v5

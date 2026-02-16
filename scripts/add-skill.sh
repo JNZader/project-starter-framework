@@ -39,20 +39,25 @@ show_help() {
 }
 
 clone_gentleman() {
-    if [[ ! -d "$TEMP_DIR" ]]; then
-        echo -e "${YELLOW}Cloning Gentleman-Skills repository...${NC}"
-        git clone --depth 1 "$GENTLEMAN_REPO" "$TEMP_DIR" || {
-            echo -e "${RED}Failed to clone Gentleman-Skills repository${NC}"
-            exit 1
-        }
-    else
-        echo -e "${YELLOW}Updating Gentleman-Skills repository...${NC}"
+    if [[ -d "$TEMP_DIR" ]]; then
+        # Re-clone if cache older than 1 hour
+        local age_minutes
+        if [[ "$(uname)" == "Darwin" ]]; then
+            age_minutes=$(( ($(date +%s) - $(stat -f %m "$TEMP_DIR")) / 60 ))
+        else
+            age_minutes=$(( ($(date +%s) - $(date -r "$TEMP_DIR" +%s)) / 60 ))
+        fi
+        if [[ $age_minutes -lt 60 ]]; then
+            echo -e "${CYAN}  Using cached Gentleman-Skills (${age_minutes}m old)${NC}"
+            return 0
+        fi
         rm -rf "$TEMP_DIR"
-        git clone --depth 1 "$GENTLEMAN_REPO" "$TEMP_DIR" || {
-            echo -e "${RED}Failed to update Gentleman-Skills repository${NC}"
-            exit 1
-        }
     fi
+    echo -e "${CYAN}  Cloning Gentleman-Skills...${NC}"
+    git clone --depth 1 "$GENTLEMAN_REPO" "$TEMP_DIR" 2>/dev/null || {
+        echo -e "${RED}Error: Could not clone Gentleman-Skills repository${NC}"
+        exit 1
+    }
 }
 
 list_available() {
@@ -133,9 +138,11 @@ remove_skill() {
     if [[ -d "$skill_path" ]]; then
         rm -rf "$skill_path"
         echo -e "${GREEN}✓ Removed skill: $skill_name${NC}"
+        return 0
     elif [[ -f "$skill_path.md" ]]; then
         rm -f "$skill_path.md"
         echo -e "${GREEN}✓ Removed skill: $skill_name${NC}"
+        return 0
     else
         # Buscar por nombre en subcarpetas
         local file_match

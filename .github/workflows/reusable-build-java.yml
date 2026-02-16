@@ -29,7 +29,7 @@ on:
       run-tests:
         description: 'Run tests (uses more minutes)'
         required: false
-        default: false
+        default: true
         type: boolean
       run-spotless:
         description: 'Run Spotless format check'
@@ -49,7 +49,7 @@ on:
       lint-fail-on-error:
         description: 'Fail the build if linting fails'
         required: false
-        default: false
+        default: true
         type: boolean
 
 env:
@@ -70,6 +70,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validate inputs
+        env:
+          ARGS: ${{ inputs.gradle-args }}
+        run: |
+          if echo "$ARGS" | grep -qE '[;|&$`(){}]'; then
+            echo "::error::Invalid characters in input arguments. Shell metacharacters are not allowed."
+            exit 1
+          fi
 
       - name: Setup Java ${{ inputs.java-version }}
         uses: actions/setup-java@v4

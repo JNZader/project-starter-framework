@@ -34,7 +34,8 @@ services:
 
   supabase-kong:
     image: kong:3.5
-    # NOTE: You must create kong.yml before starting. See GHAGGA docs.
+    # NOTE: kong.yml is required. Get it from the GHAGGA repository:
+    #   curl -o kong.yml https://raw.githubusercontent.com/JNZader/ghagga/main/kong.yml
     volumes:
       - ./kong.yml:/home/kong/kong.yml:ro
     ports:
@@ -65,7 +66,7 @@ services:
       - "127.0.0.1:5173:5173"
     environment:
       VITE_SUPABASE_URL: http://localhost:54321
-      VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?Set SUPABASE_ANON_KEY in .env.ghagga}
     depends_on:
       supabase-kong:
         condition: service_healthy

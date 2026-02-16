@@ -12,6 +12,9 @@ depends_on:
   - backend
 
 when:
+  - event: push
+    branch: main
+  - event: pull_request
   - event: tag
   - event: manual
 

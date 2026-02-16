@@ -22,7 +22,7 @@ on:
       run-tests:
         description: 'Run tests'
         required: false
-        default: false
+        default: true
         type: boolean
       run-clippy:
         description: 'Run clippy linter'
@@ -47,7 +47,7 @@ on:
       lint-fail-on-error:
         description: 'Fail the build if linting fails'
         required: false
-        default: false
+        default: true
         type: boolean
 
 jobs:
@@ -65,6 +65,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validate inputs
+        env:
+          ARGS: ${{ inputs.cargo-args }}
+        run: |
+          if echo "$ARGS" | grep -qE '[;|&$`(){}]'; then
+            echo "::error::Invalid characters in input arguments. Shell metacharacters are not allowed."
+            exit 1
+          fi
 
       - name: Setup Rust ${{ inputs.toolchain }}
         uses: dtolnay/rust-toolchain@master
@@ -98,9 +107,18 @@ jobs:
         run: cargo test --all-features $CARGO_ARGS
 
       - name: Upload binary
+        if: inputs.run-tests
         uses: actions/upload-artifact@v4
         with:
           name: release-binary
-          path: ${{ inputs.working-directory }}/target/release/*
+          path: |
+            ${{ inputs.working-directory }}/target/release/*
+            !${{ inputs.working-directory }}/target/release/.fingerprint
+            !${{ inputs.working-directory }}/target/release/build
+            !${{ inputs.working-directory }}/target/release/deps
+            !${{ inputs.working-directory }}/target/release/examples
+            !${{ inputs.working-directory }}/target/release/incremental
+            !${{ inputs.working-directory }}/target/release/.cargo-lock
+            !${{ inputs.working-directory }}/target/release/*.d
           retention-days: 7
           if-no-files-found: ignore

@@ -171,19 +171,19 @@ validate_skills() {
         # Verificar frontmatter
         if ! head -1 "$skill_file" | grep -q "^---"; then
             echo -e "${RED}  [$skill_name] Falta frontmatter YAML${NC}"
-            ((errors++))
+            errors=$((errors + 1))
             continue
         fi
 
         # Verificar campos requeridos
         if ! grep -q "^name:" "$skill_file"; then
             echo -e "${RED}  [$skill_name] Falta campo 'name'${NC}"
-            ((errors++))
+            errors=$((errors + 1))
         fi
 
         if ! grep -q "^description:" "$skill_file"; then
             echo -e "${RED}  [$skill_name] Falta campo 'description'${NC}"
-            ((errors++))
+            errors=$((errors + 1))
         fi
 
         # Verificar Related Skills
@@ -229,6 +229,7 @@ EOF
             other) pattern="git|technical|power" ;;
         esac
 
+        local count=0
         while IFS= read -r -d '' skill_file; do
             [ "$(basename "$skill_file")" = "_TEMPLATE.md" ] && continue
 
@@ -239,6 +240,7 @@ EOF
             if echo "$skill_base" | grep -qE "$pattern"; then
                 desc=$(grep -A2 "^description:" "$skill_file" | tail -1 | sed 's/^  //' | cut -c1-60)
                 echo "- \`$skill_name\`: $desc" >> "$summary_file"
+                count=$((count + 1))
             fi
         done < <(find "$SKILLS_DIR" -type f -name "*.md" -print0)
     done

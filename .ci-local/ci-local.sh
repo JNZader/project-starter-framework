@@ -95,7 +95,7 @@ detect_stack() {
             BUILD_TOOL="pip"
         fi
         DOCKERFILE="python.Dockerfile"
-        LINT_CMD="ruff check . ; pylint **/*.py 2>/dev/null || true"
+        LINT_CMD="ruff check . && { pylint **/*.py 2>/dev/null || true; }"
         TEST_CMD="pytest"
         return
     fi
@@ -173,7 +173,8 @@ DOCKERFILE
             cat > "$docker_dir/$DOCKERFILE" << 'DOCKERFILE'
 FROM golang:1.23-bookworm
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
-RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.62.0 && \
+    mv /root/go/bin/golangci-lint /usr/local/bin/
 RUN useradd -m -s /bin/bash runner
 USER runner
 WORKDIR /home/runner/work
@@ -222,11 +223,11 @@ ensure_docker_image() {
 
     if [[ "$current_hash" != "$image_hash" ]]; then
         echo -e "${YELLOW}Building CI Docker image...${NC}"
-        local build_args="--label dockerfile-hash=$current_hash"
+        local -a build_args=("--label" "dockerfile-hash=$current_hash")
         if [[ -n "$JAVA_VERSION" && "$STACK_TYPE" == java-* ]]; then
-            build_args="$build_args --build-arg JAVA_VERSION=$JAVA_VERSION"
+            build_args+=("--build-arg" "JAVA_VERSION=$JAVA_VERSION")
         fi
-        docker build $build_args -f "$dockerfile" -t "$image_name" "$SCRIPT_DIR/docker"
+        docker build "${build_args[@]}" -f "$dockerfile" -t "$image_name" "$SCRIPT_DIR/docker"
     fi
 }
 
@@ -236,10 +237,12 @@ run_in_ci() {
     if [ -t 0 ]; then
         docker_flags="$docker_flags -it"
     fi
+    local timeout="${CI_LOCAL_TIMEOUT:-600}"
     docker run $docker_flags \
-        -v "$PROJECT_DIR:/home/runner/work:ro" \
+        --stop-timeout 30 \
+        -v "$PROJECT_DIR:/home/runner/work" \
         -e CI=true \
-        "$image_name" "$1"
+        "$image_name" "timeout $timeout bash -c '$1'"
 }
 
 # =============================================================================
@@ -304,22 +307,22 @@ case "$MODE" in
 
         step=1
         total=0
-        [[ -n "$LINT_CMD" ]] && ((total++))
-        [[ -n "$COMPILE_CMD" ]] && ((total++))
-        [[ -n "$TEST_CMD" ]] && ((total++))
+        [[ -n "$LINT_CMD" ]] && total=$((total + 1))
+        [[ -n "$COMPILE_CMD" ]] && total=$((total + 1))
+        [[ -n "$TEST_CMD" ]] && total=$((total + 1))
 
         if [[ -n "$LINT_CMD" ]]; then
             echo -e "\n${YELLOW}Step $step/$total: Lint${NC}"
             echo -e "  ${CYAN}$LINT_CMD${NC}"
             run_in_ci "cd /home/runner/work && $LINT_CMD"
-            ((step++))
+            step=$((step + 1))
         fi
 
         if [[ -n "$COMPILE_CMD" ]]; then
             echo -e "\n${YELLOW}Step $step/$total: Compile${NC}"
             echo -e "  ${CYAN}$COMPILE_CMD${NC}"
             run_in_ci "cd /home/runner/work && $COMPILE_CMD"
-            ((step++))
+            step=$((step + 1))
         fi
 
         if [[ -n "$TEST_CMD" ]]; then

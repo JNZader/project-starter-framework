@@ -16,7 +16,7 @@ when:
 
 steps:
   - name: build
-    image: rust:latest
+    image: rust:1.83-slim
     commands:
       - rustup component add clippy rustfmt
       - cargo fmt --all -- --check || true
@@ -42,7 +42,7 @@ steps:
 # RELEASE - Only on version tags
 # ===========================================
 #   - name: release
-#     image: rust:latest
+#     image: rust:1.83-slim
 #     commands:
 #       - echo "Uploading release artifacts..."
 #     when:

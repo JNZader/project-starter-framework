@@ -17,6 +17,15 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
+# Portable sed -i (works on both GNU and BSD/macOS sed)
+sed_inplace() {
+    if sed --version 2>/dev/null | grep -q GNU; then
+        sed -i "$@"
+    else
+        sed -i '' "$@"
+    fi
+}
+
 echo -e "${CYAN}"
 echo "╔════════════════════════════════════════════════════════════╗"
 echo "║           PROJECT STARTER FRAMEWORK v2.0                   ║"
@@ -122,6 +131,20 @@ Thumbs.db
 .env.local
 *.env
 
+# Credentials
+.npmrc
+credentials.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+.aws/
+.ssh/
+.gcp/
+service-account*.json
+
 # Build
 *.log
 coverage/
@@ -198,11 +221,11 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
         4)
             if [[ -d "$FRAMEWORK_DIR/optional/engram" ]]; then
                 # Copiar config MCP
-                local project_name
                 project_name=$(basename "$(pwd)")
+                escaped_name=$(printf '%s\n' "$project_name" | sed 's/[&/\]/\\&/g')
                 if [[ -f "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" ]]; then
                     if [[ ! -f ".mcp.json" ]]; then
-                        sed "s/__PROJECT_NAME__/$project_name/g" \
+                        sed "s/__PROJECT_NAME__/$escaped_name/g" \
                             "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" > .mcp.json
                     else
                         echo -e "${YELLOW}  .mcp.json ya existe - agrega engram manualmente${NC}"
@@ -232,10 +255,10 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
         echo -e ""
         read -p "  ¿Agregar también Engram para memoria de agentes AI? [y/N]: " ADD_ENGRAM
         if [[ "$ADD_ENGRAM" == "y" || "$ADD_ENGRAM" == "Y" ]]; then
-            local project_name
             project_name=$(basename "$(pwd)")
+            escaped_name=$(printf '%s\n' "$project_name" | sed 's/[&/\]/\\&/g')
             if [[ ! -f ".mcp.json" ]]; then
-                sed "s/__PROJECT_NAME__/$project_name/g" \
+                sed "s/__PROJECT_NAME__/$escaped_name/g" \
                     "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" > .mcp.json
             fi
             cp "$FRAMEWORK_DIR/optional/engram/install-engram.sh" scripts/ 2>/dev/null || true
@@ -268,7 +291,7 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-      timezone: "America/Argentina/Buenos_Aires"
+      # timezone: "UTC"  # Change to your timezone
     labels:
       - "dependencies"
       - "github-actions"
@@ -516,10 +539,11 @@ fi
 echo -e "${YELLOW}[8/8] Configurando CLAUDE.md...${NC}"
 
 PROJECT_NAME=$(basename "$PROJECT_DIR")
+escaped_name=$(printf '%s\n' "$PROJECT_NAME" | sed 's/[&/\]/\\&/g')
 
 if [[ -f "CLAUDE.md" ]]; then
-    sed -i "s/\[NOMBRE_PROYECTO\]/$PROJECT_NAME/g" CLAUDE.md 2>/dev/null || true
-    sed -i "s/\[STACK\]/$STACK/g" CLAUDE.md 2>/dev/null || true
+    sed_inplace "s/\[NOMBRE_PROYECTO\]/$escaped_name/g" CLAUDE.md 2>/dev/null || true
+    sed_inplace "s/\[STACK\]/$STACK/g" CLAUDE.md 2>/dev/null || true
     echo -e "${GREEN}  ✓ CLAUDE.md actualizado${NC}"
 else
     echo -e "${YELLOW}  ⚠ CLAUDE.md no encontrado${NC}"
@@ -528,8 +552,8 @@ fi
 # Actualizar CONTEXT.md si existe
 if [[ -f ".project/Memory/CONTEXT.md" ]]; then
     TODAY=$(date +%Y-%m-%d)
-    sed -i "s/\[NOMBRE_PROYECTO\]/$PROJECT_NAME/g" .project/Memory/CONTEXT.md 2>/dev/null || true
-    sed -i "s/\[FECHA\]/$TODAY/g" .project/Memory/CONTEXT.md 2>/dev/null || true
+    sed_inplace "s/\[NOMBRE_PROYECTO\]/$escaped_name/g" .project/Memory/CONTEXT.md 2>/dev/null || true
+    sed_inplace "s/\[FECHA\]/$TODAY/g" .project/Memory/CONTEXT.md 2>/dev/null || true
 fi
 
 # =============================================================================

@@ -62,11 +62,13 @@ jobs:
 
       - name: Set image name
         id: image
+        env:
+          INPUT_IMAGE_NAME: ${{ inputs.image-name }}
         run: |
-          if [ -n "${{ inputs.image-name }}" ]; then
-            echo "name=${{ inputs.image-name }}" >> $GITHUB_OUTPUT
+          if [ -n "$INPUT_IMAGE_NAME" ]; then
+            echo "name=$INPUT_IMAGE_NAME" >> "$GITHUB_OUTPUT"
           else
-            echo "name=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
+            echo "name=${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Setup QEMU

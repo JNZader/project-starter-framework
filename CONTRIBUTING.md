@@ -62,6 +62,33 @@ Test across:
 3. Update `AUTO_INVOKE.md` if applicable
 4. Test with target CLI (Claude Code, OpenCode, etc.)
 
+### Proceso Completo para Agents/Skills
+
+#### Paso 1: Elegir Template
+```bash
+# Para agentes
+cp .ai-config/agents/_TEMPLATE.md .ai-config/agents/categoria/nuevo-agente.md
+
+# Para skills
+cp .ai-config/skills/_TEMPLATE.md .ai-config/skills/categoria/nuevo-skill.md
+```
+
+#### Paso 2: Definir Metadata (YAML frontmatter)
+- **name**: identificador en kebab-case
+- **description**: incluir "Trigger:" para auto-invoke
+- **metadata**: author, version, tags
+
+#### Paso 3: Escribir Contenido
+- Seccion "When to Use" (requerido)
+- Seccion "Critical Patterns" (requerido)
+- Seccion "Related Skills" (para cross-references)
+
+#### Paso 4: Validar y Testear
+```bash
+./scripts/sync-skills.sh validate
+./scripts/sync-ai-config.sh all
+```
+
 ## Code Style
 
 - **Shell scripts**: Follow ShellCheck recommendations

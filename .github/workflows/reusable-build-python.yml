@@ -41,12 +41,19 @@ on:
         required: false
         default: '.'
         type: string
+      lint-fail-on-error:
+        description: 'Fail the build if linting fails'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
 
     defaults:
       run:
@@ -90,24 +97,34 @@ jobs:
         run: uv sync
 
       - name: Install dev tools
+        if: inputs.package-manager == 'pip'
         run: pip install --quiet ruff mypy pytest
+
+      - name: Install dev tools (poetry)
+        if: inputs.package-manager == 'poetry'
+        run: poetry run pip install --quiet ruff mypy pytest
+
+      - name: Install dev tools (uv)
+        if: inputs.package-manager == 'uv'
+        run: uv pip install --quiet ruff mypy pytest
 
       - name: Lint (ruff)
         if: inputs.run-lint
-        run: ruff check . || true
-        continue-on-error: true
+        continue-on-error: ${{ !inputs.lint-fail-on-error }}
+        run: ruff check .
 
       - name: Type check
-        run: mypy . --ignore-missing-imports || true
         continue-on-error: true
+        run: mypy . --ignore-missing-imports
 
       - name: Test
         if: inputs.run-tests
+        env:
+          PKG_MGR: ${{ inputs.package-manager }}
         run: |
-          pip install pytest
-          if [ "${{ inputs.package-manager }}" = "poetry" ]; then
+          if [ "$PKG_MGR" = "poetry" ]; then
             poetry run pytest
-          elif [ "${{ inputs.package-manager }}" = "uv" ]; then
+          elif [ "$PKG_MGR" = "uv" ]; then
             uv run pytest
           else
             pytest

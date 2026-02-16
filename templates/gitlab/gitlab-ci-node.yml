@@ -3,7 +3,7 @@
 # ===========================================
 # Copy to: .gitlab-ci.yml
 #
-# MINIMAL CI - runs only on tags and manual triggers.
+# MINIMAL CI - runs on merge requests, tags, and manual triggers.
 # Run full validation locally: ./.ci-local/ci-local.sh full
 # ===========================================
 
@@ -20,7 +20,7 @@ cache:
     - .npm/
 
 # ===========================================
-# BUILD - Only on tags or manual
+# BUILD - On merge requests, tags, or manual
 # ===========================================
 build:
   stage: build
@@ -29,7 +29,8 @@ build:
     - npm run lint || true
     - npm run build
   rules:
-    - if: $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
     - when: manual
       allow_failure: true
 
@@ -38,11 +39,11 @@ build:
 # ===========================================
 # docker:
 #   stage: docker
-#   image: docker:latest
+#   image: docker:24
 #   services:
-#     - docker:dind
+#     - docker:24-dind
 #   script:
 #     - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG .
 #     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
 #   rules:
-#     - if: $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/
+#     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/

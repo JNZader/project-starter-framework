@@ -7,20 +7,25 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
   pull_request:
     branches: [main, develop]
     paths-ignore:
       - '**.md'
-      - 'docs/**'
-      - '.obsidian/**'
-      - '.project/Sessions/**'
-      - '.trash/**'
+      - '.gitignore'
   workflow_dispatch:
     inputs:
       run_tests:
         description: 'Run tests'
         default: false
         type: boolean
+
+permissions:
+  contents: read
 
 # Cancel previous runs on same PR
 concurrency:

@@ -20,9 +20,9 @@ services:
   supabase-db:
     image: supabase/postgres:15.6.1.143
     ports:
-      - "54322:5432"
+      - "127.0.0.1:54322:5432"
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.ghagga}
       POSTGRES_DB: ghagga
     volumes:
       - ghagga-db:/var/lib/postgresql/data
@@ -34,15 +34,23 @@ services:
 
   supabase-kong:
     image: kong:3.5
+    # NOTE: You must create kong.yml before starting. See GHAGGA docs.
+    volumes:
+      - ./kong.yml:/home/kong/kong.yml:ro
     ports:
-      - "54321:8000"   # Supabase API
-      - "54323:8443"   # Supabase API (HTTPS)
+      - "127.0.0.1:54321:8000"   # Supabase API
+      - "127.0.0.1:54323:8443"   # Supabase API (HTTPS)
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
     depends_on:
       supabase-db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kong health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ---------------------------------------------------------------------------
   # GHAGGA Dashboard (React + Vite)
@@ -54,12 +62,18 @@ services:
       args:
         GHAGGA_REPO: https://github.com/JNZader/ghagga.git
     ports:
-      - "5173:5173"
+      - "127.0.0.1:5173:5173"
     environment:
       VITE_SUPABASE_URL: http://localhost:54321
       VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
     depends_on:
-      - supabase-kong
+      supabase-kong:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5173/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
 volumes:
   ghagga-db:

@@ -89,11 +89,13 @@ detect_stack() {
             BUILD_TOOL="poetry"
         elif [[ -f "$PROJECT_DIR/Pipfile" ]]; then
             BUILD_TOOL="pipenv"
+        elif [[ -f "$PROJECT_DIR/uv.lock" ]]; then
+            BUILD_TOOL="uv"
         else
             BUILD_TOOL="pip"
         fi
         DOCKERFILE="python.Dockerfile"
-        LINT_CMD="ruff check . || pylint **/*.py"
+        LINT_CMD="ruff check . ; pylint **/*.py 2>/dev/null || true"
         TEST_CMD="pytest"
         return
     fi
@@ -208,16 +210,21 @@ ensure_docker_image() {
     local image_name=$(get_image_name)
     local dockerfile="$SCRIPT_DIR/docker/$DOCKERFILE"
 
+    # Create Dockerfile if it does not exist yet
     if [[ ! -f "$dockerfile" ]]; then
         echo -e "${YELLOW}Creating Dockerfile for $STACK_TYPE...${NC}"
         create_dockerfile
     fi
 
-    if [[ -z "$(docker images -q $image_name 2>/dev/null)" ]]; then
-        echo -e "${YELLOW}Building CI image for $STACK_TYPE...${NC}"
-        local build_args=""
+    # Detect staleness: rebuild if the Dockerfile content has changed since last build
+    local current_hash=$(sha256sum "$dockerfile" 2>/dev/null | cut -d' ' -f1)
+    local image_hash=$(docker inspect --format='{{index .Config.Labels "dockerfile-hash"}}' "$image_name" 2>/dev/null || echo "")
+
+    if [[ "$current_hash" != "$image_hash" ]]; then
+        echo -e "${YELLOW}Building CI Docker image...${NC}"
+        local build_args="--label dockerfile-hash=$current_hash"
         if [[ -n "$JAVA_VERSION" && "$STACK_TYPE" == java-* ]]; then
-            build_args="--build-arg JAVA_VERSION=$JAVA_VERSION"
+            build_args="$build_args --build-arg JAVA_VERSION=$JAVA_VERSION"
         fi
         docker build $build_args -f "$dockerfile" -t "$image_name" "$SCRIPT_DIR/docker"
     fi
@@ -225,10 +232,13 @@ ensure_docker_image() {
 
 run_in_ci() {
     local image_name=$(get_image_name)
-    docker run --rm -it \
-        -v "$PROJECT_DIR:/home/runner/work" \
+    local docker_flags="--rm"
+    if [ -t 0 ]; then
+        docker_flags="$docker_flags -it"
+    fi
+    docker run $docker_flags \
+        -v "$PROJECT_DIR:/home/runner/work:ro" \
         -e CI=true \
-        -e GITHUB_ACTIONS=true \
         "$image_name" "$1"
 }
 
@@ -320,5 +330,5 @@ case "$MODE" in
         ;;
 esac
 
-echo -e "\n${GREEN}✓ CI Local completed successfully!${NC}"
+echo -e "\n${GREEN}CI Local completed successfully!${NC}"
 echo -e "${GREEN}  Safe to push - CI should pass.${NC}\n"

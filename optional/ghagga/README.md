@@ -31,6 +31,19 @@ GitHub PR → Webhook → Supabase Edge Function → Multi-LLM Review → PR Com
 | **Workflow** | Pipeline multi-paso secuencial | Analisis profundo, cada paso especializado |
 | **Consensus** | Multiples LLMs evaluan y votan | Maxima confiabilidad, reviews criticas |
 
+## Opciones de Deployment
+
+| Opcion | Complejidad | Costo | Cuando usar |
+|--------|------------|-------|-------------|
+| Reusable Workflow | Baja | Free tier | Solo quieres PR reviews, sin dashboard |
+| Docker Compose | Media | Self-hosted | Equipo quiere dashboard, tiene servidor |
+| Full Clone | Alta | Self-hosted | Necesitas personalizar logica de review |
+
+### Costos de API
+- **Simple mode**: ~$0.01-0.05 por review (1 LLM call)
+- **Workflow mode**: ~$0.05-0.15 por review (multi-paso)
+- **Consensus mode**: ~$0.15-0.50 por review (multiples LLMs)
+
 ## Instalacion
 
 ### Prerequisitos
@@ -40,7 +53,33 @@ GitHub PR → Webhook → Supabase Edge Function → Multi-LLM Review → PR Com
 - [Deno](https://deno.land) (para Edge Functions)
 - Una GitHub App configurada
 
-### Opcion 1: Deploy local (desarrollo)
+### Opcion 1: Reusable Workflow (CI)
+
+En tu `.github/workflows/ci.yml`:
+
+```yaml
+jobs:
+  review:
+    uses: JNZader/project-starter-framework/.github/workflows/reusable-ghagga-review.yml@main
+    with:
+      ghagga-url: ${{ vars.GHAGGA_URL }}
+    secrets:
+      ghagga-token: ${{ secrets.GHAGGA_TOKEN }}
+```
+
+### Opcion 2: Docker Compose (este modulo)
+
+```bash
+# Desde tu proyecto
+cp optional/ghagga/docker-compose.yml .
+cp optional/ghagga/.env.example .env.ghagga
+
+# Editar .env.ghagga con tus keys
+# Levantar servicios
+docker compose -f docker-compose.yml up -d
+```
+
+### Opcion 3: Full Clone (desarrollo)
 
 ```bash
 # Clonar GHAGGA
@@ -59,32 +98,6 @@ supabase functions serve
 
 # Dashboard
 cd dashboard && npm install && npm run dev
-```
-
-### Opcion 2: Docker Compose (este modulo)
-
-```bash
-# Desde tu proyecto
-cp optional/ghagga/docker-compose.yml .
-cp optional/ghagga/.env.example .env.ghagga
-
-# Editar .env.ghagga con tus keys
-# Levantar servicios
-docker compose -f docker-compose.yml up -d
-```
-
-### Opcion 3: Reusable Workflow (CI)
-
-En tu `.github/workflows/ci.yml`:
-
-```yaml
-jobs:
-  review:
-    uses: JNZader/project-starter-framework/.github/workflows/reusable-ghagga-review.yml@main
-    with:
-      ghagga-url: ${{ vars.GHAGGA_URL }}
-    secrets:
-      ghagga-token: ${{ secrets.GHAGGA_TOKEN }}
 ```
 
 ## Setup GitHub App

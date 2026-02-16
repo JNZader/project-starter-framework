@@ -30,6 +30,16 @@ echo -e "${CYAN}=== Sync AI Config ===${NC}"
 generate_claude() {
     echo -e "${YELLOW}Generating Claude Code config...${NC}"
 
+    # Check if CLAUDE.md already exists and prompt for overwrite
+    if [[ -f "$PROJECT_DIR/CLAUDE.md" ]]; then
+        echo -e "${YELLOW}CLAUDE.md already exists. Overwrite? [y/N]${NC}"
+        read -r OVERWRITE
+        if [[ "$OVERWRITE" != "y" && "$OVERWRITE" != "Y" ]]; then
+            echo -e "${GREEN}Skipping CLAUDE.md${NC}"
+            return
+        fi
+    fi
+
     # Crear directorio .claude si no existe
     mkdir -p "$PROJECT_DIR/.claude"
 
@@ -85,8 +95,8 @@ HEADER
         [[ "$(basename "$agent")" == "_TEMPLATE.md" ]] && continue
         if grep -q "^name:" "$agent"; then
             echo -e "\n---\n" >> "$PROJECT_DIR/AGENTS.md"
-            # Copiar contenido sin frontmatter YAML
-            sed '1,/^---$/d; /^---$/,$!d; /^---$/d' "$agent" >> "$PROJECT_DIR/AGENTS.md"
+            # Strip YAML frontmatter (everything between first and second ---) using awk
+            awk 'BEGIN{n=0} /^---$/{n++; next} n>=2{print}' "$agent" >> "$PROJECT_DIR/AGENTS.md"
         fi
     done < <(find "$AI_CONFIG_DIR/agents" -type f -name "*.md" -print0)
 
@@ -105,8 +115,8 @@ HEADER
 
     # Agregar prompt base
     if [[ -f "$AI_CONFIG_DIR/prompts/base.md" ]]; then
-        # Extraer solo las reglas importantes
-        grep -A 100 "## Reglas Críticas" "$AI_CONFIG_DIR/prompts/base.md" | head -50 >> "$PROJECT_DIR/.cursorrules"
+        # Extract the "Reglas Criticas" section until the next top-level heading
+        awk '/^## Reglas Cr.ticas/,/^## [^R]/' "$AI_CONFIG_DIR/prompts/base.md" | head -n -1 >> "$PROJECT_DIR/.cursorrules"
     fi
 
     echo -e "${GREEN}✓ Generated .cursorrules${NC}"

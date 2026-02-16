@@ -41,12 +41,19 @@ on:
         required: false
         default: ''
         type: string
+      lint-fail-on-error:
+        description: 'Fail the build if linting fails'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
 
     defaults:
       run:
@@ -69,16 +76,18 @@ jobs:
         run: go mod verify
 
       - name: Build
-        run: go build -v ${{ inputs.build-flags }} ./...
+        env:
+          BUILD_FLAGS: ${{ inputs.build-flags }}
+        run: go build -v $BUILD_FLAGS ./...
 
       - name: Lint
         if: inputs.run-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          version: v1.62
           working-directory: ${{ inputs.working-directory }}
           args: --timeout=5m
-        continue-on-error: true
+        continue-on-error: ${{ !inputs.lint-fail-on-error }}
 
       - name: Test
         if: inputs.run-tests

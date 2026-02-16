@@ -15,7 +15,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 SKILLS_DIR="$PROJECT_DIR/.ai-config/skills"
 GENTLEMAN_REPO="https://github.com/Gentleman-Programming/Gentleman-Skills.git"
-TEMP_DIR="${TMPDIR:-/tmp}/gentleman-skills"
+TEMP_DIR="${TMPDIR:-/tmp}/gentleman-skills-$(id -u)"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -41,10 +41,17 @@ show_help() {
 clone_gentleman() {
     if [[ ! -d "$TEMP_DIR" ]]; then
         echo -e "${YELLOW}Cloning Gentleman-Skills repository...${NC}"
-        git clone --depth 1 "$GENTLEMAN_REPO" "$TEMP_DIR" 2>/dev/null
+        git clone --depth 1 "$GENTLEMAN_REPO" "$TEMP_DIR" || {
+            echo -e "${RED}Failed to clone Gentleman-Skills repository${NC}"
+            exit 1
+        }
     else
         echo -e "${YELLOW}Updating Gentleman-Skills repository...${NC}"
-        cd "$TEMP_DIR" && git pull 2>/dev/null
+        rm -rf "$TEMP_DIR"
+        git clone --depth 1 "$GENTLEMAN_REPO" "$TEMP_DIR" || {
+            echo -e "${RED}Failed to update Gentleman-Skills repository${NC}"
+            exit 1
+        }
     fi
 }
 
@@ -114,6 +121,13 @@ add_gentleman_skill() {
 
 remove_skill() {
     local skill_name="$1"
+
+    # Security: validate skill name to prevent path traversal
+    if [[ ! "$skill_name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo -e "${RED}Error: Invalid skill name format. Use only alphanumeric, dash, underscore.${NC}"
+        exit 1
+    fi
+
     local skill_path="$SKILLS_DIR/$skill_name"
 
     if [[ -d "$skill_path" ]]; then

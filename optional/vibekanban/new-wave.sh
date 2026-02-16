@@ -20,6 +20,14 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
+sed_inplace() {
+    if sed --version 2>/dev/null | grep -q GNU; then
+        sed -i "$@"
+    else
+        sed -i '' "$@"
+    fi
+}
+
 # Asegurar que existe el archivo de oleadas
 if [[ ! -f "$WAVES_FILE" ]]; then
     cat > "$WAVES_FILE" << 'EOF'
@@ -45,7 +53,7 @@ EOF
 fi
 
 show_help() {
-    echo -e "${CYAN}NEW-WAVE: Gestión de oleadas de tareas paralelas${NC}"
+    echo -e "${CYAN}NEW-WAVE: Gestion de oleadas de tareas paralelas${NC}"
     echo ""
     echo "Uso:"
     echo "  ./scripts/new-wave.sh \"T-001 T-002 T-003\"   Crear oleada con tareas"
@@ -76,15 +84,15 @@ create_wave() {
     echo -e "  Total: $task_count tareas"
 
     # Actualizar archivo de oleadas
-    sed -i "s/\*\*Numero:\*\* [0-9]*/\*\*Numero:\*\* $wave_num/" "$WAVES_FILE"
-    sed -i "s/\*\*Estado:\*\* .*/\*\*Estado:\*\* En progreso/" "$WAVES_FILE"
-    sed -i "s/\*\*Tareas:\*\* .*/\*\*Tareas:\*\* $tasks/" "$WAVES_FILE"
+    sed_inplace "s/\*\*Numero:\*\* [0-9]*/\*\*Numero:\*\* $wave_num/" "$WAVES_FILE"
+    sed_inplace "s/\*\*Estado:\*\* .*/\*\*Estado:\*\* En progreso/" "$WAVES_FILE"
+    sed_inplace "s/\*\*Tareas:\*\* .*/\*\*Tareas:\*\* $tasks/" "$WAVES_FILE"
 
-    echo -e "${GREEN}✓ Oleada $wave_num creada${NC}"
+    echo -e "${GREEN}Oleada $wave_num creada${NC}"
     echo ""
 
     # Preguntar si crear branches
-    read -p "¿Crear branches para cada tarea? (y/n) " -n 1 -r
+    read -p "Crear branches para cada tarea? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         create_branches "$tasks"
@@ -102,18 +110,18 @@ create_branches() {
     git pull origin "$base_branch" 2>/dev/null || true
 
     for task in $tasks; do
-        local branch_name="feature/${task,,}"  # lowercase
+        local branch_name="feature/$(echo "$task" | tr '[:upper:]' '[:lower:]')"
         if git show-ref --verify --quiet "refs/heads/$branch_name"; then
-            echo -e "  ${YELLOW}⚠ Branch $branch_name ya existe${NC}"
+            echo -e "  ${YELLOW}Branch $branch_name ya existe${NC}"
         else
             git checkout -b "$branch_name" "$base_branch"
-            echo -e "  ${GREEN}✓ Creado: $branch_name${NC}"
+            echo -e "  ${GREEN}Creado: $branch_name${NC}"
         fi
     done
 
     # Volver a develop
     git checkout "$base_branch"
-    echo -e "${GREEN}✓ Branches creados${NC}"
+    echo -e "${GREEN}Branches creados${NC}"
 }
 
 complete_wave() {
@@ -124,13 +132,13 @@ complete_wave() {
     echo -e "${YELLOW}Completando Oleada $wave_num...${NC}"
 
     # Agregar al historial
-    sed -i "/^|---|/a | $wave_num | $tasks | - | $today | Completada |" "$WAVES_FILE"
+    sed_inplace "/^|---|/a | $wave_num | $tasks | - | $today | Completada |" "$WAVES_FILE"
 
     # Resetear oleada actual
-    sed -i "s/\*\*Estado:\*\* .*/\*\*Estado:\*\* Ninguna activa/" "$WAVES_FILE"
-    sed -i "s/\*\*Tareas:\*\* .*/\*\*Tareas:\*\* -/" "$WAVES_FILE"
+    sed_inplace "s/\*\*Estado:\*\* .*/\*\*Estado:\*\* Ninguna activa/" "$WAVES_FILE"
+    sed_inplace "s/\*\*Tareas:\*\* .*/\*\*Tareas:\*\* -/" "$WAVES_FILE"
 
-    echo -e "${GREEN}✓ Oleada $wave_num completada${NC}"
+    echo -e "${GREEN}Oleada $wave_num completada${NC}"
 }
 
 # =============================================================================

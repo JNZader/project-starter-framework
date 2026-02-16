@@ -4,6 +4,31 @@
 
 ---
 
+## Por que este framework?
+
+### El Problema
+- Los pipelines CI/CD consumen minutos costosos en runners remotos
+- Los equipos rompen CI repetidamente porque no pueden testear localmente
+- El desarrollo asistido por IA carece de contexto y memoria de proyecto
+- Cada nuevo proyecto requiere horas de setup repetitivo
+
+### La Solucion
+- **CI-Local**: Testea localmente en Docker, replicando tu CI remoto exactamente
+- **AI Config**: Configuracion centralizada de agentes para asistencia AI consistente
+- **Diseno Modular**: Usa solo lo que necesitas (memoria, code review, etc.)
+- **Framework, no template**: Copia y personaliza, no forkea
+
+## Quien deberia usar esto?
+
+| Perfil | Modulos Recomendados | Beneficio |
+|--------|---------------------|-----------|
+| Solo Developer | CI-Local + AI Config + obsidian-brain | Iteracion rapida, memoria AI, validacion local |
+| Equipo Pequeno | Todo core + ghagga | Reviews automaticos, contexto compartido |
+| Open Source | Core + templates | Minimizar costos CI, community-friendly |
+| Enterprise | Core + agentes custom | Compliance, security scanning |
+
+---
+
 ## Requisitos Previos
 
 | Herramienta | Requerido | Para qué |

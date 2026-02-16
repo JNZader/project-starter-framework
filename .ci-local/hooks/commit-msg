@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # =============================================================================
 # COMMIT-MSG: Validate commit message
 # =============================================================================
@@ -55,9 +56,7 @@ AI_PATTERNS=(
 for pattern in "${AI_PATTERNS[@]}"; do
     if echo "$COMMIT_MSG" | grep -iqE "$pattern"; then
         echo -e ""
-        echo -e "${RED}╔════════════════════════════════════════════════════════════╗${NC}"
-        echo -e "${RED}║  ✗ COMMIT BLOCKED: AI Attribution Detected                 ║${NC}"
-        echo -e "${RED}╚════════════════════════════════════════════════════════════╝${NC}"
+        echo -e "${RED}COMMIT BLOCKED: AI Attribution Detected${NC}"
         echo -e ""
         echo -e "${RED}Found in commit message: ${NC}"
         echo -e "${YELLOW}  Pattern: $pattern${NC}"

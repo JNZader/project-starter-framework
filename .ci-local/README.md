@@ -81,6 +81,34 @@ git commit --no-verify
 git push --no-verify
 ```
 
+## Como Funciona
+
+```
+Developer workflow:
+
+1. Editar codigo
+2. git add .
+3. git commit -m "feat: add feature"
+     |
+     pre-commit hook:
+     - [1/3] Verificar atribucion AI (BLOQUEADO si encuentra)
+     - [2/3] Scan de seguridad Semgrep (reglas locales)
+     - [3/3] Compile check rapido
+     |
+     commit-msg hook:
+     - Validar formato conventional commit
+     |
+4. git push
+     |
+     pre-push hook:
+     - Detectar stack (Java/Node/Python/Go/Rust)
+     - Generar Dockerfile para el stack
+     - Construir imagen Docker (con cache de hash)
+     - Ejecutar test suite completo en contenedor
+     |
+5. Push exitoso → CI remoto pasara
+```
+
 ## Estructura
 
 ```

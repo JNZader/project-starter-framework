@@ -69,7 +69,12 @@ add_scope() {
     fi
 
     # Agregar scope después de metadata
-    sed -i "/^metadata:/a\\  scope: [$scope]" "$skill_file"
+    if sed --version 2>/dev/null | grep -q GNU; then
+        sed -i "/^metadata:/a\\  scope: [$scope]" "$skill_file"
+    else
+        sed -i '' "/^metadata:/a\\
+  scope: [$scope]" "$skill_file"
+    fi
     echo -e "${GREEN}Scope agregado a '$skill_name': $scope${NC}"
 }
 
@@ -114,24 +119,39 @@ See `.ai-config/AUTO_INVOKE.md` for action-to-skill mapping.
 EOF
     fi
 
-    # Crear symlinks
+    # Crear symlinks (with Windows fallback)
     if [ ! -f "$claude_md" ] || [ -L "$claude_md" ]; then
         rm -f "$claude_md" 2>/dev/null || true
-        ln -s "AGENTS.md" "$claude_md"
-        echo -e "${GREEN}  CLAUDE.md -> AGENTS.md${NC}"
+        if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+            cp "$agents_md" "$claude_md"
+            echo -e "${GREEN}  CLAUDE.md <- AGENTS.md (copied, Windows fallback)${NC}"
+        else
+            ln -sf "AGENTS.md" "$claude_md"
+            echo -e "${GREEN}  CLAUDE.md -> AGENTS.md${NC}"
+        fi
     fi
 
     if [ ! -f "$gemini_md" ] || [ -L "$gemini_md" ]; then
         rm -f "$gemini_md" 2>/dev/null || true
-        ln -s "AGENTS.md" "$gemini_md"
-        echo -e "${GREEN}  GEMINI.md -> AGENTS.md${NC}"
+        if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+            cp "$agents_md" "$gemini_md"
+            echo -e "${GREEN}  GEMINI.md <- AGENTS.md (copied, Windows fallback)${NC}"
+        else
+            ln -sf "AGENTS.md" "$gemini_md"
+            echo -e "${GREEN}  GEMINI.md -> AGENTS.md${NC}"
+        fi
     fi
 
     mkdir -p "$PROJECT_ROOT/.github"
     if [ ! -f "$copilot_md" ] || [ -L "$copilot_md" ]; then
         rm -f "$copilot_md" 2>/dev/null || true
-        ln -s "../AGENTS.md" "$copilot_md"
-        echo -e "${GREEN}  .github/copilot-instructions.md -> AGENTS.md${NC}"
+        if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+            cp "$agents_md" "$copilot_md"
+            echo -e "${GREEN}  .github/copilot-instructions.md <- AGENTS.md (copied, Windows fallback)${NC}"
+        else
+            ln -sf "../AGENTS.md" "$copilot_md"
+            echo -e "${GREEN}  .github/copilot-instructions.md -> AGENTS.md${NC}"
+        fi
     fi
 
     echo -e "${GREEN}Symlinks creados exitosamente${NC}"
@@ -191,13 +211,12 @@ generate_summary() {
 > Auto-generated. Do not edit manually.
 
 ## By Category
-
-### Frontend
 EOF
 
     for category in "frontend" "backend" "database" "infrastructure" "ai-ml" "testing" "mobile" "other"; do
         echo "" >> "$summary_file"
-        echo "### ${category^}" >> "$summary_file"
+        category_title="$(echo "${category:0:1}" | tr '[:lower:]' '[:upper:]')${category:1}"
+        echo "### $category_title" >> "$summary_file"
 
         case $category in
             frontend) pattern="frontend|mantine|astro|tanstack|zod|zustand" ;;

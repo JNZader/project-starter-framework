@@ -1,15 +1,23 @@
 # =============================================================================
 # CI Monorepo - GitHub Actions
 # =============================================================================
-# Template para monorepos con múltiples servicios/packages
+# Template para monorepos con multiple servicios/packages
 # Copia este archivo a tu proyecto: .github/workflows/ci.yml
 # =============================================================================
 
 name: CI Monorepo
 
 on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
   pull_request:
     branches: [main, develop]
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
   workflow_dispatch:
     inputs:
       service:
@@ -22,6 +30,9 @@ on:
           - frontend
           - backend
           - shared
+
+permissions:
+  contents: read
 
 # Cancelar runs anteriores del mismo PR
 concurrency:
@@ -69,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: packages/frontend  # Ajustar según tu estructura
+        working-directory: packages/frontend  # Ajustar segun tu estructura
     steps:
       - uses: actions/checkout@v4
 
@@ -101,7 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: packages/backend  # Ajustar según tu estructura
+        working-directory: packages/backend  # Ajustar segun tu estructura
     steps:
       - uses: actions/checkout@v4
 
@@ -125,11 +136,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check results
+        env:
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+          BACKEND_RESULT: ${{ needs.backend.result }}
         run: |
-          echo "Frontend: ${{ needs.frontend.result }}"
-          echo "Backend: ${{ needs.backend.result }}"
+          echo "Frontend: $FRONTEND_RESULT"
+          echo "Backend: $BACKEND_RESULT"
 
-          if [[ "${{ needs.frontend.result }}" == "failure" ]] || \
-             [[ "${{ needs.backend.result }}" == "failure" ]]; then
+          if [[ "$FRONTEND_RESULT" == "failure" ]] || \
+             [[ "$BACKEND_RESULT" == "failure" ]]; then
+            echo "::error::One or more jobs failed"
             exit 1
           fi

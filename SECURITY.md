@@ -50,6 +50,21 @@ When using this framework:
 - These files are git-ignored by default
 - Never include API keys or tokens in AI config files
 
+### 6. Modulos Opcionales
+
+#### Engram (MCP Server)
+- Engram corre como servidor MCP local con acceso a archivos del proyecto
+- Usa tags `<private>` para redactar contenido sensible
+- La base de datos se almacena en `.engram/` (git-ignored)
+- Revisar la variable `ENGRAM_PROJECT` antes de compartir configs
+
+#### GHAGGA (Code Review)
+- Requiere GitHub App con acceso al repositorio
+- El webhook recibe todo el contenido del PR (revisar implicaciones de privacidad)
+- Los proveedores LLM reciben fragmentos de codigo (verificar politicas de retencion)
+- Usar deployment self-hosted para proyectos sensibles
+- Configurar `GHAGGA_URL` y `GHAGGA_TOKEN` como secrets, nunca en codigo
+
 ## Known Security Considerations
 
 ### Git Hooks Execution

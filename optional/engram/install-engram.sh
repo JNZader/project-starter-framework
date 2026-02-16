@@ -134,21 +134,43 @@ DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${VERSION}/${ARCHIVE_
 # Descargar
 echo -e "${YELLOW}Descargando ${DOWNLOAD_URL}...${NC}"
 TMP_DIR=$(mktemp -d)
+chmod 700 "$TMP_DIR"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-if ! curl -fsSL -o "${TMP_DIR}/engram-archive" "$DOWNLOAD_URL"; then
+if ! curl -fsSL -o "${TMP_DIR}/${ARCHIVE_NAME}" "$DOWNLOAD_URL"; then
     echo -e "${RED}Error descargando. Verifica la URL:${NC}"
     echo -e "  ${DOWNLOAD_URL}"
     echo -e "${YELLOW}Releases disponibles: https://github.com/${REPO}/releases${NC}"
     exit 1
 fi
 
+# Verify checksum if available
+CHECKSUM_URL="https://github.com/${REPO}/releases/download/${VERSION}/checksums.txt"
+if curl -fsSL -o "${TMP_DIR}/checksums.txt" "$CHECKSUM_URL" 2>/dev/null; then
+    echo -e "${YELLOW}Verifying checksum...${NC}"
+    cd "$TMP_DIR"
+    if command -v sha256sum &>/dev/null; then
+        sha256sum -c checksums.txt --ignore-missing || {
+            echo -e "${RED}Checksum verification failed!${NC}"
+            exit 1
+        }
+    elif command -v shasum &>/dev/null; then
+        shasum -a 256 -c checksums.txt --ignore-missing || {
+            echo -e "${RED}Checksum verification failed!${NC}"
+            exit 1
+        }
+    fi
+    echo -e "${GREEN}Checksum verified${NC}"
+else
+    echo -e "${YELLOW}Warning: No checksums available, skipping verification${NC}"
+fi
+
 # Extraer
 echo -e "${YELLOW}Extrayendo...${NC}"
 if [[ "$ARCHIVE_NAME" == *.zip ]]; then
-    unzip -o "${TMP_DIR}/engram-archive" -d "${TMP_DIR}" > /dev/null
+    unzip -o "${TMP_DIR}/${ARCHIVE_NAME}" -d "${TMP_DIR}" > /dev/null
 else
-    tar xzf "${TMP_DIR}/engram-archive" -C "${TMP_DIR}"
+    tar xzf "${TMP_DIR}/${ARCHIVE_NAME}" -C "${TMP_DIR}"
 fi
 
 # Instalar

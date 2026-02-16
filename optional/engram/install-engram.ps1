@@ -86,11 +86,29 @@ $tmpDir = Join-Path $env:TEMP "engram-install"
 
 Write-Host "Descargando $downloadUrl..." -ForegroundColor Yellow
 New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
-Invoke-WebRequest -Uri $downloadUrl -OutFile "$tmpDir\engram.zip"
+$archivePath = "$tmpDir\engram.zip"
+Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath
+
+# Verify checksum if available
+$checksumUrl = "https://github.com/$Repo/releases/download/$version/checksums.txt"
+try {
+    $checksums = Invoke-RestMethod -Uri $checksumUrl -ErrorAction Stop
+    $expectedHash = ($checksums -split "`n" | Where-Object { $_ -match $archiveName } | ForEach-Object { ($_ -split '\s+')[0] })
+    if ($expectedHash) {
+        $actualHash = (Get-FileHash -Path $archivePath -Algorithm SHA256).Hash.ToLower()
+        if ($actualHash -ne $expectedHash.ToLower()) {
+            Write-Host "Checksum verification failed!" -ForegroundColor Red
+            exit 1
+        }
+        Write-Host "Checksum verified" -ForegroundColor Green
+    }
+} catch {
+    Write-Host "Warning: No checksums available, skipping verification" -ForegroundColor Yellow
+}
 
 # Extract
 Write-Host "Extrayendo..." -ForegroundColor Yellow
-Expand-Archive -Path "$tmpDir\engram.zip" -DestinationPath $tmpDir -Force
+Expand-Archive -Path $archivePath -DestinationPath $tmpDir -Force
 
 # Install
 New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null

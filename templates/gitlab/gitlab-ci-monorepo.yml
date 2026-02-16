@@ -3,7 +3,7 @@
 # ===========================================
 # Copy to: .gitlab-ci.yml
 #
-# MINIMAL CI - runs only on tags and manual triggers.
+# MINIMAL CI - runs on merge requests, tags, and manual triggers.
 # Uses rules:changes to detect which service changed.
 # Run full validation locally: ./.ci-local/ci-local.sh full
 # ===========================================
@@ -24,6 +24,9 @@ frontend:
     - npm run lint || true
     - npm run build
   rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - packages/frontend/**/*
     - if: $CI_COMMIT_TAG
       changes:
         - packages/frontend/**/*
@@ -44,6 +47,9 @@ backend:
     - ./gradlew classes --no-daemon
     - ./gradlew spotlessCheck --no-daemon || true
   rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - packages/backend/**/*
     - if: $CI_COMMIT_TAG
       changes:
         - packages/backend/**/*
@@ -55,24 +61,24 @@ backend:
 # ===========================================
 # docker-frontend:
 #   stage: docker
-#   image: docker:latest
+#   image: docker:24
 #   services:
-#     - docker:dind
+#     - docker:24-dind
 #   needs: ["frontend"]
 #   script:
 #     - docker build -t $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_TAG packages/frontend
 #     - docker push $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_TAG
 #   rules:
-#     - if: $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/
+#     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
 
 # docker-backend:
 #   stage: docker
-#   image: docker:latest
+#   image: docker:24
 #   services:
-#     - docker:dind
+#     - docker:24-dind
 #   needs: ["backend"]
 #   script:
 #     - docker build -t $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_TAG packages/backend
 #     - docker push $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_TAG
 #   rules:
-#     - if: $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/
+#     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/

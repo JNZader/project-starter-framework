@@ -5,7 +5,7 @@
 #
 # Features:
 #   - Build verification only (tests run locally via CI-Local)
-#   - Manual trigger or tag-based releases
+#   - Manual trigger, merge request, or tag-based releases
 #   - Supports pip, poetry, and uv
 # =============================================================================
 
@@ -34,8 +34,10 @@ cache:
 build-pip:
   stage: build
   rules:
-    - if: $CI_COMMIT_TAG
-    - when: manual
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($PACKAGE_MANAGER == "pip" || $PACKAGE_MANAGER == null)
+    - if: $CI_COMMIT_TAG && ($PACKAGE_MANAGER == "pip" || $PACKAGE_MANAGER == null)
+    - if: ($PACKAGE_MANAGER == "pip" || $PACKAGE_MANAGER == null)
+      when: manual
       allow_failure: true
   script:
     - python -m pip install --upgrade pip
@@ -44,9 +46,6 @@ build-pip:
     - pip install ruff mypy
     - ruff check . || true
     - mypy . --ignore-missing-imports || true
-  only:
-    variables:
-      - $PACKAGE_MANAGER == "pip" || $PACKAGE_MANAGER == null
 
 # =============================================================================
 # Build with Poetry
@@ -54,8 +53,10 @@ build-pip:
 build-poetry:
   stage: build
   rules:
-    - if: $CI_COMMIT_TAG
-    - when: manual
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $PACKAGE_MANAGER == "poetry"
+    - if: $CI_COMMIT_TAG && $PACKAGE_MANAGER == "poetry"
+    - if: $PACKAGE_MANAGER == "poetry"
+      when: manual
       allow_failure: true
   before_script:
     - pip install poetry
@@ -64,11 +65,6 @@ build-poetry:
     - poetry install
     - poetry run ruff check . || true
     - poetry run mypy . --ignore-missing-imports || true
-  only:
-    variables:
-      - $PACKAGE_MANAGER == "poetry"
-    exists:
-      - poetry.lock
 
 # =============================================================================
 # Build with uv
@@ -76,8 +72,10 @@ build-poetry:
 build-uv:
   stage: build
   rules:
-    - if: $CI_COMMIT_TAG
-    - when: manual
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $PACKAGE_MANAGER == "uv"
+    - if: $CI_COMMIT_TAG && $PACKAGE_MANAGER == "uv"
+    - if: $PACKAGE_MANAGER == "uv"
+      when: manual
       allow_failure: true
   before_script:
     - pip install uv
@@ -85,11 +83,6 @@ build-uv:
     - uv sync
     - uv run ruff check . || true
     - uv run mypy . --ignore-missing-imports || true
-  only:
-    variables:
-      - $PACKAGE_MANAGER == "uv"
-    exists:
-      - uv.lock
 
 # =============================================================================
 # Publish to PyPI - Only on version tags

@@ -46,12 +46,19 @@ on:
         required: false
         default: '.'
         type: string
+      lint-fail-on-error:
+        description: 'Fail the build if linting fails'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
 
     defaults:
       run:
@@ -87,32 +94,39 @@ jobs:
 
       - name: Lint
         if: inputs.run-lint
+        continue-on-error: ${{ !inputs.lint-fail-on-error }}
+        env:
+          PKG_MGR: ${{ inputs.package-manager }}
         run: |
-          if [ "${{ inputs.package-manager }}" = "pnpm" ]; then
-            pnpm run lint || true
-          elif [ "${{ inputs.package-manager }}" = "yarn" ]; then
-            yarn lint || true
+          if [ "$PKG_MGR" = "pnpm" ]; then
+            pnpm run lint
+          elif [ "$PKG_MGR" = "yarn" ]; then
+            yarn lint
           else
-            npm run lint || true
+            npm run lint
           fi
-        continue-on-error: true
 
       - name: Build
+        env:
+          PKG_MGR: ${{ inputs.package-manager }}
+          BUILD_SCRIPT: ${{ inputs.build-script }}
         run: |
-          if [ "${{ inputs.package-manager }}" = "pnpm" ]; then
-            pnpm run ${{ inputs.build-script }}
-          elif [ "${{ inputs.package-manager }}" = "yarn" ]; then
-            yarn ${{ inputs.build-script }}
+          if [ "$PKG_MGR" = "pnpm" ]; then
+            pnpm run "$BUILD_SCRIPT"
+          elif [ "$PKG_MGR" = "yarn" ]; then
+            yarn "$BUILD_SCRIPT"
           else
-            npm run ${{ inputs.build-script }}
+            npm run "$BUILD_SCRIPT"
           fi
 
       - name: Test
         if: inputs.run-tests
+        env:
+          PKG_MGR: ${{ inputs.package-manager }}
         run: |
-          if [ "${{ inputs.package-manager }}" = "pnpm" ]; then
+          if [ "$PKG_MGR" = "pnpm" ]; then
             pnpm test
-          elif [ "${{ inputs.package-manager }}" = "yarn" ]; then
+          elif [ "$PKG_MGR" = "yarn" ]; then
             yarn test
           else
             npm test

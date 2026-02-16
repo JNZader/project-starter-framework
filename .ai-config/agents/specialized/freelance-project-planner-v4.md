@@ -2305,9 +2305,10 @@ _Deployed with Vercel • Framework: ${{ needs.detect-stack.outputs.framework }}
         id: deploy
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           # Deploy con nombre basado en PR
-          PREVIEW_NAME="pr-${{ github.event.pull_request.number }}"
+          PREVIEW_NAME="pr-${PR_NUMBER}"
 
           railway up --detach --environment "$PREVIEW_NAME"
 
@@ -2358,9 +2359,10 @@ _Deployed with Railway • Framework: ${{ needs.detect-stack.outputs.framework }
         id: deploy
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_NAME: ${{ github.event.repository.name }}
         run: |
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          APP_NAME="${{ github.event.repository.name }}-pr-${PR_NUMBER}"
+          APP_NAME="${REPO_NAME}-pr-${PR_NUMBER}"
 
           # Crear app si no existe
           flyctl apps create "$APP_NAME" --org personal 2>/dev/null || true
@@ -2414,8 +2416,9 @@ _Deployed with Fly.io_`;
         continue-on-error: true
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          PREVIEW_NAME="pr-${{ github.event.pull_request.number }}"
+          PREVIEW_NAME="pr-${PR_NUMBER}"
           railway environment delete "$PREVIEW_NAME" --yes || true
 
       - name: Cleanup Fly.io Preview
@@ -2423,8 +2426,10 @@ _Deployed with Fly.io_`;
         continue-on-error: true
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_NAME: ${{ github.event.repository.name }}
         run: |
-          APP_NAME="${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}"
+          APP_NAME="${REPO_NAME}-pr-${PR_NUMBER}"
           flyctl apps destroy "$APP_NAME" --yes || true
 ```
 
@@ -2458,9 +2463,9 @@ jobs:
 
       - name: Detect Stack and Update Next PR
         id: sync
+        env:
+          MERGED_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
-          MERGED_BRANCH="${{ github.event.pull_request.head.ref }}"
-
           echo "📚 Branch mergeado: $MERGED_BRANCH"
 
           # Detectar si es parte de un stack
@@ -2528,23 +2533,30 @@ _Auto-sync by Stack Manager_"
         if: steps.sync.outputs.is_stack == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FEATURE: ${{ steps.sync.outputs.feature }}
+          POSITION: ${{ steps.sync.outputs.position }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HAS_NEXT: ${{ steps.sync.outputs.has_next }}
         run: |
-          FEATURE="${{ steps.sync.outputs.feature }}"
-          POSITION="${{ steps.sync.outputs.position }}"
-
           # Buscar issue de tracking del stack
           TRACKING_ISSUE=$(gh issue list --search "Stack: $FEATURE in:title" --json number --jq '.[0].number')
+
+          if [ "$HAS_NEXT" = "true" ]; then
+            NEXT_MSG="➡️ Siguiente PR listo para review"
+          else
+            NEXT_MSG="🎉 Stack completado!"
+          fi
 
           if [ -n "$TRACKING_ISSUE" ]; then
             # Agregar comentario de progreso
             gh issue comment "$TRACKING_ISSUE" --body "✅ **PR ${POSITION} mergeado**
 
-Branch: \`${{ github.event.pull_request.head.ref }}\`
+Branch: \`${HEAD_REF}\`
 
-${{ steps.sync.outputs.has_next == 'true' && '➡️ Siguiente PR listo para review' || '🎉 Stack completado!' }}"
+${NEXT_MSG}"
 
             # Si no hay siguiente PR, cerrar el tracking issue
-            if [ "${{ steps.sync.outputs.has_next }}" != "true" ]; then
+            if [ "$HAS_NEXT" != "true" ]; then
               gh issue close "$TRACKING_ISSUE" --comment "🎉 **Stack completado!**
 
 Todos los PRs han sido mergeados exitosamente."
@@ -3528,8 +3540,9 @@ jobs:
     steps:
       - name: Detect Stack Info
         id: stack
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
-          BRANCH="${{ github.event.pull_request.head.ref }}"
 
           if [[ $BRANCH =~ ^feature/([^/]+)/([0-9]+)- ]]; then
             echo "feature=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
@@ -3553,16 +3566,16 @@ jobs:
         if: steps.stack.outputs.is_stack == 'true' && env.SLACK_WEBHOOK != ''
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          FEATURE: ${{ steps.stack.outputs.feature }}
+          POSITION: ${{ steps.stack.outputs.position }}
+          TOTAL: ${{ steps.stack.outputs.total }}
+          MERGED: ${{ steps.stack.outputs.merged }}
+          EVENT: ${{ github.event.action }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
         run: |
-          FEATURE="${{ steps.stack.outputs.feature }}"
-          POSITION="${{ steps.stack.outputs.position }}"
-          TOTAL="${{ steps.stack.outputs.total }}"
-          MERGED="${{ steps.stack.outputs.merged }}"
-          EVENT="${{ github.event.action }}"
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          PR_URL="${{ github.event.pull_request.html_url }}"
-
-          if [ "$EVENT" = "closed" ] && [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+          if [ "$EVENT" = "closed" ] && [ "$PR_MERGED" = "true" ]; then
             COLOR="#00C853"
             EMOJI="✅"
             STATUS="mergeado"
@@ -3625,16 +3638,16 @@ jobs:
         if: steps.stack.outputs.is_stack == 'true' && env.DISCORD_WEBHOOK != ''
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          FEATURE: ${{ steps.stack.outputs.feature }}
+          POSITION: ${{ steps.stack.outputs.position }}
+          TOTAL: ${{ steps.stack.outputs.total }}
+          MERGED: ${{ steps.stack.outputs.merged }}
+          EVENT: ${{ github.event.action }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
         run: |
-          FEATURE="${{ steps.stack.outputs.feature }}"
-          POSITION="${{ steps.stack.outputs.position }}"
-          TOTAL="${{ steps.stack.outputs.total }}"
-          MERGED="${{ steps.stack.outputs.merged }}"
-          EVENT="${{ github.event.action }}"
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          PR_URL="${{ github.event.pull_request.html_url }}"
-
-          if [ "$EVENT" = "closed" ] && [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+          if [ "$EVENT" = "closed" ] && [ "$PR_MERGED" = "true" ]; then
             COLOR="65280"  # Green
             EMOJI="✅"
             STATUS="mergeado"

@@ -156,9 +156,12 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
     echo -e "    1) obsidian-brain  - Vault Obsidian + Kanban + memoria estructurada (RECOMENDADO)"
     echo -e "    2) vibekanban      - Oleadas paralelas + memoria (legacy)"
     echo -e "    3) simple          - Solo un archivo NOTES.md"
-    echo -e "    4) ninguno         - Sin memoria de proyecto"
+    echo -e "    4) engram          - Memoria persistente para agentes AI (MCP server)"
+    echo -e "    5) ninguno         - Sin memoria de proyecto"
     echo -e ""
-    read -p "  Opción [1/2/3/4]: " MEMORY_CHOICE
+    echo -e "  ${YELLOW}Nota: engram complementa a obsidian-brain (pueden usarse juntos)${NC}"
+    echo -e ""
+    read -p "  Opción [1/2/3/4/5]: " MEMORY_CHOICE
 
     case "$MEMORY_CHOICE" in
         1)
@@ -192,10 +195,60 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
                 echo -e "${GREEN}  ✓ Memory simple instalado${NC}"
             fi
             ;;
+        4)
+            if [[ -d "$FRAMEWORK_DIR/optional/engram" ]]; then
+                # Copiar config MCP
+                local project_name
+                project_name=$(basename "$(pwd)")
+                if [[ -f "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" ]]; then
+                    if [[ ! -f ".mcp.json" ]]; then
+                        sed "s/__PROJECT_NAME__/$project_name/g" \
+                            "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" > .mcp.json
+                    else
+                        echo -e "${YELLOW}  .mcp.json ya existe - agrega engram manualmente${NC}"
+                        echo -e "  Ver: optional/engram/.mcp-config-snippet.json"
+                    fi
+                fi
+                # Copiar script de instalacion
+                cp "$FRAMEWORK_DIR/optional/engram/install-engram.sh" scripts/ 2>/dev/null || true
+                cp "$FRAMEWORK_DIR/optional/engram/install-engram.ps1" scripts/ 2>/dev/null || true
+                chmod +x scripts/install-engram.sh 2>/dev/null || true
+                # Append gitignore snippet
+                if [[ -f "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" ]]; then
+                    echo "" >> .gitignore
+                    cat "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" >> .gitignore
+                fi
+                echo -e "${GREEN}  ✓ Engram configurado${NC}"
+                echo -e "  ${CYAN}Ejecuta: ./scripts/install-engram.sh para instalar el binario${NC}"
+            fi
+            ;;
         *)
             echo -e "${GREEN}  ✓ Sin módulo de memoria${NC}"
             ;;
     esac
+
+    # Preguntar por engram adicional si eligieron obsidian-brain
+    if [[ "$MEMORY_CHOICE" == "1" && -d "$FRAMEWORK_DIR/optional/engram" ]]; then
+        echo -e ""
+        read -p "  ¿Agregar también Engram para memoria de agentes AI? [y/N]: " ADD_ENGRAM
+        if [[ "$ADD_ENGRAM" == "y" || "$ADD_ENGRAM" == "Y" ]]; then
+            local project_name
+            project_name=$(basename "$(pwd)")
+            if [[ ! -f ".mcp.json" ]]; then
+                sed "s/__PROJECT_NAME__/$project_name/g" \
+                    "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" > .mcp.json
+            fi
+            cp "$FRAMEWORK_DIR/optional/engram/install-engram.sh" scripts/ 2>/dev/null || true
+            cp "$FRAMEWORK_DIR/optional/engram/install-engram.ps1" scripts/ 2>/dev/null || true
+            chmod +x scripts/install-engram.sh 2>/dev/null || true
+            if [[ -f "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" ]]; then
+                echo "" >> .gitignore
+                cat "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" >> .gitignore
+            fi
+            echo -e "${GREEN}  ✓ Engram agregado (complementa Obsidian Brain)${NC}"
+            echo -e "  ${CYAN}Ejecuta: ./scripts/install-engram.sh para instalar el binario${NC}"
+        fi
+    fi
 else
     echo -e "${GREEN}  ✓ Módulos ya configurados o no disponibles${NC}"
 fi
@@ -397,6 +450,38 @@ if [[ -n "$FRAMEWORK_DIR" && -n "$TEMPLATE_SUFFIX" ]]; then
             if [[ -f "$FRAMEWORK_DIR/.github/PULL_REQUEST_TEMPLATE.md" ]]; then
                 cp "$FRAMEWORK_DIR/.github/PULL_REQUEST_TEMPLATE.md" .github/PULL_REQUEST_TEMPLATE.md
                 echo -e "${GREEN}  ✓ PR template copiado${NC}"
+            fi
+
+            # GHAGGA AI Code Review (optional)
+            if [[ -d "$FRAMEWORK_DIR/optional/ghagga" ]]; then
+                echo -e ""
+                read -p "  ¿Agregar AI code review con GHAGGA? [y/N]: " ADD_GHAGGA
+                if [[ "$ADD_GHAGGA" == "y" || "$ADD_GHAGGA" == "Y" ]]; then
+                    cp "$FRAMEWORK_DIR/.github/workflows/reusable-ghagga-review.yml" .github/workflows/ 2>/dev/null || true
+                    bash "$FRAMEWORK_DIR/optional/ghagga/setup-ghagga.sh" --workflow 2>/dev/null || {
+                        # Fallback: copiar workflow directamente
+                        cat > .github/workflows/ghagga-review.yml << 'GHAGGA_WF'
+name: AI Code Review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main, develop]
+concurrency:
+  group: ghagga-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  review:
+    uses: JNZader/project-starter-framework/.github/workflows/reusable-ghagga-review.yml@main
+    with:
+      ghagga-url: ${{ vars.GHAGGA_URL }}
+      review-mode: simple
+    secrets:
+      ghagga-token: ${{ secrets.GHAGGA_TOKEN }}
+GHAGGA_WF
+                    }
+                    echo -e "${GREEN}  ✓ GHAGGA AI review configurado${NC}"
+                    echo -e "  ${CYAN}Configura GHAGGA_URL (variable) y GHAGGA_TOKEN (secret) en repo settings${NC}"
+                fi
             fi
             ;;
         2)

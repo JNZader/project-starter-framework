@@ -1,0 +1,140 @@
+# ===========================================
+# Reusable Workflow: GHAGGA AI Code Review
+# ===========================================
+# Triggers AI-powered code review on PRs using GHAGGA.
+#
+# Usage:
+#   jobs:
+#     review:
+#       uses: JNZader/project-starter-framework/.github/workflows/reusable-ghagga-review.yml@main
+#       with:
+#         ghagga-url: ${{ vars.GHAGGA_URL }}
+#       secrets:
+#         ghagga-token: ${{ secrets.GHAGGA_TOKEN }}
+# ===========================================
+
+name: GHAGGA Review (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      ghagga-url:
+        description: 'URL of GHAGGA instance (Supabase Edge Function)'
+        required: true
+        type: string
+      review-mode:
+        description: 'Review mode: simple, workflow, or consensus'
+        required: false
+        default: 'simple'
+        type: string
+      skip-draft:
+        description: 'Skip review on draft PRs'
+        required: false
+        default: true
+        type: boolean
+      file-patterns:
+        description: 'Glob patterns to include (comma-separated, e.g. "src/**,lib/**")'
+        required: false
+        default: '**'
+        type: string
+      exclude-patterns:
+        description: 'Glob patterns to exclude (comma-separated)'
+        required: false
+        default: '**/*.md,**/*.txt,**/package-lock.json,**/yarn.lock,**/pnpm-lock.yaml'
+        type: string
+    secrets:
+      ghagga-token:
+        description: 'Authentication token for GHAGGA API'
+        required: true
+
+jobs:
+  review:
+    name: AI Code Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # Skip draft PRs if configured
+    if: ${{ !inputs.skip-draft || !github.event.pull_request.draft }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR diff
+        id: diff
+        run: |
+          # Get changed files
+          CHANGED_FILES=$(gh pr diff ${{ github.event.pull_request.number }} --name-only)
+          echo "changed_files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$CHANGED_FILES" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+          # Get diff content
+          DIFF=$(gh pr diff ${{ github.event.pull_request.number }})
+          # Truncate if too large (max 100KB)
+          if [ ${#DIFF} -gt 102400 ]; then
+            DIFF="${DIFF:0:102400}... [truncated]"
+          fi
+          echo "diff<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$DIFF" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Trigger GHAGGA review
+        id: review
+        run: |
+          RESPONSE=$(curl -fsSL \
+            -X POST "${{ inputs.ghagga-url }}/functions/v1/review" \
+            -H "Authorization: Bearer ${{ secrets.ghagga-token }}" \
+            -H "Content-Type: application/json" \
+            -d @- << PAYLOAD
+          {
+            "repository": "${{ github.repository }}",
+            "pull_request_number": ${{ github.event.pull_request.number }},
+            "head_sha": "${{ github.event.pull_request.head.sha }}",
+            "base_branch": "${{ github.event.pull_request.base.ref }}",
+            "head_branch": "${{ github.event.pull_request.head.ref }}",
+            "title": $(echo '${{ github.event.pull_request.title }}' | jq -Rs .),
+            "review_mode": "${{ inputs.review-mode }}",
+            "file_patterns": "${{ inputs.file-patterns }}",
+            "exclude_patterns": "${{ inputs.exclude-patterns }}"
+          }
+          PAYLOAD
+          )
+
+          echo "response=$RESPONSE" >> "$GITHUB_OUTPUT"
+
+          # Check if review was successful
+          STATUS=$(echo "$RESPONSE" | jq -r '.status // "error"')
+          if [ "$STATUS" = "error" ]; then
+            echo "::warning::GHAGGA review returned an error"
+            echo "$RESPONSE" | jq -r '.message // "Unknown error"'
+          else
+            echo "Review triggered successfully"
+          fi
+
+      - name: Post review summary
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const response = '${{ steps.review.outputs.response }}';
+            let parsed;
+            try {
+              parsed = JSON.parse(response);
+            } catch {
+              console.log('Could not parse GHAGGA response');
+              return;
+            }
+
+            if (parsed.status === 'completed' && parsed.summary) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `### GHAGGA AI Review\n\n${parsed.summary}\n\n---\n*Review mode: ${parsed.review_mode || 'simple'}*`
+              });
+            }

@@ -87,14 +87,12 @@ backup_if_exists() {
 # NOTE: Does NOT set LINT_CMD/COMPILE_CMD/TEST_CMD. Those are CI-specific
 #       and should be configured by the caller (e.g., ci-local.sh).
 # =============================================================================
+# shellcheck disable=SC2034  # STACK_TYPE, BUILD_TOOL, JAVA_VERSION used by callers
 detect_stack() {
     local project_dir="${1:-.}"
 
-    # shellcheck disable=SC2034  # Used by callers after sourcing
     STACK_TYPE="unknown"
-    # shellcheck disable=SC2034
     BUILD_TOOL=""
-    # shellcheck disable=SC2034
     JAVA_VERSION="21"
 
     # Java + Gradle
@@ -170,9 +168,9 @@ detect_stack() {
 #
 # Usage: detect_framework
 # =============================================================================
+# shellcheck disable=SC2034  # FRAMEWORK_DIR, HAS_OPTIONAL used by callers
 detect_framework() {
     FRAMEWORK_DIR=""
-    # shellcheck disable=SC2034
     HAS_OPTIONAL=false
     if [[ -d "templates" && -d ".ai-config" ]]; then
         FRAMEWORK_DIR="."

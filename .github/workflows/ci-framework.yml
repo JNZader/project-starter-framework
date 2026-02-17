@@ -54,7 +54,8 @@ jobs:
             'PSAvoidUsingWriteHost',
             'PSUseApprovedVerbs',
             'PSUseShouldProcessForStateChangingFunctions',
-            'PSUseBOMForUnicodeEncodedFile'
+            'PSUseBOMForUnicodeEncodedFile',
+            'PSUseSingularNouns'
           ) }
           $results = Invoke-ScriptAnalyzer -Path scripts/*.ps1 -Recurse -Severity Warning,Error -Settings $settings
           $results += Invoke-ScriptAnalyzer -Path lib/Common.psm1 -Severity Warning,Error -Settings $settings

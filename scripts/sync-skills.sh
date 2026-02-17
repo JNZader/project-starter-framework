@@ -4,23 +4,21 @@
 
 set -e
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/common.sh"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 AI_CONFIG="$PROJECT_ROOT/.ai-config"
 SKILLS_DIR="$AI_CONFIG/skills"
 AUTO_INVOKE="$AI_CONFIG/AUTO_INVOKE.md"
 
-# Colores
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
+# BLUE is not provided by common.sh, define it locally
 BLUE='\033[0;34m'
-NC='\033[0m'
 
 echo -e "${BLUE}=== Skill Sync Tool ===${NC}"
 echo ""
 
-# Función: Listar todos los skills con metadata
+# Funcion: Listar todos los skills con metadata
 list_skills() {
     echo -e "${GREEN}Skills disponibles:${NC}"
     echo ""
@@ -33,7 +31,7 @@ list_skills() {
         skill_rel="${skill_file#$SKILLS_DIR/}"
         skill_name="${skill_rel%.md}"
 
-        # Extraer descripción del frontmatter
+        # Extraer descripcion del frontmatter
         description=$(sed -n '/^description:/,/^[a-z]/p' "$skill_file" | head -5 | grep -v "^description:" | grep -v "^[a-z]" | tr '\n' ' ' | cut -c1-50)
 
         # Extraer scope si existe
@@ -43,7 +41,7 @@ list_skills() {
     done < <(find "$SKILLS_DIR" -type f -name "*.md" -print0)
 }
 
-# Función: Agregar scope a un skill
+# Funcion: Agregar scope a un skill
 add_scope() {
     local skill_name="$1"
     local scope="$2"
@@ -68,17 +66,12 @@ add_scope() {
         return 0
     fi
 
-    # Agregar scope después de metadata
-    if sed --version 2>/dev/null | grep -q GNU; then
-        sed -i "/^metadata:/a\\  scope: [$scope]" "$skill_file"
-    else
-        sed -i '' "/^metadata:/a\\
-  scope: [$scope]" "$skill_file"
-    fi
+    # Agregar scope despues de metadata
+    sed_inplace "/^metadata:/a\\  scope: [$scope]" "$skill_file"
     echo -e "${GREEN}Scope agregado a '$skill_name': $scope${NC}"
 }
 
-# Función: Generar symlinks para múltiples IDEs
+# Funcion: Generar symlinks para multiples IDEs
 setup_symlinks() {
     echo -e "${BLUE}Generando symlinks multi-IDE...${NC}"
 
@@ -157,7 +150,7 @@ EOF
     echo -e "${GREEN}Symlinks creados exitosamente${NC}"
 }
 
-# Función: Validar skills (formato correcto)
+# Funcion: Validar skills (formato correcto)
 validate_skills() {
     echo -e "${BLUE}Validando skills...${NC}"
     local errors=0
@@ -188,18 +181,18 @@ validate_skills() {
 
         # Verificar Related Skills
         if ! grep -q "^## Related Skills" "$skill_file"; then
-            echo -e "${YELLOW}  [$skill_name] Falta sección 'Related Skills'${NC}"
+            echo -e "${YELLOW}  [$skill_name] Falta seccion 'Related Skills'${NC}"
         fi
     done < <(find "$SKILLS_DIR" -type f -name "*.md" -print0)
 
     if [ $errors -eq 0 ]; then
-        echo -e "${GREEN}Todos los skills son válidos${NC}"
+        echo -e "${GREEN}Todos los skills son validos${NC}"
     else
         echo -e "${RED}Se encontraron $errors errores${NC}"
     fi
 }
 
-# Función: Generar resumen de skills para AGENTS.md
+# Funcion: Generar resumen de skills para AGENTS.md
 generate_summary() {
     echo -e "${BLUE}Generando resumen de skills...${NC}"
 

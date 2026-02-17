@@ -11,17 +11,13 @@
 
 set -e
 
+source "$(cd "$(dirname "$0")" && pwd)/../lib/common.sh"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 SKILLS_DIR="$PROJECT_DIR/.ai-config/skills"
 GENTLEMAN_REPO="https://github.com/Gentleman-Programming/Gentleman-Skills.git"
 TEMP_DIR="${TMPDIR:-/tmp}/gentleman-skills-$(id -u)"
-
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
 
 show_help() {
     echo -e "${CYAN}ADD-SKILL: Agrega skills al proyecto${NC}"
@@ -117,7 +113,7 @@ add_gentleman_skill() {
     echo -e "${YELLOW}Installing skill: $skill_name${NC}"
     cp -r "$source_path" "$SKILLS_DIR/"
 
-    echo -e "${GREEN}✓ Skill '$skill_name' installed${NC}"
+    echo -e "${GREEN}Skill '$skill_name' installed${NC}"
     echo ""
     echo "Next steps:"
     echo "  1. Review: $SKILLS_DIR/$skill_name/"
@@ -137,11 +133,11 @@ remove_skill() {
 
     if [[ -d "$skill_path" ]]; then
         rm -rf "$skill_path"
-        echo -e "${GREEN}✓ Removed skill: $skill_name${NC}"
+        echo -e "${GREEN}Removed skill: $skill_name${NC}"
         return 0
     elif [[ -f "$skill_path.md" ]]; then
         rm -f "$skill_path.md"
-        echo -e "${GREEN}✓ Removed skill: $skill_name${NC}"
+        echo -e "${GREEN}Removed skill: $skill_name${NC}"
         return 0
     else
         # Buscar por nombre en subcarpetas
@@ -153,7 +149,7 @@ remove_skill() {
             else
                 rm -f "$file_match"
             fi
-            echo -e "${GREEN}✓ Removed skill: $skill_name${NC}"
+            echo -e "${GREEN}Removed skill: $skill_name${NC}"
             return 0
         fi
     fi

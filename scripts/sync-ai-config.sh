@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# SYNC-AI-CONFIG: Genera configuración para diferentes AI CLIs
+# SYNC-AI-CONFIG: Genera configuracion para diferentes AI CLIs
 # =============================================================================
 # Uso:
 #   ./scripts/sync-ai-config.sh claude    # Solo Claude Code
@@ -11,20 +11,16 @@
 
 set -e
 
+source "$(cd "$(dirname "$0")" && pwd)/../lib/common.sh"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 AI_CONFIG_DIR="$PROJECT_DIR/.ai-config"
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
-
 echo -e "${CYAN}=== Sync AI Config ===${NC}"
 
 # =============================================================================
-# Funciones de generación
+# Funciones de generacion
 # =============================================================================
 
 generate_claude() {
@@ -76,7 +72,7 @@ HEADER
         echo "- $name" >> "$PROJECT_DIR/CLAUDE.md"
     done < <(find "$AI_CONFIG_DIR/skills" -type f -name "*.md" -print0)
 
-    echo -e "${GREEN}✓ Generated CLAUDE.md${NC}"
+    echo -e "${GREEN}Generated CLAUDE.md${NC}"
 }
 
 generate_opencode() {
@@ -104,7 +100,7 @@ HEADER
         fi
     done < <(find "$AI_CONFIG_DIR/agents" -type f -name "*.md" -print0)
 
-    echo -e "${GREEN}✓ Generated AGENTS.md${NC}"
+    echo -e "${GREEN}Generated AGENTS.md${NC}"
 }
 
 generate_cursor() {
@@ -123,7 +119,7 @@ HEADER
         awk '/^## Reglas Cr.ticas/,/^## [^R]/' "$AI_CONFIG_DIR/prompts/base.md" | head -n -1 >> "$PROJECT_DIR/.cursorrules"
     fi
 
-    echo -e "${GREEN}✓ Generated .cursorrules${NC}"
+    echo -e "${GREEN}Generated .cursorrules${NC}"
 }
 
 generate_aider() {
@@ -150,7 +146,7 @@ EOF
     echo "  - Conventional commits format" >> "$PROJECT_DIR/.aider.conf.yml"
     echo "  - Run CI-Local before push" >> "$PROJECT_DIR/.aider.conf.yml"
 
-    echo -e "${GREEN}✓ Generated .aider.conf.yml${NC}"
+    echo -e "${GREEN}Generated .aider.conf.yml${NC}"
 }
 
 generate_continue() {
@@ -183,7 +179,7 @@ generate_continue() {
   ]
 }
 EOF
-    echo -e "${GREEN}✓ Generated ~/.continue/config.json${NC}"
+    echo -e "${GREEN}Generated ~/.continue/config.json${NC}"
 }
 
 # =============================================================================
@@ -219,7 +215,7 @@ case "${1:-all}" in
 esac
 
 echo -e ""
-echo -e "${GREEN}✓ AI config sync complete!${NC}"
+echo -e "${GREEN}AI config sync complete!${NC}"
 echo -e ""
 echo -e "Generated files:"
 [[ -f "$PROJECT_DIR/CLAUDE.md" ]] && echo "  - CLAUDE.md (Claude Code)"

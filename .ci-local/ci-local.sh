@@ -16,111 +16,62 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-# Colores
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+# Source shared library for colors and detect_stack
+source "$SCRIPT_DIR/../lib/common.sh"
 
 # =============================================================================
-# DETECCIÓN DE STACK
+# CI COMMAND SETUP (extends shared detect_stack with CI-specific commands)
 # =============================================================================
-detect_stack() {
-    STACK_TYPE="unknown"
-    BUILD_TOOL=""
+setup_ci_commands() {
+    # detect_stack is from lib/common.sh - sets STACK_TYPE, BUILD_TOOL, JAVA_VERSION
+    detect_stack
+
     DOCKERFILE=""
     LINT_CMD=""
     COMPILE_CMD=""
     TEST_CMD=""
-    JAVA_VERSION="21"
 
-    # Java + Gradle
-    if [[ -f "$PROJECT_DIR/build.gradle" || -f "$PROJECT_DIR/build.gradle.kts" ]]; then
-        STACK_TYPE="java-gradle"
-        BUILD_TOOL="gradle"
-        DOCKERFILE="java.Dockerfile"
-        LINT_CMD="./gradlew spotlessCheck --no-daemon"
-        COMPILE_CMD="./gradlew classes testClasses --no-daemon"
-        TEST_CMD="./gradlew test --no-daemon"
-
-        # Detectar versión Java (compatible con macOS y Linux)
-        if [[ -f "$PROJECT_DIR/build.gradle.kts" ]]; then
-            JAVA_VERSION=$(grep -E 'languageVersion\s*=\s*JavaLanguageVersion\.of\(' "$PROJECT_DIR/build.gradle.kts" 2>/dev/null | grep -o '[0-9]\+' | head -1 || echo "21")
-        elif [[ -f "$PROJECT_DIR/build.gradle" ]]; then
-            JAVA_VERSION=$(grep -E 'sourceCompatibility\s*=' "$PROJECT_DIR/build.gradle" 2>/dev/null | grep -o '[0-9]\+' | head -1 || echo "21")
-        fi
-        [[ -z "$JAVA_VERSION" ]] && JAVA_VERSION="21"
-        return
-    fi
-
-    # Java + Maven
-    if [[ -f "$PROJECT_DIR/pom.xml" ]]; then
-        STACK_TYPE="java-maven"
-        BUILD_TOOL="maven"
-        DOCKERFILE="java.Dockerfile"
-        LINT_CMD="./mvnw spotless:check"
-        COMPILE_CMD="./mvnw compile test-compile"
-        TEST_CMD="./mvnw test"
-        return
-    fi
-
-    # Node.js
-    if [[ -f "$PROJECT_DIR/package.json" ]]; then
-        STACK_TYPE="node"
-        if [[ -f "$PROJECT_DIR/pnpm-lock.yaml" ]]; then
-            BUILD_TOOL="pnpm"
-        elif [[ -f "$PROJECT_DIR/yarn.lock" ]]; then
-            BUILD_TOOL="yarn"
-        else
-            BUILD_TOOL="npm"
-        fi
-        DOCKERFILE="node.Dockerfile"
-        LINT_CMD="$BUILD_TOOL run lint"
-        COMPILE_CMD="$BUILD_TOOL run build"
-        TEST_CMD="$BUILD_TOOL test"
-        return
-    fi
-
-    # Python
-    if [[ -f "$PROJECT_DIR/pyproject.toml" || -f "$PROJECT_DIR/setup.py" || -f "$PROJECT_DIR/requirements.txt" ]]; then
-        STACK_TYPE="python"
-        if [[ -f "$PROJECT_DIR/poetry.lock" ]]; then
-            BUILD_TOOL="poetry"
-        elif [[ -f "$PROJECT_DIR/Pipfile" ]]; then
-            BUILD_TOOL="pipenv"
-        elif [[ -f "$PROJECT_DIR/uv.lock" ]]; then
-            BUILD_TOOL="uv"
-        else
-            BUILD_TOOL="pip"
-        fi
-        DOCKERFILE="python.Dockerfile"
-        LINT_CMD="ruff check . && { pylint **/*.py 2>/dev/null || true; }"
-        TEST_CMD="pytest"
-        return
-    fi
-
-    # Go
-    if [[ -f "$PROJECT_DIR/go.mod" ]]; then
-        STACK_TYPE="go"
-        BUILD_TOOL="go"
-        DOCKERFILE="go.Dockerfile"
-        LINT_CMD="golangci-lint run"
-        COMPILE_CMD="go build ./..."
-        TEST_CMD="go test ./..."
-        return
-    fi
-
-    # Rust
-    if [[ -f "$PROJECT_DIR/Cargo.toml" ]]; then
-        STACK_TYPE="rust"
-        BUILD_TOOL="cargo"
-        DOCKERFILE="rust.Dockerfile"
-        LINT_CMD="cargo clippy -- -D warnings"
-        COMPILE_CMD="cargo build"
-        TEST_CMD="cargo test"
-        return
-    fi
+    case "$STACK_TYPE" in
+        java-gradle)
+            DOCKERFILE="java.Dockerfile"
+            LINT_CMD="./gradlew spotlessCheck --no-daemon"
+            COMPILE_CMD="./gradlew classes testClasses --no-daemon"
+            TEST_CMD="./gradlew test --no-daemon"
+            ;;
+        java-maven)
+            DOCKERFILE="java.Dockerfile"
+            LINT_CMD="./mvnw spotless:check"
+            COMPILE_CMD="./mvnw compile test-compile"
+            TEST_CMD="./mvnw test"
+            ;;
+        node)
+            DOCKERFILE="node.Dockerfile"
+            LINT_CMD="$BUILD_TOOL run lint"
+            COMPILE_CMD="$BUILD_TOOL run build"
+            TEST_CMD="$BUILD_TOOL test"
+            ;;
+        python)
+            DOCKERFILE="python.Dockerfile"
+            LINT_CMD="ruff check . && { pylint **/*.py 2>/dev/null || true; }"
+            COMPILE_CMD=""
+            TEST_CMD="pytest"
+            ;;
+        go)
+            DOCKERFILE="go.Dockerfile"
+            LINT_CMD="golangci-lint run"
+            COMPILE_CMD="go build ./..."
+            TEST_CMD="go test ./..."
+            ;;
+        rust)
+            DOCKERFILE="rust.Dockerfile"
+            LINT_CMD="cargo clippy -- -D warnings"
+            COMPILE_CMD="cargo build"
+            TEST_CMD="cargo test"
+            ;;
+        *)
+            DOCKERFILE=""
+            ;;
+    esac
 }
 
 # =============================================================================
@@ -250,7 +201,7 @@ run_in_ci() {
 # =============================================================================
 echo -e "\n${YELLOW}=== CI-LOCAL ===${NC}"
 
-detect_stack
+setup_ci_commands
 
 if [[ "$STACK_TYPE" == "unknown" ]]; then
     echo -e "${RED}Could not detect project type!${NC}"

@@ -10,30 +10,8 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-# Colores
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
-
-# Portable sed -i (works on both GNU and BSD/macOS sed)
-sed_inplace() {
-    if sed --version 2>/dev/null | grep -q GNU; then
-        sed -i "$@"
-    else
-        sed -i '' "$@"
-    fi
-}
-
-# Backup a file before overwriting it
-backup_if_exists() {
-    local file="$1"
-    if [[ -f "$file" ]]; then
-        cp "$file" "${file}.bak"
-        echo -e "${YELLOW}  Backed up existing ${file}${NC}"
-    fi
-}
+# Source shared library
+source "$SCRIPT_DIR/../lib/common.sh"
 
 echo -e "${CYAN}"
 echo "╔════════════════════════════════════════════════════════════╗"
@@ -75,20 +53,8 @@ fi
 # =============================================================================
 echo -e "${YELLOW}[3/8] Detectando stack tecnológico...${NC}"
 
-STACK="unknown"
-if [[ -f "build.gradle" || -f "build.gradle.kts" ]]; then
-    STACK="java-gradle"
-elif [[ -f "pom.xml" ]]; then
-    STACK="java-maven"
-elif [[ -f "go.mod" ]]; then
-    STACK="go"
-elif [[ -f "Cargo.toml" ]]; then
-    STACK="rust"
-elif [[ -f "package.json" ]]; then
-    STACK="node"
-elif [[ -f "pyproject.toml" || -f "requirements.txt" ]]; then
-    STACK="python"
-fi
+detect_stack "."
+STACK="$STACK_TYPE"
 
 if [[ "$STACK" != "unknown" ]]; then
     echo -e "${GREEN}  ✓ Detectado: $STACK${NC}"
@@ -184,20 +150,14 @@ fi
 # =============================================================================
 echo -e "${YELLOW}[6/8] Módulos opcionales...${NC}"
 
-FRAMEWORK_DIR=""
-# Detect if we're running from the framework repo (has templates/ and .ai-config/)
-if [[ -d "templates" && -d ".ai-config" ]]; then
-    FRAMEWORK_DIR="."
-elif [[ -d "../templates" && -d "../.ai-config" ]]; then
-    FRAMEWORK_DIR=".."
-fi
-
-HAS_OPTIONAL=false
-if [[ -n "$FRAMEWORK_DIR" && -d "$FRAMEWORK_DIR/optional" ]]; then
-    HAS_OPTIONAL=true
-fi
+detect_framework
 
 if [[ -n "$FRAMEWORK_DIR" ]]; then
+    # Copy shared library to target project
+    mkdir -p lib
+    cp "$FRAMEWORK_DIR/lib/common.sh" lib/common.sh
+    echo -e "${GREEN}  lib/common.sh copied${NC}"
+
     if [[ "$HAS_OPTIONAL" == true ]]; then
         echo -e "  ${CYAN}¿Instalar módulo de memoria del proyecto?${NC}"
         echo -e "    1) obsidian-brain  - Vault Obsidian + Kanban + memoria estructurada (RECOMENDADO)"
@@ -250,7 +210,7 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
                 if [[ -d "$FRAMEWORK_DIR/optional/engram" ]]; then
                     # Copiar config MCP
                     project_name=$(basename "$(pwd)")
-                    escaped_name=$(printf '%s\n' "$project_name" | sed 's/[&/\]/\\&/g')
+                    escaped_name=$(escape_sed "$project_name")
                     if [[ -f "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" ]]; then
                         if [[ ! -f ".mcp.json" ]]; then
                             sed "s/__PROJECT_NAME__/$escaped_name/g" \
@@ -286,7 +246,7 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
             read -p "  ¿Agregar también Engram para memoria de agentes AI? [y/N]: " ADD_ENGRAM
             if [[ "$ADD_ENGRAM" == "y" || "$ADD_ENGRAM" == "Y" ]]; then
                 project_name=$(basename "$(pwd)")
-                escaped_name=$(printf '%s\n' "$project_name" | sed 's/[&/\]/\\&/g')
+                escaped_name=$(escape_sed "$project_name")
                 if [[ ! -f ".mcp.json" ]]; then
                     sed "s/__PROJECT_NAME__/$escaped_name/g" \
                         "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" > .mcp.json
@@ -587,7 +547,7 @@ fi
 echo -e "${YELLOW}[8/8] Configurando CLAUDE.md...${NC}"
 
 PROJECT_NAME=$(basename "$PROJECT_DIR")
-escaped_name=$(printf '%s\n' "$PROJECT_NAME" | sed 's/[&/\]/\\&/g')
+escaped_name=$(escape_sed "$PROJECT_NAME")
 
 if [[ -f "CLAUDE.md" ]]; then
     sed_inplace "s/\[NOMBRE_PROYECTO\]/$escaped_name/g" CLAUDE.md 2>/dev/null || true

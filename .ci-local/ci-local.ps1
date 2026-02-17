@@ -1,7 +1,7 @@
 # =============================================================================
 # CI-LOCAL: Universal CI Simulation for Any Project
 # =============================================================================
-# Detecta automáticamente: Java/Gradle, Java/Maven, Node, Python, Go, Rust
+# Detecta automaticamente: Java/Gradle, Java/Maven, Node, Python, Go, Rust
 #
 # Uso:
 #   .\ci-local.ps1              # CI completo
@@ -19,106 +19,65 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectDir = Split-Path -Parent $ScriptDir
 
+Import-Module "$ScriptDir/../lib/Common.psm1" -Force
+
 # Colores
 function Write-Color($Text, $Color) {
     Write-Host $Text -ForegroundColor $Color
 }
 
 # =============================================================================
-# DETECCIÓN DE STACK
+# CI STACK DETECTION (extends shared Detect-Stack with CI-specific commands)
 # =============================================================================
-function Detect-Stack {
+function Detect-CIStack {
+    $baseStack = Detect-Stack -ProjectPath $ProjectDir
+
     $stack = @{
-        Type = "unknown"
-        BuildTool = ""
+        Type       = $baseStack.StackType
+        BuildTool  = $baseStack.BuildTool
+        JavaVersion = $baseStack.JavaVersion
         Dockerfile = ""
-        LintCmd = ""
-        TestCmd = ""
+        LintCmd    = ""
+        TestCmd    = ""
         CompileCmd = ""
     }
 
-    # Java + Gradle
-    if ((Test-Path "$ProjectDir/build.gradle") -or (Test-Path "$ProjectDir/build.gradle.kts")) {
-        $stack.Type = "java-gradle"
-        $stack.BuildTool = "gradle"
-        $stack.Dockerfile = "java.Dockerfile"
-        $stack.LintCmd = "./gradlew spotlessCheck --no-daemon"
-        $stack.CompileCmd = "./gradlew classes testClasses --no-daemon"
-        $stack.TestCmd = "./gradlew test --no-daemon"
-
-        # Detectar versión de Java del toolchain
-        $buildFile = if (Test-Path "$ProjectDir/build.gradle.kts") {
-            Get-Content "$ProjectDir/build.gradle.kts" -Raw
-        } else {
-            Get-Content "$ProjectDir/build.gradle" -Raw
+    switch ($stack.Type) {
+        "java-gradle" {
+            $stack.Dockerfile = "java.Dockerfile"
+            $stack.LintCmd = "./gradlew spotlessCheck --no-daemon"
+            $stack.CompileCmd = "./gradlew classes testClasses --no-daemon"
+            $stack.TestCmd = "./gradlew test --no-daemon"
         }
-        if ($buildFile -match "languageVersion\s*[=.]\s*JavaLanguageVersion\.of\((\d+)\)") {
-            $stack.JavaVersion = $matches[1]
-        } elseif ($buildFile -match "sourceCompatibility\s*=\s*['""]?(\d+)") {
-            $stack.JavaVersion = $matches[1]
-        } else {
-            $stack.JavaVersion = "21"  # Default
+        "java-maven" {
+            $stack.Dockerfile = "java.Dockerfile"
+            $stack.LintCmd = "./mvnw spotless:check"
+            $stack.CompileCmd = "./mvnw compile test-compile"
+            $stack.TestCmd = "./mvnw test"
         }
-        return $stack
-    }
-
-    # Java + Maven
-    if (Test-Path "$ProjectDir/pom.xml") {
-        $stack.Type = "java-maven"
-        $stack.BuildTool = "maven"
-        $stack.Dockerfile = "java.Dockerfile"
-        $stack.LintCmd = "./mvnw spotless:check"
-        $stack.CompileCmd = "./mvnw compile test-compile"
-        $stack.TestCmd = "./mvnw test"
-        $stack.JavaVersion = "21"
-        return $stack
-    }
-
-    # Node.js
-    if (Test-Path "$ProjectDir/package.json") {
-        $stack.Type = "node"
-        $stack.BuildTool = if (Test-Path "$ProjectDir/pnpm-lock.yaml") { "pnpm" } `
-                          elseif (Test-Path "$ProjectDir/yarn.lock") { "yarn" } `
-                          else { "npm" }
-        $stack.Dockerfile = "node.Dockerfile"
-        $stack.LintCmd = "$($stack.BuildTool) run lint"
-        $stack.CompileCmd = "$($stack.BuildTool) run build"
-        $stack.TestCmd = "$($stack.BuildTool) test"
-        return $stack
-    }
-
-    # Python
-    if ((Test-Path "$ProjectDir/pyproject.toml") -or (Test-Path "$ProjectDir/setup.py") -or (Test-Path "$ProjectDir/requirements.txt")) {
-        $stack.Type = "python"
-        $stack.BuildTool = if (Test-Path "$ProjectDir/poetry.lock") { "poetry" } `
-                          elseif (Test-Path "$ProjectDir/Pipfile") { "pipenv" } `
-                          else { "pip" }
-        $stack.Dockerfile = "python.Dockerfile"
-        $stack.LintCmd = "ruff check . || pylint **/*.py"
-        $stack.TestCmd = "pytest"
-        return $stack
-    }
-
-    # Go
-    if (Test-Path "$ProjectDir/go.mod") {
-        $stack.Type = "go"
-        $stack.BuildTool = "go"
-        $stack.Dockerfile = "go.Dockerfile"
-        $stack.LintCmd = "golangci-lint run"
-        $stack.CompileCmd = "go build ./..."
-        $stack.TestCmd = "go test ./..."
-        return $stack
-    }
-
-    # Rust
-    if (Test-Path "$ProjectDir/Cargo.toml") {
-        $stack.Type = "rust"
-        $stack.BuildTool = "cargo"
-        $stack.Dockerfile = "rust.Dockerfile"
-        $stack.LintCmd = "cargo clippy -- -D warnings"
-        $stack.CompileCmd = "cargo build"
-        $stack.TestCmd = "cargo test"
-        return $stack
+        "node" {
+            $stack.Dockerfile = "node.Dockerfile"
+            $stack.LintCmd = "$($stack.BuildTool) run lint"
+            $stack.CompileCmd = "$($stack.BuildTool) run build"
+            $stack.TestCmd = "$($stack.BuildTool) test"
+        }
+        "python" {
+            $stack.Dockerfile = "python.Dockerfile"
+            $stack.LintCmd = "ruff check . || pylint **/*.py"
+            $stack.TestCmd = "pytest"
+        }
+        "go" {
+            $stack.Dockerfile = "go.Dockerfile"
+            $stack.LintCmd = "golangci-lint run"
+            $stack.CompileCmd = "go build ./..."
+            $stack.TestCmd = "go test ./..."
+        }
+        "rust" {
+            $stack.Dockerfile = "rust.Dockerfile"
+            $stack.LintCmd = "cargo clippy -- -D warnings"
+            $stack.CompileCmd = "cargo build"
+            $stack.TestCmd = "cargo test"
+        }
     }
 
     return $stack
@@ -267,7 +226,7 @@ function Run-InCI($stack, $command) {
 # =============================================================================
 Write-Color "`n=== CI-LOCAL ===" Yellow
 
-$stack = Detect-Stack
+$stack = Detect-CIStack
 
 if ($stack.Type -eq "unknown") {
     Write-Color "Could not detect project type!" Red

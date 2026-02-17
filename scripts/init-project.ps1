@@ -6,14 +6,7 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectDir = Split-Path -Parent $ScriptDir
 
-# Helper: Backup a file before overwriting it
-function Backup-IfExists {
-    param([string]$FilePath)
-    if (Test-Path $FilePath) {
-        Copy-Item $FilePath "${FilePath}.bak" -Force
-        Write-Host "  Backed up existing ${FilePath}" -ForegroundColor Yellow
-    }
-}
+Import-Module "$ScriptDir/../lib/Common.psm1" -Force
 
 Write-Host "`n" -NoNewline
 Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
@@ -53,20 +46,8 @@ if (Test-Path ".ci-local/hooks") {
 # =============================================================================
 Write-Host "[3/8] Detectando stack tecnológico..." -ForegroundColor Yellow
 
-$Stack = "unknown"
-if ((Test-Path "build.gradle") -or (Test-Path "build.gradle.kts")) {
-    $Stack = "java-gradle"
-} elseif (Test-Path "pom.xml") {
-    $Stack = "java-maven"
-} elseif (Test-Path "go.mod") {
-    $Stack = "go"
-} elseif (Test-Path "Cargo.toml") {
-    $Stack = "rust"
-} elseif (Test-Path "package.json") {
-    $Stack = "node"
-} elseif ((Test-Path "pyproject.toml") -or (Test-Path "requirements.txt")) {
-    $Stack = "python"
-}
+$StackInfo = Detect-Stack -ProjectPath "."
+$Stack = $StackInfo.StackType
 
 if ($Stack -ne "unknown") {
     Write-Host "  Done: Detectado $Stack" -ForegroundColor Green
@@ -161,18 +142,9 @@ GEMINI.md
 # =============================================================================
 Write-Host "[6/8] Módulos opcionales..." -ForegroundColor Yellow
 
-$FrameworkDir = ""
-# Detect if we're running from the framework repo (has templates/ and .ai-config/)
-if ((Test-Path "templates") -and (Test-Path ".ai-config")) {
-    $FrameworkDir = "."
-} elseif ((Test-Path "../templates") -and (Test-Path "../.ai-config")) {
-    $FrameworkDir = ".."
-}
-
-$HasOptional = $false
-if ($FrameworkDir -ne "" -and (Test-Path "$FrameworkDir/optional")) {
-    $HasOptional = $true
-}
+$Framework = Detect-Framework
+$FrameworkDir = $Framework.FrameworkDir
+$HasOptional = $Framework.HasOptional
 
 if ($FrameworkDir -ne "") {
     if ($HasOptional) {

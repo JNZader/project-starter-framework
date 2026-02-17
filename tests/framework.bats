@@ -126,7 +126,7 @@ setup() {
 @test "escape_sed escapes special characters" {
     local result
     result=$(escape_sed "foo/bar&baz")
-    echo "$result" | grep -q 'foo\/bar\&baz'
+    echo "$result" | grep -qF 'foo\/bar\&baz'
 }
 
 @test "backup_if_exists creates .bak file" {
@@ -424,6 +424,7 @@ EOF
     git -C "$tmpdir" add bad-file.txt
 
     # Run pre-commit hook — should exit non-zero
+    cd "$tmpdir"
     run bash "$tmpdir/.ci-local/hooks/pre-commit"
     [ "$status" -ne 0 ]
 

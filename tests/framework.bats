@@ -284,10 +284,9 @@ name: Bad_Name
 description: Example
 ---
 EOF
-    python3 scripts/validate-frontmatter.py "$tmpfile" >/dev/null 2>&1 || true
-    [ $? -ne 0 ]
+    run python3 scripts/validate-frontmatter.py "$tmpfile"
+    [ "$status" -ne 0 ]
     rm -f "$tmpfile"
-}
 }
 
 @test "reusable workflows have workflow_call trigger" {
@@ -338,6 +337,7 @@ EOF
     tmpdir=$(mktemp -d)
     mkdir -p "$tmpdir/.ai-config/agents"
     mkdir -p "$tmpdir/scripts"
+    mkdir -p "$tmpdir/lib"
 
     # create a minimal agent
     cat > "$tmpdir/.ai-config/agents/test-agent.md" <<'EOF'
@@ -354,8 +354,9 @@ EOF
 Do not overwrite this section.
 EOF
 
-    # copy the sync script and run merge
+    # copy the sync script AND shared library
     cp "$FRAMEWORK_DIR/scripts/sync-ai-config.sh" "$tmpdir/scripts/sync-ai-config.sh"
+    cp "$FRAMEWORK_DIR/lib/common.sh" "$tmpdir/lib/common.sh"
     chmod +x "$tmpdir/scripts/sync-ai-config.sh"
     (cd "$tmpdir" && ./scripts/sync-ai-config.sh claude merge)
 

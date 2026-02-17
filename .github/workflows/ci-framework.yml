@@ -37,8 +37,7 @@ jobs:
         shell: pwsh
         run: |
           Install-Module Pester -Force -Scope CurrentUser -SkipPublisherCheck
-          # run validate and Pester tests
-          .\scripts\validate-framework.ps1 -SkipInstallCheck -Force -ErrorAction Stop
+          # run Pester tests (validate-framework is bash-only, covered by Linux job)
           Invoke-Pester -Script tests/pester -Output Detailed
 
       - name: Upload test-artifacts

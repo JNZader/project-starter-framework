@@ -27,8 +27,8 @@ echo -e "${CYAN}=== Sync AI Config ===${NC}"
 generate_claude() {
     echo -e "${YELLOW}Generating Claude Code config...${NC}"
 
-    # MODE: overwrite (default) or merge/append when caller passes second arg 'merge' or '--merge'
-    if [[ "$2" == "merge" || "$2" == "--merge" ]]; then
+    # MODE: overwrite (default) or merge/append when caller passes 'merge' or '--merge'
+    if [[ "$1" == "merge" || "$1" == "--merge" ]]; then
         MERGE_MODE=1
     else
         MERGE_MODE=0
@@ -259,7 +259,7 @@ EOF
 
 case "${1:-all}" in
     claude)
-        generate_claude
+        generate_claude "$2"
         ;;
     opencode)
         generate_opencode

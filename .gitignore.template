@@ -49,6 +49,13 @@ GEMINI.md
 .cursorrules
 .aider.conf.yml
 
+# Claude Code local settings
+.claude/settings.local.json
+.ai-config/.claude/
+
+# Backups
+*.bak
+
 # Logs
 *.log
 logs/

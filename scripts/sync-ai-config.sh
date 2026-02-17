@@ -8,6 +8,7 @@
 #   ./scripts/sync-ai-config.sh opencode          # Solo OpenCode
 #   ./scripts/sync-ai-config.sh cursor            # Solo Cursor
 #   ./scripts/sync-ai-config.sh all               # Todos
+#   ./scripts/sync-ai-config.sh all merge         # Todos (Claude in merge mode)
 # =============================================================================
 
 set -e
@@ -274,7 +275,7 @@ case "${1:-all}" in
         generate_continue
         ;;
     all)
-        generate_claude
+        generate_claude "$2"
         generate_opencode
         generate_cursor
         generate_aider

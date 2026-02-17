@@ -23,21 +23,46 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run Linux tests (Bats) on Ubuntu
+      - name: Lint shell scripts (ShellCheck)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y bats shellcheck jq
+          sudo apt-get install -y shellcheck
+          shellcheck -x --exclude=SC1091 --severity=warning \
+            scripts/*.sh \
+            lib/common.sh \
+            .ci-local/*.sh \
+            .ci-local/hooks/pre-commit \
+            .ci-local/hooks/commit-msg \
+            .ci-local/hooks/pre-push
+
+      - name: Run Linux tests (Bats) on Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get install -y bats jq
           # run repository validation + bats tests
           ./scripts/validate-framework.sh
           bats tests/framework.bats
+
+      - name: Lint PowerShell scripts (PSScriptAnalyzer)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
+          $results = Invoke-ScriptAnalyzer -Path scripts/*.ps1 -Recurse -Severity Warning,Error
+          $results += Invoke-ScriptAnalyzer -Path lib/Common.psm1 -Severity Warning,Error
+          if ($results) {
+              $results | Format-Table -AutoSize
+              throw "PSScriptAnalyzer found $($results.Count) issue(s)"
+          }
 
       - name: Run Windows tests (Pester)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
           Install-Module Pester -Force -Scope CurrentUser -SkipPublisherCheck
-          # run Pester tests (validate-framework is bash-only, covered by Linux job)
+          # run framework validation + Pester tests
+          .\scripts\validate-framework.ps1
           Invoke-Pester -Script tests/pester -Output Detailed
 
       - name: Upload test-artifacts
@@ -48,5 +73,5 @@ jobs:
           path: |
             test-results/*
             junit.xml
-            
+
     # small matrix parallelization complete

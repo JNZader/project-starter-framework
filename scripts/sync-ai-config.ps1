@@ -5,7 +5,10 @@
 param(
     [Parameter(Position=0)]
     [ValidateSet("claude", "opencode", "cursor", "aider", "continue", "all")]
-    [string]$Target = "all"
+    [string]$Target = "all",
+
+    [Parameter(Position=1)]
+    [string]$Mode = ""
 )
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -17,11 +20,14 @@ Import-Module "$ScriptDir\..\lib\Common.psm1" -Force
 Write-Host "=== Sync AI Config ===" -ForegroundColor Cyan
 
 function Generate-Claude {
+    param(
+        [string]$MergeArg = ""
+    )
     Write-Host "Generating Claude Code config..." -ForegroundColor Yellow
 
     # Support optional 'merge' mode when caller provides extra arg or env var
     $mergeMode = $false
-    if ($args -contains 'merge' -or $env:SYNC_AI_CONFIG_MODE -eq 'merge') { $mergeMode = $true }
+    if ($MergeArg -eq 'merge' -or $MergeArg -eq '--merge' -or $env:SYNC_AI_CONFIG_MODE -eq 'merge') { $mergeMode = $true }
 
     # Crear directorio .claude
     New-Item -ItemType Directory -Path "$ProjectDir\.claude" -Force | Out-Null
@@ -233,13 +239,13 @@ function Generate-Continue {
 
 # Main
 switch ($Target) {
-    "claude" { Generate-Claude }
+    "claude" { Generate-Claude -MergeArg $Mode }
     "opencode" { Generate-OpenCode }
     "cursor" { Generate-Cursor }
     "aider" { Generate-Aider }
     "continue" { Generate-Continue }
     "all" {
-        Generate-Claude
+        Generate-Claude -MergeArg $Mode
         Generate-OpenCode
         Generate-Cursor
         Generate-Aider

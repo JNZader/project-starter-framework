@@ -49,8 +49,10 @@ jobs:
         shell: pwsh
         run: |
           Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
-          $results = Invoke-ScriptAnalyzer -Path scripts/*.ps1 -Recurse -Severity Warning,Error
-          $results += Invoke-ScriptAnalyzer -Path lib/Common.psm1 -Severity Warning,Error
+          # Exclude PSAvoidUsingWriteHost — all scripts are interactive CLI tools
+          $settings = @{ ExcludeRules = @('PSAvoidUsingWriteHost') }
+          $results = Invoke-ScriptAnalyzer -Path scripts/*.ps1 -Recurse -Severity Warning,Error -Settings $settings
+          $results += Invoke-ScriptAnalyzer -Path lib/Common.psm1 -Severity Warning,Error -Settings $settings
           if ($results) {
               $results | Format-Table -AutoSize
               throw "PSScriptAnalyzer found $($results.Count) issue(s)"

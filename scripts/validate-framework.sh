@@ -75,7 +75,7 @@ while IFS= read -r -d '' agent; do
     if [[ -z "$name_line" ]]; then
         check_fail "Missing 'name:' in $agent"
     else
-        name_value=$(echo "$name_line" | sed 's/^name:[[:space:]]*//; s/["'"'\'\"]//g' | tr -d '[:space:]')
+        name_value=$(echo "$name_line" | sed -e 's/^name:[[:space:]]*//' -e 's/["'"'"']//g' | tr -d '[:space:]')
         if [[ -z "$name_value" ]]; then
             check_fail "Empty 'name' in $agent"
         elif ! echo "$name_value" | grep -qE '^[a-z0-9]+(-[a-z0-9]+)*$'; then
@@ -116,7 +116,7 @@ while IFS= read -r -d '' skill; do
     if [[ -z "$name_line" ]]; then
         check_fail "Missing 'name:' in $skill"
     else
-        name_value=$(echo "$name_line" | sed 's/^name:[[:space:]]*//; s/["'"'\'\"]//g' | tr -d '[:space:]')
+        name_value=$(echo "$name_line" | sed -e 's/^name:[[:space:]]*//' -e 's/["'"'"']//g' | tr -d '[:space:]')
         if [[ -z "$name_value" ]]; then
             check_fail "Empty 'name' in $skill"
         elif ! echo "$name_value" | grep -qE '^[a-z0-9]+(-[a-z0-9]+)*$'; then

@@ -14,13 +14,19 @@ fi
 _COMMON_SH_LOADED=1
 
 # =============================================================================
-# Colors
+# Colors (exported for callers via source)
 # =============================================================================
+# shellcheck disable=SC2034
 RED='\033[0;31m'
+# shellcheck disable=SC2034
 GREEN='\033[0;32m'
+# shellcheck disable=SC2034
 YELLOW='\033[1;33m'
+# shellcheck disable=SC2034
 CYAN='\033[0;36m'
+# shellcheck disable=SC2034
 BLUE='\033[0;34m'
+# shellcheck disable=SC2034
 NC='\033[0m'
 
 # =============================================================================
@@ -84,8 +90,11 @@ backup_if_exists() {
 detect_stack() {
     local project_dir="${1:-.}"
 
+    # shellcheck disable=SC2034  # Used by callers after sourcing
     STACK_TYPE="unknown"
+    # shellcheck disable=SC2034
     BUILD_TOOL=""
+    # shellcheck disable=SC2034
     JAVA_VERSION="21"
 
     # Java + Gradle
@@ -163,6 +172,7 @@ detect_stack() {
 # =============================================================================
 detect_framework() {
     FRAMEWORK_DIR=""
+    # shellcheck disable=SC2034
     HAS_OPTIONAL=false
     if [[ -d "templates" && -d ".ai-config" ]]; then
         FRAMEWORK_DIR="."

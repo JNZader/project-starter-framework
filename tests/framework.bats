@@ -214,6 +214,53 @@ setup() {
     [ "$missing" -eq 0 ]
 }
 
+# --- New: stricter frontmatter checks ---
+@test "agents have required frontmatter fields (name & description)" {
+    local errors=0
+    while IFS= read -r agent; do
+        [ -f "$agent" ] || continue
+        [[ "$(basename "$agent")" == "_TEMPLATE.md" ]] && continue
+        if ! grep -q "^name:\s*" "$agent"; then
+            echo "Missing 'name' in agent: $agent"
+            errors=$((errors + 1))
+        fi
+        if ! grep -q "^description:\s*" "$agent"; then
+            echo "Missing 'description' in agent: $agent"
+            errors=$((errors + 1))
+        fi
+        # name should be kebab-case
+        name=$(grep "^name:" "$agent" | head -1 | sed 's/name:\s*//')
+        if [ -n "$name" ] && ! echo "$name" | grep -qE '^[a-z0-9]+(-[a-z0-9]+)*$'; then
+            echo "Invalid agent name (should be kebab-case): $agent -> $name"
+            errors=$((errors + 1))
+        fi
+    done < <(find "$FRAMEWORK_DIR/.ai-config/agents" -name "*.md" 2>/dev/null)
+    [ "$errors" -eq 0 ]
+}
+
+@test "skills have required frontmatter fields (name & description)" {
+    local errors=0
+    while IFS= read -r skill; do
+        [ -f "$skill" ] || continue
+        [[ "$(basename "$skill")" == "_TEMPLATE.md" ]] && continue
+        if ! grep -q "^name:\s*" "$skill"; then
+            echo "Missing 'name' in skill: $skill"
+            errors=$((errors + 1))
+        fi
+        if ! grep -q "^description:\s*" "$skill"; then
+            echo "Missing 'description' in skill: $skill"
+            errors=$((errors + 1))
+        fi
+        # name should be kebab-case
+        name=$(grep "^name:" "$skill" | head -1 | sed 's/name:\s*//')
+        if [ -n "$name" ] && ! echo "$name" | grep -qE '^[a-z0-9]+(-[a-z0-9]+)*$'; then
+            echo "Invalid skill name (should be kebab-case): $skill -> $name"
+            errors=$((errors + 1))
+        fi
+    done < <(find "$FRAMEWORK_DIR/.ai-config/skills" -name "*.md" 2>/dev/null)
+    [ "$errors" -eq 0 ]
+}
+
 @test "reusable workflows have workflow_call trigger" {
     for wf in "$FRAMEWORK_DIR"/.github/workflows/reusable-*.yml; do
         [ -f "$wf" ] || continue
@@ -256,6 +303,38 @@ setup() {
             return 1
         }
     done
+}
+
+@test "sync-ai-config 'merge' mode appends generated section instead of overwriting custom content" {
+    tmpdir=$(mktemp -d)
+    mkdir -p "$tmpdir/.ai-config/agents"
+    mkdir -p "$tmpdir/scripts"
+
+    # create a minimal agent
+    cat > "$tmpdir/.ai-config/agents/test-agent.md" <<'EOF'
+---
+name: test-agent
+description: Test agent
+---
+EOF
+
+    # create an existing CLAUDE.md with custom content
+    cat > "$tmpdir/CLAUDE.md" <<'EOF'
+# Project manual instructions
+
+Do not overwrite this section.
+EOF
+
+    # copy the sync script and run merge
+    cp "$FRAMEWORK_DIR/scripts/sync-ai-config.sh" "$tmpdir/scripts/sync-ai-config.sh"
+    chmod +x "$tmpdir/scripts/sync-ai-config.sh"
+    (cd "$tmpdir" && ./scripts/sync-ai-config.sh claude merge)
+
+    # verify CLAUDE.md still contains custom header and has auto-generated block
+    grep -q "Project manual instructions" "$tmpdir/CLAUDE.md"
+    grep -q "test-agent" "$tmpdir/CLAUDE.md"
+
+    rm -rf "$tmpdir"
 }
 
 @test "lib/Common.psm1 exists as PowerShell counterpart" {

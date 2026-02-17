@@ -1,0 +1,53 @@
+name: Framework CI (tests)
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Linux tests (Bats) on Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y bats shellcheck jq
+          # run repository validation + bats tests
+          ./scripts/validate-framework.sh
+          bats tests/framework.bats
+
+      - name: Run Windows tests (Pester)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Install-Module Pester -Force -Scope CurrentUser -SkipPublisherCheck
+          # run validate and Pester tests
+          .\scripts\validate-framework.ps1 -SkipInstallCheck -Force -ErrorAction Stop
+          Invoke-Pester -Script tests/pester -Output Detailed
+
+      - name: Upload test-artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: framework-test-logs-${{ matrix.os }}
+          path: |
+            test-results/*
+            junit.xml
+            
+    # small matrix parallelization complete

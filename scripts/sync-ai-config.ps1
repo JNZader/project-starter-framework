@@ -19,7 +19,60 @@ Write-Host "=== Sync AI Config ===" -ForegroundColor Cyan
 function Generate-Claude {
     Write-Host "Generating Claude Code config..." -ForegroundColor Yellow
 
-    # Check if CLAUDE.md already exists and prompt for overwrite
+    # Support optional 'merge' mode when caller provides extra arg or env var
+    $mergeMode = $false
+    if ($args -contains 'merge' -or $env:SYNC_AI_CONFIG_MODE -eq 'merge') { $mergeMode = $true }
+
+    # Crear directorio .claude
+    New-Item -ItemType Directory -Path "$ProjectDir\.claude" -Force | Out-Null
+
+    if (Test-Path "$ProjectDir\CLAUDE.md" -and $mergeMode) {
+        Write-Host "CLAUDE.md exists — performing safe merge (append/update generated section)" -ForegroundColor Yellow
+        Backup-IfExists "$ProjectDir\CLAUDE.md"
+
+        $gen = @"
+
+## Auto-generated from .ai-config/
+
+"@
+        $basePath = "$AiConfigDir\prompts\base.md"
+        if (Test-Path $basePath) {
+            $gen += Get-Content $basePath -Raw
+            $gen += "`n---`n"
+        }
+
+        $gen += "`n## Agentes Disponibles`n`n"
+        Get-ChildItem "$AiConfigDir\agents" -Recurse -Filter "*.md" | Where-Object { $_.Name -ne "_TEMPLATE.md" } | ForEach-Object {
+            $agentContent = Get-Content $_.FullName -Raw
+            if ($agentContent -match "name:\s*(.+)") { $name = $matches[1].Trim() } else { $name = '' }
+            if ($agentContent -match "description:\s*(.+)") { $desc = $matches[1].Trim() } else { $desc = '' }
+            if ($name) { $gen += "- **$name**: $desc`n" }
+        }
+
+        $gen += "`n## Skills Disponibles`n`n"
+        Get-ChildItem "$AiConfigDir\skills" -Recurse -Filter "*.md" -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "_TEMPLATE.md" } | ForEach-Object {
+            $skillContent = Get-Content $_.FullName -Raw
+            if ($skillContent -match "name:\s*(.+)") { $sname = $matches[1].Trim() } else { $sname = '' }
+            if ($sname) { $gen += "- $sname`n" }
+        }
+
+        # If existing file already contains our auto-generated marker, replace that section
+        $existing = Get-Content "$ProjectDir\CLAUDE.md" -Raw
+        if ($existing -match "(?ms)## Auto-generated from \.ai-config/.*$") {
+            # Remove from marker to EOF and append new generated block
+            $before = ($existing -split "(?ms)## Auto-generated from \.ai-config/")[0]
+            $before = $before.TrimEnd()
+            ($before + "`n" + $gen) | Out-File -FilePath "$ProjectDir\CLAUDE.md" -Encoding utf8
+        } else {
+            # Append generated section at EOF
+            $existing + "`n" + $gen | Out-File -FilePath "$ProjectDir\CLAUDE.md" -Encoding utf8
+        }
+
+        Write-Host "Merged CLAUDE.md (auto-generated section updated)" -ForegroundColor Green
+        return
+    }
+
+    # Default behavior: prompt/overwrite as before
     if (Test-Path "$ProjectDir\CLAUDE.md") {
         $overwrite = Read-Host "CLAUDE.md already exists. Overwrite? [y/N]"
         if ($overwrite -ne "y" -and $overwrite -ne "Y") {
@@ -28,13 +81,10 @@ function Generate-Claude {
         }
     }
 
-    # Crear directorio .claude
-    New-Item -ItemType Directory -Path "$ProjectDir\.claude" -Force | Out-Null
-
     # Backup existing file before overwrite
     Backup-IfExists "$ProjectDir\CLAUDE.md"
 
-    # Iniciar CLAUDE.md
+    # Iniciar CLAUDE.md (overwrite)
     $content = @"
 # Claude Code Instructions
 

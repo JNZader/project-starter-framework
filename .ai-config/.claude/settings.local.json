@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:woodpecker-ci.org)",
+      "Bash(python:*)",
+      "Bash(bash -n \"C:/Programacion/project-starter-framework/scripts/init-project.sh\")",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(python3:*)",
+      "Bash(tr:*)",
+      "Bash({)",
+      "Bash(})",
+      "Bash(done)",
+      "Bash(git status:*)",
+      "Bash(git add:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh api:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(xargs:*)",
+      "WebFetch(domain:www.amazon.com)",
+      "WebFetch(domain:technical.city)",
+      "WebFetch(domain:tiendamia.com)",
+      "Bash(ls -la \"C:\\\\Programacion\\\\project-starter-framework\\\\.github\"\" 2>/dev/null || echo \"No .github directory \")"
+    ]
+  }
+}

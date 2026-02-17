@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh repo view:*)",
+      "Bash(gh api:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(bash scripts/doctor.sh:*)",
+      "Bash(echo:*)",
+      "Bash(bash -n \"C:/Programacion/project-starter-framework/scripts/init-project.sh\")",
+      "Bash(powershell -ExecutionPolicy Bypass -File scripts/doctor.ps1)",
+      "Bash(powershell.exe -NoProfile -Command \"[System.Management.Automation.Language.Parser]::ParseFile\\(''C:\\\\Programacion\\\\project-starter-framework\\\\scripts\\\\init-project.ps1'', [ref]$null, [ref]$null\\)\")",
+      "Bash(powershell.exe -NoProfile -Command \"\n$tokens = $null\n$errors = $null\n[System.Management.Automation.Language.Parser]::ParseFile\\(''C:\\\\Programacion\\\\project-starter-framework\\\\scripts\\\\init-project.ps1'', [ref]$tokens, [ref]$errors\\)\nif \\($errors.Count -gt 0\\) {\n    $errors | ForEach-Object { Write-Host $_.ToString\\(\\) }\n} else {\n    Write-Host ''No syntax errors''\n}\n\")",
+      "Bash(chmod:*)",
+      "Bash(powershell.exe -NoProfile:*)",
+      "Bash(bash scripts/generate-agents-catalog.sh)",
+      "Bash(xxd:*)",
+      "Bash(python3:*)",
+      "Bash(python -c \"\ndata = open\\(''C:/Programacion/project-starter-framework/scripts/init-project.ps1'', ''rb''\\).read\\(\\)\nidx = data.find\\(b''\"\"@''\\)\nwhile idx != -1:\n    start = max\\(0, idx-10\\)\n    end = min\\(len\\(data\\), idx+10\\)\n    print\\(''Found at byte %d: %r'' % \\(idx, data[start:end]\\)\\)\n    idx = data.find\\(b''\"\"@'', idx+1\\)\n\")",
+      "Bash(python:*)",
+      "Bash(git -C \"C:/Programacion/project-starter-framework\" log --oneline -20)",
+      "Bash(git -C \"C:/Programacion/project-starter-framework\" diff --stat HEAD~5...HEAD)"
+    ]
+  }
+}

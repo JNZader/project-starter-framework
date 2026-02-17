@@ -40,6 +40,7 @@ Genera configuración para diferentes AI CLIs desde `.ai-config/`:
 ```bash
 # Para Claude Code
 ./scripts/sync-ai-config.sh claude
+./scripts/sync-ai-config.sh claude merge   # Safe-merge: append/update only the auto-generated section
 
 # Para OpenCode
 ./scripts/sync-ai-config.sh opencode

@@ -30,8 +30,10 @@ cd project-starter-framework
 
 Test across:
 - Multiple stacks (Java, Node, Python, Go, Rust)
-- Both Windows (PowerShell) and Linux/Mac (Bash)
+- Both Windows (PowerShell) and Linux/Mac (Bash) — the repo has Bats (Linux) and Pester (Windows) tests
 - Different project structures
+
+Note: The repository CI (`ci-framework.yml`) runs Bats on Linux and Pester on Windows for cross-platform parity.
 
 #### Pull Request Process
 

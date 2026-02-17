@@ -50,8 +50,6 @@ function Get-FrontmatterField {
         }
     }
 
-    $frontmatter = $frontmatterLines -join "`n"
-
     # Try to extract inline value: "field: value"
     $value = ""
     foreach ($fmLine in $frontmatterLines) {

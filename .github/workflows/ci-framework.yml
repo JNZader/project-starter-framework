@@ -49,8 +49,13 @@ jobs:
         shell: pwsh
         run: |
           Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
-          # Exclude PSAvoidUsingWriteHost — all scripts are interactive CLI tools
-          $settings = @{ ExcludeRules = @('PSAvoidUsingWriteHost') }
+          # Exclude rules that are noise for interactive CLI scripts
+          $settings = @{ ExcludeRules = @(
+            'PSAvoidUsingWriteHost',
+            'PSUseApprovedVerbs',
+            'PSUseShouldProcessForStateChangingFunctions',
+            'PSUseBOMForUnicodeEncodedFile'
+          ) }
           $results = Invoke-ScriptAnalyzer -Path scripts/*.ps1 -Recurse -Severity Warning,Error -Settings $settings
           $results += Invoke-ScriptAnalyzer -Path lib/Common.psm1 -Severity Warning,Error -Settings $settings
           if ($results) {

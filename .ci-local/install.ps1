@@ -6,6 +6,9 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectDir = Split-Path -Parent $ScriptDir
 
+# Import shared library
+Import-Module "$ScriptDir\..\lib\Common.psm1" -Force
+
 Write-Host "=== CI-LOCAL Installation ===" -ForegroundColor Cyan
 
 Set-Location $ProjectDir
@@ -18,17 +21,27 @@ Write-Host "Done" -ForegroundColor Green
 # 2. Verificar dependencias
 Write-Host "[2/2] Checking dependencies..." -ForegroundColor Yellow
 
-try {
+$dockerCmd = Get-Command docker -ErrorAction SilentlyContinue
+if ($dockerCmd) {
     $null = docker info 2>$null
-    Write-Host "Docker: available" -ForegroundColor Green
-} catch {
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Docker: available" -ForegroundColor Green
+    } else {
+        Write-Host "Docker: not running (required for pre-push CI)" -ForegroundColor Yellow
+    }
+} else {
     Write-Host "Docker: not running (required for pre-push CI)" -ForegroundColor Yellow
 }
 
 if (Get-Command semgrep -ErrorAction SilentlyContinue) {
     Write-Host "Semgrep: installed (native)" -ForegroundColor Green
-} elseif ((Get-Command docker -ErrorAction SilentlyContinue) -and ((docker info 2>$null) -ne $null)) {
-    Write-Host "Semgrep: available via Docker (returntocorp/semgrep)" -ForegroundColor Green
+} elseif ($dockerCmd) {
+    $null = docker info 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Semgrep: available via Docker (returntocorp/semgrep)" -ForegroundColor Green
+    } else {
+        Write-Host "Semgrep: not available (install semgrep or Docker)" -ForegroundColor Yellow
+    }
 } else {
     Write-Host "Semgrep: not available (install semgrep or Docker)" -ForegroundColor Yellow
 }

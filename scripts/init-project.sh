@@ -17,6 +17,11 @@ source "$SCRIPT_DIR/../lib/common.sh"
 # Argument parsing
 # =============================================================================
 DRY_RUN=false
+NON_INTERACTIVE=false
+OPT_MEMORY=""
+OPT_CI=""
+OPT_ENGRAM=false
+OPT_GHAGGA=false
 
 show_help() {
     echo "Usage: $(basename "$0") [OPTIONS]"
@@ -24,8 +29,13 @@ show_help() {
     echo "Setup inicial para nuevo proyecto."
     echo ""
     echo "Options:"
-    echo "  --dry-run   Show what would be done without making changes"
-    echo "  --help      Show this help message"
+    echo "  --dry-run             Show what would be done without making changes"
+    echo "  --non-interactive     Run without prompts (use defaults or --memory/--ci flags)"
+    echo "  --memory=N            Memory module choice: 1=obsidian-brain, 2=vibekanban, 3=memory-simple, 4=engram, 5=none"
+    echo "  --ci=N                CI provider: 1=github, 2=gitlab, 3=woodpecker, 4=none"
+    echo "  --engram              Add Engram module (when using --memory=1)"
+    echo "  --ghagga              Add GHAGGA integration (when using --ci=1)"
+    echo "  --help                Show this help message"
     echo ""
 }
 
@@ -33,6 +43,21 @@ for arg in "$@"; do
     case "$arg" in
         --dry-run)
             DRY_RUN=true
+            ;;
+        --non-interactive)
+            NON_INTERACTIVE=true
+            ;;
+        --memory=*)
+            OPT_MEMORY="${arg#--memory=}"
+            ;;
+        --ci=*)
+            OPT_CI="${arg#--ci=}"
+            ;;
+        --engram)
+            OPT_ENGRAM=true
+            ;;
+        --ghagga)
+            OPT_GHAGGA=true
             ;;
         --help|-h)
             show_help
@@ -238,6 +263,57 @@ else
 fi
 
 # =============================================================================
+# Reusable function: Install Engram module
+# =============================================================================
+# Installs the Engram memory module (MCP server config, install scripts,
+# gitignore snippet). Called from memory choice "4" and from the secondary
+# prompt when adding Engram alongside obsidian-brain.
+# =============================================================================
+install_engram_module() {
+    local framework_dir="$1"
+
+    echo -e "${GREEN}  Installing Engram module...${NC}"
+
+    local project_name
+    project_name=$(basename "$(pwd)")
+    local escaped_name
+    escaped_name=$(escape_sed "$project_name")
+
+    if [[ -f "$framework_dir/optional/engram/.mcp-config-snippet.json" ]]; then
+        if [[ ! -f ".mcp.json" ]]; then
+            if [[ "$DRY_RUN" == true ]]; then
+                echo -e "  ${CYAN}[DRY-RUN] Would generate .mcp.json from template${NC}"
+                DRY_RUN_ACTIONS+=("Generate .mcp.json")
+            else
+                sed "s/__PROJECT_NAME__/$escaped_name/g" \
+                    "$framework_dir/optional/engram/.mcp-config-snippet.json" > .mcp.json
+            fi
+        else
+            echo -e "${YELLOW}  .mcp.json ya existe - agrega engram manualmente${NC}"
+            echo -e "  Ver: optional/engram/.mcp-config-snippet.json"
+        fi
+    fi
+
+    backup_if_exists "scripts/install-engram.sh"
+    run_copy "$framework_dir/optional/engram/install-engram.sh" "scripts/" 2>/dev/null || true
+    backup_if_exists "scripts/install-engram.ps1"
+    run_copy "$framework_dir/optional/engram/install-engram.ps1" "scripts/" 2>/dev/null || true
+    run_cmd "Make install-engram.sh executable" chmod +x scripts/install-engram.sh 2>/dev/null || true
+
+    if [[ -f "$framework_dir/optional/engram/.gitignore-snippet.txt" ]]; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo -e "  ${CYAN}[DRY-RUN] Would append engram gitignore snippet${NC}"
+            DRY_RUN_ACTIONS+=("Append engram gitignore snippet")
+        else
+            echo "" >> .gitignore
+            cat "$framework_dir/optional/engram/.gitignore-snippet.txt" >> .gitignore
+        fi
+    fi
+
+    echo -e "${GREEN}  Engram module installed${NC}"
+}
+
+# =============================================================================
 # 6. Módulos opcionales
 # =============================================================================
 echo -e "${YELLOW}[6/8] Módulos opcionales...${NC}"
@@ -260,7 +336,11 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
         echo -e ""
         echo -e "  ${YELLOW}Nota: engram complementa a obsidian-brain (pueden usarse juntos)${NC}"
         echo -e ""
-        read -p "  Opción [1/2/3/4/5]: " MEMORY_CHOICE
+        if [[ "$NON_INTERACTIVE" == true ]]; then
+            MEMORY_CHOICE="${OPT_MEMORY:-5}"
+        else
+            read -p "  Opción [1/2/3/4/5]: " MEMORY_CHOICE
+        fi
 
         case "$MEMORY_CHOICE" in
             1)
@@ -305,40 +385,7 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
                 ;;
             4)
                 if [[ -d "$FRAMEWORK_DIR/optional/engram" ]]; then
-                    # Copiar config MCP
-                    project_name=$(basename "$(pwd)")
-                    escaped_name=$(escape_sed "$project_name")
-                    if [[ -f "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" ]]; then
-                        if [[ ! -f ".mcp.json" ]]; then
-                            if [[ "$DRY_RUN" == true ]]; then
-                                echo -e "  ${CYAN}[DRY-RUN] Would generate .mcp.json from template${NC}"
-                                DRY_RUN_ACTIONS+=("Generate .mcp.json")
-                            else
-                                sed "s/__PROJECT_NAME__/$escaped_name/g" \
-                                    "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" > .mcp.json
-                            fi
-                        else
-                            echo -e "${YELLOW}  .mcp.json ya existe - agrega engram manualmente${NC}"
-                            echo -e "  Ver: optional/engram/.mcp-config-snippet.json"
-                        fi
-                    fi
-                    # Copiar script de instalacion
-                    backup_if_exists "scripts/install-engram.sh"
-                    run_copy "$FRAMEWORK_DIR/optional/engram/install-engram.sh" "scripts/" 2>/dev/null || true
-                    backup_if_exists "scripts/install-engram.ps1"
-                    run_copy "$FRAMEWORK_DIR/optional/engram/install-engram.ps1" "scripts/" 2>/dev/null || true
-                    run_cmd "Make install-engram.sh executable" chmod +x scripts/install-engram.sh 2>/dev/null || true
-                    # Append gitignore snippet
-                    if [[ -f "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" ]]; then
-                        if [[ "$DRY_RUN" == true ]]; then
-                            echo -e "  ${CYAN}[DRY-RUN] Would append engram gitignore snippet to .gitignore${NC}"
-                            DRY_RUN_ACTIONS+=("Append engram gitignore snippet")
-                        else
-                            echo "" >> .gitignore
-                            cat "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" >> .gitignore
-                        fi
-                    fi
-                    echo -e "${GREEN}  ✓ Engram configurado${NC}"
+                    install_engram_module "$FRAMEWORK_DIR"
                     echo -e "  ${CYAN}Ejecuta: ./scripts/install-engram.sh para instalar el binario${NC}"
                 fi
                 ;;
@@ -350,33 +397,17 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
         # Preguntar por engram adicional si eligieron obsidian-brain
         if [[ "$MEMORY_CHOICE" == "1" && -d "$FRAMEWORK_DIR/optional/engram" ]]; then
             echo -e ""
-            read -p "  ¿Agregar también Engram para memoria de agentes AI? [y/N]: " ADD_ENGRAM
+            if [[ "$NON_INTERACTIVE" == true ]]; then
+                if [[ "$OPT_ENGRAM" == true ]]; then
+                    ADD_ENGRAM="y"
+                else
+                    ADD_ENGRAM="N"
+                fi
+            else
+                read -p "  ¿Agregar también Engram para memoria de agentes AI? [y/N]: " ADD_ENGRAM
+            fi
             if [[ "$ADD_ENGRAM" == "y" || "$ADD_ENGRAM" == "Y" ]]; then
-                project_name=$(basename "$(pwd)")
-                escaped_name=$(escape_sed "$project_name")
-                if [[ ! -f ".mcp.json" ]]; then
-                    if [[ "$DRY_RUN" == true ]]; then
-                        echo -e "  ${CYAN}[DRY-RUN] Would generate .mcp.json from template${NC}"
-                        DRY_RUN_ACTIONS+=("Generate .mcp.json")
-                    else
-                        sed "s/__PROJECT_NAME__/$escaped_name/g" \
-                            "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" > .mcp.json
-                    fi
-                fi
-                backup_if_exists "scripts/install-engram.sh"
-                run_copy "$FRAMEWORK_DIR/optional/engram/install-engram.sh" "scripts/" 2>/dev/null || true
-                backup_if_exists "scripts/install-engram.ps1"
-                run_copy "$FRAMEWORK_DIR/optional/engram/install-engram.ps1" "scripts/" 2>/dev/null || true
-                run_cmd "Make install-engram.sh executable" chmod +x scripts/install-engram.sh 2>/dev/null || true
-                if [[ -f "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" ]]; then
-                    if [[ "$DRY_RUN" == true ]]; then
-                        echo -e "  ${CYAN}[DRY-RUN] Would append engram gitignore snippet to .gitignore${NC}"
-                        DRY_RUN_ACTIONS+=("Append engram gitignore snippet")
-                    else
-                        echo "" >> .gitignore
-                        cat "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" >> .gitignore
-                    fi
-                fi
+                install_engram_module "$FRAMEWORK_DIR"
                 echo -e "${GREEN}  ✓ Engram agregado (complementa Obsidian Brain)${NC}"
                 echo -e "  ${CYAN}Ejecuta: ./scripts/install-engram.sh para instalar el binario${NC}"
             fi
@@ -462,7 +493,11 @@ if [[ -n "$FRAMEWORK_DIR" && -n "$TEMPLATE_SUFFIX" ]]; then
     echo -e "    3) Woodpecker CI"
     echo -e "    4) Solo CI-Local (sin CI remoto)"
     echo -e ""
-    read -p "  Opción [1/2/3/4]: " CI_CHOICE
+    if [[ "$NON_INTERACTIVE" == true ]]; then
+        CI_CHOICE="${OPT_CI:-4}"
+    else
+        read -p "  Opción [1/2/3/4]: " CI_CHOICE
+    fi
 
     case "$CI_CHOICE" in
         1)
@@ -509,7 +544,15 @@ if [[ -n "$FRAMEWORK_DIR" && -n "$TEMPLATE_SUFFIX" ]]; then
             # GHAGGA AI Code Review (optional)
             if [[ -d "$FRAMEWORK_DIR/optional/ghagga" ]]; then
                 echo -e ""
-                read -p "  ¿Agregar AI code review con GHAGGA? [y/N]: " ADD_GHAGGA
+                if [[ "$NON_INTERACTIVE" == true ]]; then
+                    if [[ "$OPT_GHAGGA" == true ]]; then
+                        ADD_GHAGGA="y"
+                    else
+                        ADD_GHAGGA="N"
+                    fi
+                else
+                    read -p "  ¿Agregar AI code review con GHAGGA? [y/N]: " ADD_GHAGGA
+                fi
                 if [[ "$ADD_GHAGGA" == "y" || "$ADD_GHAGGA" == "Y" ]]; then
                     run_copy "$FRAMEWORK_DIR/.github/workflows/reusable-ghagga-review.yml" ".github/workflows/" 2>/dev/null || true
                     if [[ "$DRY_RUN" == true ]]; then

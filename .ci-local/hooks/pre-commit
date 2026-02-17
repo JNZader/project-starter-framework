@@ -2,7 +2,7 @@
 # =============================================================================
 # PRE-COMMIT: Universal quick checks before commit
 # =============================================================================
-# Detecta el stack y ejecuta lint + compile rápido
+# Detecta el stack y ejecuta lint + compile rapido
 # Tiempo: ~30-60 segundos
 # =============================================================================
 
@@ -109,8 +109,9 @@ if [[ -n "$SEMGREP_CMD" ]]; then
                 exit 1
             }
         else
-            docker run --rm -v "${PROJECT_DIR}:/src" -w /src returntocorp/semgrep \
-                semgrep --config=/src/.ci-local/semgrep.yml --severity=ERROR --quiet $STAGED_FILES 2>/dev/null || {
+            # Pipe file list via stdin into the container where xargs feeds it to semgrep
+            echo "$STAGED_FILES" | docker run --rm -i -v "${PROJECT_DIR}:/src" -w /src returntocorp/semgrep \
+                sh -c 'xargs semgrep --config=/src/.ci-local/semgrep.yml --severity=ERROR --quiet' 2>/dev/null || {
                 echo -e "${RED}Semgrep found issues${NC}"
                 exit 1
             }

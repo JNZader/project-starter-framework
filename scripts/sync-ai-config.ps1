@@ -19,6 +19,15 @@ Write-Host "=== Sync AI Config ===" -ForegroundColor Cyan
 function Generate-Claude {
     Write-Host "Generating Claude Code config..." -ForegroundColor Yellow
 
+    # Check if CLAUDE.md already exists and prompt for overwrite
+    if (Test-Path "$ProjectDir\CLAUDE.md") {
+        $overwrite = Read-Host "CLAUDE.md already exists. Overwrite? [y/N]"
+        if ($overwrite -ne "y" -and $overwrite -ne "Y") {
+            Write-Host "Skipped CLAUDE.md" -ForegroundColor Yellow
+            return
+        }
+    }
+
     # Crear directorio .claude
     New-Item -ItemType Directory -Path "$ProjectDir\.claude" -Force | Out-Null
 
@@ -43,18 +52,25 @@ function Generate-Claude {
     # Agregar agentes
     $content += "`n## Agentes Disponibles`n`n"
     Get-ChildItem "$AiConfigDir\agents" -Recurse -Filter "*.md" | Where-Object { $_.Name -ne "_TEMPLATE.md" } | ForEach-Object {
+        $name = ""
+        $desc = ""
         $agentContent = Get-Content $_.FullName -Raw
         if ($agentContent -match "name:\s*(.+)") { $name = $matches[1].Trim() }
         if ($agentContent -match "description:\s*(.+)") { $desc = $matches[1].Trim() }
-        $content += "- **$name**: $desc`n"
+        if ($name) {
+            $content += "- **$name**: $desc`n"
+        }
     }
 
     # Agregar skills
     $content += "`n## Skills Disponibles`n`n"
     Get-ChildItem "$AiConfigDir\skills" -Recurse -Filter "*.md" -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "_TEMPLATE.md" } | ForEach-Object {
+        $name = ""
         $skillContent = Get-Content $_.FullName -Raw
         if ($skillContent -match "name:\s*(.+)") { $name = $matches[1].Trim() }
-        $content += "- $name`n"
+        if ($name) {
+            $content += "- $name`n"
+        }
     }
 
     $content | Out-File -FilePath "$ProjectDir\CLAUDE.md" -Encoding utf8

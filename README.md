@@ -35,7 +35,7 @@
 |-------------|-----------|----------|
 | **Git** | Sí | Control de versiones |
 | **Docker Desktop** | Recomendado | CI simulation (pre-push) |
-| **Semgrep** | Opcional | Security scan (pre-commit) |
+| **Semgrep** | Opcional | Security scan (pre-commit). Fallback automático a Docker si disponible |
 
 ```bash
 # Instalar Semgrep (opcional)
@@ -83,6 +83,12 @@ Rename-Item .gitignore.template .gitignore
 .\scripts\init-project.ps1
 ```
 
+> **Tip:** Usa `--dry-run` para ver qué hará el setup sin hacer cambios:
+> ```bash
+> ./scripts/init-project.sh --dry-run
+> .\scripts\init-project.ps1 -DryRun  # Windows
+> ```
+
 ### Opción 2: Framework con módulos opcionales
 
 Si deseas memoria de proyecto (Obsidian Brain) o code review automatizado (Ghagga):
@@ -98,6 +104,7 @@ cp -r /path/to/project-starter-framework/{.ai-config,.ci-local,.github,templates
 - `obsidian-brain`: Memoria de proyecto con Kanban visual, Dataview y Templater
 - `vibekanban`: Metodología de oleadas paralelas (legacy)
 - `memory-simple`: Solo un archivo NOTES.md básico
+- `engram`: Memoria persistente para agentes AI (MCP server)
 
 El script `init-project.sh` te permitirá elegir qué módulos instalar de forma interactiva.
 
@@ -108,7 +115,7 @@ El script `init-project.sh` te permitirá elegir qué módulos instalar de forma
 ```
 project-starter-framework/
 │
-├── .ai-config/                   # Config para AI CLIs (78+ agentes)
+├── .ai-config/                   # Config para AI CLIs (79+ agentes)
 │   ├── agents/                   # Agentes organizados por categoría
 │   ├── skills/                   # Skills reutilizables
 │   └── hooks/                    # Hooks de eventos
@@ -126,7 +133,8 @@ project-starter-framework/
 │       ├── reusable-build-go.yml
 │       ├── reusable-build-rust.yml
 │       ├── reusable-docker.yml
-│       └── reusable-release.yml
+│       ├── reusable-release.yml
+│       └── auto-version.yml
 │
 ├── templates/                    # CI templates para copiar
 │   ├── github/                   # GitHub Actions (java, node, python, rust, monorepo)
@@ -148,6 +156,11 @@ project-starter-framework/
 │   ├── common.sh                 # Funciones compartidas (Bash)
 │   └── Common.psm1               # Funciones compartidas (PowerShell)
 │
+├── tests/                        # Framework tests (Bats)
+│   ├── framework.bats            # Tests de estructura y funciones
+│   └── README.md                 # Guía de testing
+│
+├── .framework-version            # Versión del framework (auto-updated)
 ├── .releaserc                    # Config semantic-release
 ├── CLAUDE.md                     # Instrucciones Claude Code
 ├── CONTRIBUTING.md               # Guía de contribución
@@ -221,7 +234,7 @@ Config centralizada para múltiples AI CLIs:
 | Cursor | `.cursorrules` | `./scripts/sync-ai-config.sh cursor` |
 | Aider | `.aider.conf.yml` | `./scripts/sync-ai-config.sh aider` |
 
-**78+ agentes incluidos** organizados por categoría.
+**79+ agentes incluidos** organizados por categoría.
 
 ### 4. Módulos Opcionales
 
@@ -232,8 +245,18 @@ Los módulos opcionales agregan funcionalidades extra al framework core:
 | `obsidian-brain` | Memoria de proyecto con Kanban, Dataview, Templater | Proyectos con planificación compleja |
 | `vibekanban` | Oleadas paralelas + memoria (legacy) | Proyectos existentes con VibeKanban |
 | `memory-simple` | Solo archivo NOTES.md | Proyectos simples sin Obsidian |
+| `engram` | Memoria persistente para agentes AI (MCP server) | Proyectos con asistencia AI frecuente |
 
 Ver [optional/README.md](optional/README.md) para más detalles.
+
+### Diagnóstico
+
+```bash
+./scripts/doctor.sh          # Linux/Mac
+.\scripts\doctor.ps1         # Windows
+```
+
+Verifica entorno (Git, Docker, Semgrep), integridad del framework, y configuración del proyecto.
 
 ---
 
@@ -292,6 +315,15 @@ Los hooks **bloquean automáticamente** cualquier referencia a IA:
 
 ## Troubleshooting
 
+### Diagnóstico
+
+```bash
+./scripts/doctor.sh          # Linux/Mac
+.\scripts\doctor.ps1         # Windows
+```
+
+Verifica entorno (Git, Docker, Semgrep), integridad del framework, y configuración del proyecto.
+
 ### "Docker not running"
 
 ```bash
@@ -315,4 +347,4 @@ El hook detectó una referencia a IA que debe removerse.
 
 ---
 
-*Framework Version: 2.0.0* - Modular: CI-Local + AI Config + CI Templates (VibeKanban opcional)
+*Framework Version: 2.1.0* - Modular: CI-Local + AI Config + CI Templates + Optional Modules

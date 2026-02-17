@@ -125,7 +125,7 @@ HEADER
     # Agregar prompt base
     if [[ -f "$AI_CONFIG_DIR/prompts/base.md" ]]; then
         # Extract the "Reglas Criticas" section until the next top-level heading
-        awk '/^## Reglas Cr.ticas/,/^## [^R]/' "$AI_CONFIG_DIR/prompts/base.md" | head -n -1 >> "$PROJECT_DIR/.cursorrules"
+        awk '/^## Reglas Cr.ticas/,/^## [^R]/' "$AI_CONFIG_DIR/prompts/base.md" | sed '$d' >> "$PROJECT_DIR/.cursorrules"
     fi
 
     echo -e "${GREEN}Generated .cursorrules${NC}"

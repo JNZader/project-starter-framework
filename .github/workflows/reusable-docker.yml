@@ -60,6 +60,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate inputs
+        env:
+          BUILD_ARGS: ${{ inputs.build-args }}
+        run: |
+          if [ -n "$BUILD_ARGS" ] && echo "$BUILD_ARGS" | grep -qE '[;|&$`(){}<>]'; then
+            echo "::error::Invalid characters in build-args input."
+            exit 1
+          fi
+
       - name: Set image name
         id: image
         env:

@@ -68,10 +68,8 @@ extract_field() {
 # =============================================================================
 capitalize_category() {
     local input="$1"
-    # Replace hyphens with spaces, then capitalize each word
     local result=""
-    local IFS_SAVE="$IFS"
-    IFS='-'
+    local IFS='-'
     for word in $input; do
         local first rest
         first=$(printf '%s' "$word" | cut -c1 | tr '[:lower:]' '[:upper:]')
@@ -82,7 +80,6 @@ capitalize_category() {
             result="$first$rest"
         fi
     done
-    IFS="$IFS_SAVE"
     printf '%s' "$result"
 }
 

@@ -39,24 +39,24 @@ skill_count=$(find .ai-config/skills -name "*.md" ! -name "_TEMPLATE.md" 2>/dev/
 echo -e "  Agents: $agent_count, Skills: $skill_count"
 
 # Check agents have required frontmatter
-for agent in $(find .ai-config/agents -name "*.md" ! -name "_TEMPLATE.md" 2>/dev/null); do
+while IFS= read -r -d '' agent; do
     if ! head -1 "$agent" | grep -q "^---"; then
         check_warn "No frontmatter: $agent"
     else
         grep -q "^name:" "$agent" || check_warn "Missing 'name:' in $agent"
         grep -q "^description:" "$agent" || check_warn "Missing 'description:' in $agent"
     fi
-done
+done < <(find .ai-config/agents -name "*.md" ! -name "_TEMPLATE.md" -print0 2>/dev/null)
 
 # Check skills have required frontmatter
-for skill in $(find .ai-config/skills -name "*.md" ! -name "_TEMPLATE.md" 2>/dev/null); do
+while IFS= read -r -d '' skill; do
     if ! head -1 "$skill" | grep -q "^---"; then
         check_warn "No frontmatter: $skill"
     else
         grep -q "^name:" "$skill" || check_warn "Missing 'name:' in $skill"
         grep -q "^description:" "$skill" || check_warn "Missing 'description:' in $skill"
     fi
-done
+done < <(find .ai-config/skills -name "*.md" ! -name "_TEMPLATE.md" -print0 2>/dev/null)
 
 # --- Template Validation ---
 echo ""

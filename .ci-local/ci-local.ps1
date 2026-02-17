@@ -212,12 +212,14 @@ ENTRYPOINT ["/bin/bash", "-c"]
 
 function Run-InCI($stack, $command) {
     $imageName = Get-ImageName $stack
-    $dockerPath = $ProjectDir -replace '\\', '/' -replace '^([A-Za-z]):', '/$1'
+    $dockerPath = $ProjectDir -replace '\\', '/'
+    if ($dockerPath -match '^([A-Za-z]):') {
+        $dockerPath = '/' + $matches[1].ToLower() + $dockerPath.Substring(2)
+    }
 
     docker run --rm -it `
         -v "${dockerPath}:/home/runner/work" `
         -e CI=true `
-        -e GITHUB_ACTIONS=true `
         $imageName $command
 }
 
@@ -264,7 +266,10 @@ switch ($Mode) {
         Ensure-DockerImage $stack
         Write-Color "`nOpening shell in CI environment..." Yellow
         $imageName = Get-ImageName $stack
-        $dockerPath = $ProjectDir -replace '\\', '/' -replace '^([A-Za-z]):', '/$1'
+        $dockerPath = $ProjectDir -replace '\\', '/'
+        if ($dockerPath -match '^([A-Za-z]):') {
+            $dockerPath = '/' + $matches[1].ToLower() + $dockerPath.Substring(2)
+        }
         docker run --rm -it `
             -v "${dockerPath}:/home/runner/work" `
             -e CI=true `

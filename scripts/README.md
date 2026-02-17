@@ -12,6 +12,9 @@
 | `sync-ai-config.sh/ps1` | Sincroniza config de AI CLIs | ✓ |
 | `add-skill.sh/ps1` | Agrega skills de Gentleman-Skills | ✓ |
 | `sync-skills.sh/ps1` | Valida y sincroniza skills | ✓ |
+| `doctor.sh/ps1` | Diagnóstico del entorno y framework | ✓ |
+| `validate-framework.sh` | Valida estructura y consistencia del framework | - |
+| `generate-agents-catalog.sh/ps1` | Genera catálogo AGENTS.md desde frontmatter | ✓ |
 
 ---
 
@@ -115,6 +118,48 @@ Valida formato de skills y genera archivos multi-IDE:
 # Todo junto
 ./scripts/sync-skills.sh all
 ```
+
+---
+
+## doctor
+
+Diagnóstico del entorno y del framework. Verifica:
+- Herramientas requeridas (Git, Docker, Semgrep)
+- Integridad de la estructura del framework
+- Configuración del proyecto actual (hooks instalados, stack detectado)
+- Permisos de archivos ejecutables
+
+```bash
+./scripts/doctor.sh          # Linux/Mac
+.\scripts\doctor.ps1         # Windows
+```
+
+---
+
+## validate-framework
+
+Valida la estructura y consistencia interna del framework. Comprueba:
+- Que todos los archivos referenciados existen
+- Que los templates tienen el formato correcto
+- Que los agentes y skills cumplen el esquema requerido
+- Que los workflows son YAML válido
+
+```bash
+./scripts/validate-framework.sh
+```
+
+---
+
+## generate-agents-catalog
+
+Genera el archivo `AGENTS.md` (catálogo de agentes para OpenCode y otros CLIs) leyendo el frontmatter de cada agente en `.ai-config/agents/`:
+
+```bash
+./scripts/generate-agents-catalog.sh    # Linux/Mac
+.\scripts\generate-agents-catalog.ps1  # Windows
+```
+
+El archivo generado incluye nombre, descripción y trigger de cada agente, organizado por categoría.
 
 ---
 

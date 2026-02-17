@@ -67,7 +67,7 @@ jobs:
         env:
           ARGS: ${{ inputs.build-flags }}
         run: |
-          if echo "$ARGS" | grep -qE '[;|&$`(){}]'; then
+          if echo "$ARGS" | grep -qE '[;|&$`(){}<>'"'"'"]'; then
             echo "::error::Invalid characters in input arguments. Shell metacharacters are not allowed."
             exit 1
           fi

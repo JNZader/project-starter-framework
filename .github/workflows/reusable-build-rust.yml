@@ -49,6 +49,11 @@ on:
         required: false
         default: true
         type: boolean
+      upload-binary:
+        description: 'Upload release binary as artifact'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -70,7 +75,7 @@ jobs:
         env:
           ARGS: ${{ inputs.cargo-args }}
         run: |
-          if echo "$ARGS" | grep -qE '[;|&$`(){}]'; then
+          if echo "$ARGS" | grep -qE '[;|&$`(){}<>'"'"'"]'; then
             echo "::error::Invalid characters in input arguments. Shell metacharacters are not allowed."
             exit 1
           fi
@@ -106,8 +111,14 @@ jobs:
           CARGO_ARGS: ${{ inputs.cargo-args }}
         run: cargo test --all-features $CARGO_ARGS
 
+      - name: Build release binary
+        if: inputs.upload-binary
+        env:
+          CARGO_ARGS: ${{ inputs.cargo-args }}
+        run: cargo build --release $CARGO_ARGS
+
       - name: Upload binary
-        if: inputs.run-tests
+        if: inputs.upload-binary
         uses: actions/upload-artifact@v4
         with:
           name: release-binary

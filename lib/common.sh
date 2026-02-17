@@ -20,7 +20,17 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
+BLUE='\033[0;34m'
 NC='\033[0m'
+
+# =============================================================================
+# Shared logging helpers
+# =============================================================================
+log_ok()   { echo -e "  ${GREEN}[OK]${NC}   $1"; }
+log_warn() { echo -e "  ${YELLOW}[WARN]${NC} $1"; }
+log_fail() { echo -e "  ${RED}[FAIL]${NC} $1"; }
+log_info() { echo -e "  ${CYAN}[INFO]${NC} $1"; }
+log_step() { echo -e "${YELLOW}$1${NC}"; }
 
 # =============================================================================
 # sed_inplace - Portable sed -i (works on both GNU and BSD/macOS sed)
@@ -39,9 +49,10 @@ sed_inplace() {
 # escape_sed - Escape special characters for safe use in sed replacement
 # =============================================================================
 # Usage: escaped=$(escape_sed "$raw_string")
+# Note: This escapes replacement-side characters (backslash, ampersand, slash).
 # =============================================================================
 escape_sed() {
-    printf '%s\n' "$1" | sed 's/[&/\]/\\&/g'
+    printf '%s\n' "$1" | sed -e 's/[\\&/]/\\&/g'
 }
 
 # =============================================================================
@@ -112,15 +123,15 @@ detect_stack() {
         return
     fi
 
-    # Python
+    # Python (detection order: uv > poetry > pipenv > pip)
     if [[ -f "$project_dir/pyproject.toml" || -f "$project_dir/setup.py" || -f "$project_dir/requirements.txt" ]]; then
         STACK_TYPE="python"
-        if [[ -f "$project_dir/poetry.lock" ]]; then
+        if [[ -f "$project_dir/uv.lock" ]]; then
+            BUILD_TOOL="uv"
+        elif [[ -f "$project_dir/poetry.lock" ]]; then
             BUILD_TOOL="poetry"
         elif [[ -f "$project_dir/Pipfile" ]]; then
             BUILD_TOOL="pipenv"
-        elif [[ -f "$project_dir/uv.lock" ]]; then
-            BUILD_TOOL="uv"
         else
             BUILD_TOOL="pip"
         fi

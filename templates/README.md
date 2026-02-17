@@ -52,6 +52,7 @@ Todos incluyen:
 | `reusable-build-rust.yml` | Rust build | ~3 min |
 | `reusable-docker.yml` | Docker build & push | ~5 min |
 | `reusable-release.yml` | Semantic release | ~2 min |
+| `auto-version.yml` | Auto-versioning con semantic-release | ~2 min |
 
 ## GitLab CI
 
@@ -232,6 +233,23 @@ Alternativa nativa de GitHub. Se configura automaticamente con `init-project.sh`
 cp templates/dependabot.yml .github/dependabot.yml
 # Descomentar secciones segun tu stack
 ```
+
+### Dependabot Fragments (templates/common/dependabot/)
+
+Los templates de Dependabot se componen de fragmentos modulares:
+
+| Fragmento | Ecosistema |
+|-----------|------------|
+| `header.yml` | Header con version: 2 |
+| `github-actions.yml` | GitHub Actions (siempre incluido) |
+| `gradle.yml` | Java/Gradle |
+| `maven.yml` | Java/Maven |
+| `npm.yml` | Node.js/npm |
+| `pip.yml` | Python/pip |
+| `gomod.yml` | Go modules |
+| `cargo.yml` | Rust/Cargo |
+
+`init-project.sh` ensambla automáticamente: header + github-actions + stack-específico.
 
 ### Dependabot Auto-Merge
 

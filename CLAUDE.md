@@ -17,7 +17,7 @@ Los componentes se copian a nuevos proyectos usando `scripts/init-project.sh`.
 ## Estructura del Framework
 
 ```
-.ai-config/         # 78 agentes + 40 skills para AI CLIs
+.ai-config/         # 79 agentes + 40 skills para AI CLIs
 .ci-local/          # CI local con git hooks (pre-commit, pre-push)
 .github/workflows/  # Reusable workflows para GitHub Actions
 templates/          # Templates CI para copiar a proyectos
@@ -56,6 +56,10 @@ Funciona como markdown plano sin Obsidian. Con Obsidian agrega Kanban visual, qu
 ```bash
 # Setup nuevo proyecto (interactivo)
 ./scripts/init-project.sh
+
+# Diagnóstico del entorno y framework
+./scripts/doctor.sh           # Linux/Mac
+.\scripts\doctor.ps1          # Windows
 
 # Sincronizar config AI
 ./scripts/sync-ai-config.sh claude    # Solo Claude Code

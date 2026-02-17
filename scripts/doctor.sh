@@ -38,30 +38,16 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
 fi
 
 # =============================================================================
-# Counters
+# Counters + wrappers that log AND count
 # =============================================================================
 pass_count=0
 warn_count=0
 fail_count=0
 
-check_ok() {
-    echo -e "  ${GREEN}[OK]${NC}   $1"
-    pass_count=$((pass_count + 1))
-}
-
-check_warn() {
-    echo -e "  ${YELLOW}[WARN]${NC} $1"
-    warn_count=$((warn_count + 1))
-}
-
-check_fail() {
-    echo -e "  ${RED}[FAIL]${NC} $1"
-    fail_count=$((fail_count + 1))
-}
-
-check_info() {
-    echo -e "  ${CYAN}[INFO]${NC} $1"
-}
+check_ok()   { log_ok "$1";   pass_count=$((pass_count + 1)); }
+check_warn() { log_warn "$1"; warn_count=$((warn_count + 1)); }
+check_fail() { log_fail "$1"; fail_count=$((fail_count + 1)); }
+check_info() { log_info "$1"; }
 
 # =============================================================================
 # Header

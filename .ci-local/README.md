@@ -35,9 +35,11 @@ cd /path/to/new-project
 
 ```bash
 # Semgrep (análisis de seguridad, muy recomendado)
+# Si Semgrep no está instalado localmente, CI-Local hace fallback automático
+# a una imagen Docker de Semgrep cuando Docker está disponible.
 pip install semgrep
 
-# Docker (requerido para CI simulation)
+# Docker (requerido para CI simulation y fallback de Semgrep)
 # Instalar Docker Desktop
 ```
 
@@ -161,3 +163,8 @@ Editar los Dockerfiles en `.ci-local/docker/` después de la primera ejecución.
 **¿Funciona sin Docker?**
 - Los hooks de pre-commit funcionan sin Docker
 - El pre-push requiere Docker para simular CI real
+
+**¿Qué pasa si Semgrep no está instalado?**
+- CI-Local detecta si Semgrep está disponible localmente
+- Si no está instalado pero Docker está corriendo, usa la imagen `semgrep/semgrep` como fallback automático
+- Si ni Semgrep ni Docker están disponibles, el scan de seguridad se omite con advertencia

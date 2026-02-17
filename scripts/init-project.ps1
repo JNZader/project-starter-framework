@@ -4,7 +4,12 @@
 
 param(
     [switch]$DryRun,
-    [switch]$Help
+    [switch]$Help,
+    [switch]$NonInteractive,
+    [string]$Memory = "",
+    [string]$CI = "",
+    [switch]$Engram,
+    [switch]$Ghagga
 )
 
 $ErrorActionPreference = "Stop"
@@ -22,8 +27,13 @@ if ($Help) {
     Write-Host "Setup inicial para nuevo proyecto."
     Write-Host ""
     Write-Host "Options:"
-    Write-Host "  -DryRun   Show what would be done without making changes"
-    Write-Host "  -Help     Show this help message"
+    Write-Host "  -DryRun             Show what would be done without making changes"
+    Write-Host "  -NonInteractive     Run without prompts (use defaults or -Memory/-CI flags)"
+    Write-Host "  -Memory N           Memory module choice: 1=obsidian-brain, 2=vibekanban, 3=memory-simple, 4=engram, 5=none"
+    Write-Host "  -CI N               CI provider: 1=github, 2=gitlab, 3=woodpecker, 4=none"
+    Write-Host "  -Engram             Add Engram module (when using -Memory 1)"
+    Write-Host "  -Ghagga             Add GHAGGA integration (when using -CI 1)"
+    Write-Host "  -Help               Show this help message"
     Write-Host ""
     exit 0
 }
@@ -86,6 +96,59 @@ function Write-DryRunFile {
     } else {
         $Content | Out-File -FilePath $Path -Encoding utf8
     }
+}
+
+# =============================================================================
+# Reusable function: Install Engram module
+# =============================================================================
+# Installs the Engram memory module (MCP server config, install scripts,
+# gitignore snippet). Called from memory choice "4" and from the secondary
+# prompt when adding Engram alongside obsidian-brain.
+# =============================================================================
+function Install-EngramModule {
+    param([string]$FrameworkPath)
+
+    Write-Host "  Installing Engram module..." -ForegroundColor Green
+
+    $projectName = Split-Path -Leaf (Get-Location)
+
+    if (Test-Path "$FrameworkPath/optional/engram/.mcp-config-snippet.json") {
+        if (-not (Test-Path ".mcp.json")) {
+            if ($DryRun) {
+                Write-Host "  [DRY-RUN] Would generate .mcp.json from template" -ForegroundColor Cyan
+                $script:DryRunActions += "Generate .mcp.json"
+            } else {
+                $mcpContent = Get-Content "$FrameworkPath/optional/engram/.mcp-config-snippet.json" -Raw
+                $mcpContent = $mcpContent -replace '__PROJECT_NAME__', $projectName
+                $mcpContent | Out-File -FilePath ".mcp.json" -Encoding utf8
+            }
+        } else {
+            Write-Host "  .mcp.json ya existe - agrega engram manualmente" -ForegroundColor Yellow
+            Write-Host "  Ver: optional/engram/.mcp-config-snippet.json"
+        }
+    }
+
+    Backup-IfExists "scripts/install-engram.sh"
+    if (Test-Path "$FrameworkPath/optional/engram/install-engram.sh") {
+        Copy-DryRun -Source "$FrameworkPath/optional/engram/install-engram.sh" -Destination "scripts/" -Force
+    }
+    Backup-IfExists "scripts/install-engram.ps1"
+    if (Test-Path "$FrameworkPath/optional/engram/install-engram.ps1") {
+        Copy-DryRun -Source "$FrameworkPath/optional/engram/install-engram.ps1" -Destination "scripts/" -Force
+    }
+
+    $snippetPath = "$FrameworkPath/optional/engram/.gitignore-snippet.txt"
+    if (Test-Path $snippetPath) {
+        if ($DryRun) {
+            Write-Host "  [DRY-RUN] Would append engram gitignore snippet" -ForegroundColor Cyan
+            $script:DryRunActions += "Append engram gitignore snippet"
+        } else {
+            Add-Content -Path ".gitignore" -Value ""
+            Get-Content $snippetPath | Add-Content -Path ".gitignore"
+        }
+    }
+
+    Write-Host "  Engram module installed" -ForegroundColor Green
 }
 
 if ($DryRun) {
@@ -248,7 +311,15 @@ if ($FrameworkDir -ne "") {
         Write-Host ""
         Write-Host "  Nota: engram complementa a obsidian-brain (pueden usarse juntos)" -ForegroundColor Yellow
         Write-Host ""
-        $choice = Read-Host "  Opcion [1/2/3/4/5]"
+        if ($NonInteractive) {
+            if ($Memory -ne "") {
+                $choice = $Memory
+            } else {
+                $choice = "5"
+            }
+        } else {
+            $choice = Read-Host "  Opcion [1/2/3/4/5]"
+        }
 
         switch ($choice) {
             "1" {
@@ -300,44 +371,7 @@ if ($FrameworkDir -ne "") {
             }
             "4" {
                 if (Test-Path "$FrameworkDir/optional/engram") {
-                    # Copy MCP config
-                    $projectName = Split-Path -Leaf (Get-Location)
-                    if (Test-Path "$FrameworkDir/optional/engram/.mcp-config-snippet.json") {
-                        if (-not (Test-Path ".mcp.json")) {
-                            if ($DryRun) {
-                                Write-Host "  [DRY-RUN] Would generate .mcp.json from template" -ForegroundColor Cyan
-                                $script:DryRunActions += "Generate .mcp.json"
-                            } else {
-                                $mcpContent = Get-Content "$FrameworkDir/optional/engram/.mcp-config-snippet.json" -Raw
-                                $mcpContent = $mcpContent -replace '__PROJECT_NAME__', $projectName
-                                $mcpContent | Out-File -FilePath ".mcp.json" -Encoding utf8
-                            }
-                        } else {
-                            Write-Host "  .mcp.json ya existe - agrega engram manualmente" -ForegroundColor Yellow
-                            Write-Host "  Ver: optional/engram/.mcp-config-snippet.json"
-                        }
-                    }
-                    # Copy install scripts
-                    Backup-IfExists "scripts/install-engram.sh"
-                    if (Test-Path "$FrameworkDir/optional/engram/install-engram.sh") {
-                        Copy-DryRun -Source "$FrameworkDir/optional/engram/install-engram.sh" -Destination "scripts/" -Force
-                    }
-                    Backup-IfExists "scripts/install-engram.ps1"
-                    if (Test-Path "$FrameworkDir/optional/engram/install-engram.ps1") {
-                        Copy-DryRun -Source "$FrameworkDir/optional/engram/install-engram.ps1" -Destination "scripts/" -Force
-                    }
-                    # Append gitignore snippet
-                    $snippetPath = "$FrameworkDir/optional/engram/.gitignore-snippet.txt"
-                    if (Test-Path $snippetPath) {
-                        if ($DryRun) {
-                            Write-Host "  [DRY-RUN] Would append engram gitignore snippet to .gitignore" -ForegroundColor Cyan
-                            $script:DryRunActions += "Append engram gitignore snippet"
-                        } else {
-                            Add-Content -Path ".gitignore" -Value ""
-                            Get-Content $snippetPath | Add-Content -Path ".gitignore"
-                        }
-                    }
-                    Write-Host "  Done: Engram configurado" -ForegroundColor Green
+                    Install-EngramModule -FrameworkPath $FrameworkDir
                     Write-Host "  Ejecuta: .\scripts\install-engram.ps1 para instalar el binario" -ForegroundColor Cyan
                 }
             }
@@ -349,37 +383,17 @@ if ($FrameworkDir -ne "") {
         # Ask about engram addon if they chose obsidian-brain
         if ($choice -eq "1" -and (Test-Path "$FrameworkDir/optional/engram")) {
             Write-Host ""
-            $addEngram = Read-Host "  Agregar tambien Engram para memoria de agentes AI? [y/N]"
+            if ($NonInteractive) {
+                if ($Engram) {
+                    $addEngram = "y"
+                } else {
+                    $addEngram = "N"
+                }
+            } else {
+                $addEngram = Read-Host "  Agregar tambien Engram para memoria de agentes AI? [y/N]"
+            }
             if ($addEngram -eq "y" -or $addEngram -eq "Y") {
-                $projectName = Split-Path -Leaf (Get-Location)
-                if (-not (Test-Path ".mcp.json")) {
-                    if ($DryRun) {
-                        Write-Host "  [DRY-RUN] Would generate .mcp.json from template" -ForegroundColor Cyan
-                        $script:DryRunActions += "Generate .mcp.json"
-                    } else {
-                        $mcpContent = Get-Content "$FrameworkDir/optional/engram/.mcp-config-snippet.json" -Raw
-                        $mcpContent = $mcpContent -replace '__PROJECT_NAME__', $projectName
-                        $mcpContent | Out-File -FilePath ".mcp.json" -Encoding utf8
-                    }
-                }
-                Backup-IfExists "scripts/install-engram.sh"
-                if (Test-Path "$FrameworkDir/optional/engram/install-engram.sh") {
-                    Copy-DryRun -Source "$FrameworkDir/optional/engram/install-engram.sh" -Destination "scripts/" -Force
-                }
-                Backup-IfExists "scripts/install-engram.ps1"
-                if (Test-Path "$FrameworkDir/optional/engram/install-engram.ps1") {
-                    Copy-DryRun -Source "$FrameworkDir/optional/engram/install-engram.ps1" -Destination "scripts/" -Force
-                }
-                $snippetPath = "$FrameworkDir/optional/engram/.gitignore-snippet.txt"
-                if (Test-Path $snippetPath) {
-                    if ($DryRun) {
-                        Write-Host "  [DRY-RUN] Would append engram gitignore snippet to .gitignore" -ForegroundColor Cyan
-                        $script:DryRunActions += "Append engram gitignore snippet"
-                    } else {
-                        Add-Content -Path ".gitignore" -Value ""
-                        Get-Content $snippetPath | Add-Content -Path ".gitignore"
-                    }
-                }
+                Install-EngramModule -FrameworkPath $FrameworkDir
                 Write-Host "  Done: Engram agregado (complementa Obsidian Brain)" -ForegroundColor Green
                 Write-Host "  Ejecuta: .\scripts\install-engram.ps1 para instalar el binario" -ForegroundColor Cyan
             }
@@ -469,7 +483,15 @@ if ($FrameworkDir -ne "" -and $TemplateSuffix -ne "") {
     Write-Host "    3) Woodpecker CI"
     Write-Host "    4) Solo CI-Local (sin CI remoto)"
     Write-Host ""
-    $ciChoice = Read-Host "  Opcion [1/2/3/4]"
+    if ($NonInteractive) {
+        if ($CI -ne "") {
+            $ciChoice = $CI
+        } else {
+            $ciChoice = "4"
+        }
+    } else {
+        $ciChoice = Read-Host "  Opcion [1/2/3/4]"
+    }
 
     switch ($ciChoice) {
         "1" {
@@ -523,7 +545,15 @@ if ($FrameworkDir -ne "" -and $TemplateSuffix -ne "") {
             # GHAGGA AI Code Review (optional)
             if (Test-Path "$FrameworkDir/optional/ghagga") {
                 Write-Host ""
-                $addGhagga = Read-Host "  Agregar AI code review con GHAGGA? [y/N]"
+                if ($NonInteractive) {
+                    if ($Ghagga) {
+                        $addGhagga = "y"
+                    } else {
+                        $addGhagga = "N"
+                    }
+                } else {
+                    $addGhagga = Read-Host "  Agregar AI code review con GHAGGA? [y/N]"
+                }
                 if ($addGhagga -eq "y" -or $addGhagga -eq "Y") {
                     $reusableGhagga = "$FrameworkDir/.github/workflows/reusable-ghagga-review.yml"
                     if (Test-Path $reusableGhagga) {

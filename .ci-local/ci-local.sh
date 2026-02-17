@@ -184,16 +184,21 @@ ensure_docker_image() {
 
 run_in_ci() {
     local image_name=$(get_image_name)
-    local docker_flags="--rm"
+    local -a docker_flags=(--rm)
     if [ -t 0 ]; then
-        docker_flags="$docker_flags -it"
+        docker_flags+=(-it)
     fi
     local timeout="${CI_LOCAL_TIMEOUT:-600}"
-    docker run $docker_flags \
+    # Validate timeout is a positive integer
+    if ! [[ "$timeout" =~ ^[0-9]+$ ]]; then
+        echo -e "${RED}Error: CI_LOCAL_TIMEOUT must be a positive integer, got: $timeout${NC}"
+        exit 1
+    fi
+    docker run "${docker_flags[@]}" \
         --stop-timeout 30 \
         -v "$PROJECT_DIR:/home/runner/work" \
         -e CI=true \
-        "$image_name" "timeout $timeout bash -c '$1'"
+        "$image_name" timeout "$timeout" bash -c "$1"
 }
 
 # =============================================================================

@@ -6,6 +6,15 @@
 # =============================================================================
 
 # =============================================================================
+# Shared logging helpers
+# =============================================================================
+function Log-Ok   { param([string]$Message) Write-Host "  [OK]   $Message" -ForegroundColor Green }
+function Log-Warn { param([string]$Message) Write-Host "  [WARN] $Message" -ForegroundColor Yellow }
+function Log-Fail { param([string]$Message) Write-Host "  [FAIL] $Message" -ForegroundColor Red }
+function Log-Info { param([string]$Message) Write-Host "  [INFO] $Message" -ForegroundColor Cyan }
+function Log-Step { param([string]$Message) Write-Host "$Message" -ForegroundColor Yellow }
+
+# =============================================================================
 # Backup-IfExists - Create a .bak copy of a file before overwriting
 # =============================================================================
 # Usage: Backup-IfExists "path/to/file"
@@ -80,7 +89,7 @@ function Detect-Stack {
         return $result
     }
 
-    # Python
+    # Python (detection order: uv > poetry > pipenv > pip)
     if ((Test-Path "$ProjectPath/pyproject.toml") -or (Test-Path "$ProjectPath/setup.py") -or (Test-Path "$ProjectPath/requirements.txt")) {
         $result.StackType = "python"
         if (Test-Path "$ProjectPath/uv.lock") { $result.BuildTool = "uv" }
@@ -133,4 +142,4 @@ function Detect-Framework {
     return $result
 }
 
-Export-ModuleMember -Function Detect-Stack, Detect-Framework, Backup-IfExists
+Export-ModuleMember -Function Detect-Stack, Detect-Framework, Backup-IfExists, Log-Ok, Log-Warn, Log-Fail, Log-Info, Log-Step

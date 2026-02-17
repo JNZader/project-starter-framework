@@ -40,7 +40,7 @@ if ($Help) {
 }
 
 # =============================================================================
-# Counters
+# Counters + wrappers that log AND count
 # =============================================================================
 $script:PassCount = 0
 $script:WarnCount = 0
@@ -48,25 +48,25 @@ $script:FailCount = 0
 
 function Check-Ok {
     param([string]$Message)
-    Write-Host "  [OK]   $Message" -ForegroundColor Green
+    Log-Ok $Message
     $script:PassCount++
 }
 
 function Check-Warn {
     param([string]$Message)
-    Write-Host "  [WARN] $Message" -ForegroundColor Yellow
+    Log-Warn $Message
     $script:WarnCount++
 }
 
 function Check-Fail {
     param([string]$Message)
-    Write-Host "  [FAIL] $Message" -ForegroundColor Red
+    Log-Fail $Message
     $script:FailCount++
 }
 
 function Check-Info {
     param([string]$Message)
-    Write-Host "  [INFO] $Message" -ForegroundColor Cyan
+    Log-Info $Message
 }
 
 # =============================================================================
@@ -118,8 +118,13 @@ $semgrepCmd = Get-Command semgrep -ErrorAction SilentlyContinue
 if ($semgrepCmd) {
     $semgrepVersion = (semgrep --version 2>$null) | Select-Object -First 1
     Check-Ok "Semgrep installed natively ($semgrepVersion)"
-} elseif ($dockerCmd -and ((docker info 2>$null) -ne $null)) {
-    Check-Ok "Semgrep available via Docker (returntocorp/semgrep)"
+} elseif ($dockerCmd) {
+    $null = docker info 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Check-Ok "Semgrep available via Docker (returntocorp/semgrep)"
+    } else {
+        Check-Warn "Semgrep not available (Docker daemon not running)"
+    }
 } else {
     Check-Warn "Semgrep not available (install semgrep or Docker)"
 }

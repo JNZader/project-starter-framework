@@ -54,7 +54,7 @@ El framework core incluye CI-Local, AI Config y templates CI. Es totalmente func
 
 ```bash
 # 1. Copiar framework core (sin optional/)
-cp -r /path/to/project-starter-framework/{.ai-config,.ci-local,.github,templates,scripts,CLAUDE.md,.gitignore.template} /path/to/tu-proyecto/
+cp -r /path/to/project-starter-framework/{.ai-config,.ci-local,.github,templates,scripts,lib,CLAUDE.md,.gitignore.template} /path/to/tu-proyecto/
 
 # 2. Ir al proyecto
 cd /path/to/tu-proyecto
@@ -70,7 +70,8 @@ mv .gitignore.template .gitignore
 
 ```powershell
 # 1. Copiar framework core
-Copy-Item -Recurse C:\path\to\project-starter-framework\{.ai-config,.ci-local,.github,templates,scripts,CLAUDE.md,.gitignore.template} C:\path\to\tu-proyecto\
+$items = '.ai-config','.ci-local','.github','templates','scripts','lib','CLAUDE.md','.gitignore.template'
+$items | ForEach-Object { Copy-Item -Recurse "C:\path\to\project-starter-framework\$_" "C:\path\to\tu-proyecto\" }
 
 # 2. Ir al proyecto
 cd C:\path\to\tu-proyecto
@@ -88,7 +89,7 @@ Si deseas memoria de proyecto (Obsidian Brain) o code review automatizado (Ghagg
 
 ```bash
 # 1. Copiar framework completo (incluye optional/)
-cp -r /path/to/project-starter-framework/{.ai-config,.ci-local,.github,templates,scripts,optional,CLAUDE.md,.gitignore.template} /path/to/tu-proyecto/
+cp -r /path/to/project-starter-framework/{.ai-config,.ci-local,.github,templates,scripts,lib,optional,CLAUDE.md,.gitignore.template} /path/to/tu-proyecto/
 
 # 2. Continuar con pasos 2-4 de Opción 1
 ```
@@ -142,6 +143,10 @@ project-starter-framework/
 │   ├── init-project.ps1/sh       # Setup inicial
 │   ├── sync-ai-config.ps1/sh     # Sincronizar AI config
 │   └── add-skill.sh              # Agregar Gentleman-Skills
+│
+├── lib/                          # Shared libraries
+│   ├── common.sh                 # Funciones compartidas (Bash)
+│   └── Common.psm1               # Funciones compartidas (PowerShell)
 │
 ├── .releaserc                    # Config semantic-release
 ├── CLAUDE.md                     # Instrucciones Claude Code
@@ -244,6 +249,23 @@ El CI-Local **detecta automáticamente** tu stack:
 | Rust | `Cargo.toml` | clippy | cargo test |
 | Node.js | `package.json` | npm lint | npm test |
 | Python | `pyproject.toml` | ruff | pytest |
+
+### Matriz de Funcionalidades por Stack
+
+| Funcionalidad | Java | Node.js | Python | Go | Rust |
+|---------------|------|---------|--------|----|------|
+| CI-Local (quick) | ✓ | ✓ | ✓ | ✓ | ✓ |
+| CI-Local (full/Docker) | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Pre-commit hooks | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Semgrep security scan | ✓ | ✓ | ✓ | ✓ | ✓ |
+| GitHub Actions template | ✓ | ✓ | ✓ | ✓ | ✓ |
+| GitLab CI template | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Woodpecker CI template | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Reusable workflow | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Dependabot config | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Lint integrado | spotless | eslint | ruff | golangci-lint | clippy |
+| Test runner | JUnit | jest/vitest | pytest | go test | cargo test |
+| Docker build | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 ---
 

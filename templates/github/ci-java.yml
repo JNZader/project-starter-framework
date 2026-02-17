@@ -13,12 +13,12 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - '**.md'
+      - '**/*.md'
       - '.gitignore'
   pull_request:
     branches: [main, develop]
     paths-ignore:
-      - '**.md'
+      - '**/*.md'
       - '.gitignore'
   workflow_dispatch:
     inputs:

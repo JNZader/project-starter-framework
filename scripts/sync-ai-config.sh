@@ -39,6 +39,9 @@ generate_claude() {
     # Crear directorio .claude si no existe
     mkdir -p "$PROJECT_DIR/.claude"
 
+    # Backup existing file before overwrite
+    backup_if_exists "$PROJECT_DIR/CLAUDE.md"
+
     # Generar CLAUDE.md combinando prompts y agentes
     cat > "$PROJECT_DIR/CLAUDE.md" << 'HEADER'
 # Claude Code Instructions
@@ -78,6 +81,9 @@ HEADER
 generate_opencode() {
     echo -e "${YELLOW}Generating OpenCode config...${NC}"
 
+    # Backup existing file before overwrite
+    backup_if_exists "$PROJECT_DIR/AGENTS.md"
+
     # Generar AGENTS.md para OpenCode
     cat > "$PROJECT_DIR/AGENTS.md" << 'HEADER'
 # OpenCode Agents
@@ -106,6 +112,9 @@ HEADER
 generate_cursor() {
     echo -e "${YELLOW}Generating Cursor config...${NC}"
 
+    # Backup existing file before overwrite
+    backup_if_exists "$PROJECT_DIR/.cursorrules"
+
     # Generar .cursorrules
     cat > "$PROJECT_DIR/.cursorrules" << 'HEADER'
 # Cursor Rules
@@ -124,6 +133,9 @@ HEADER
 
 generate_aider() {
     echo -e "${YELLOW}Generating Aider config...${NC}"
+
+    # Backup existing file before overwrite
+    backup_if_exists "$PROJECT_DIR/.aider.conf.yml"
 
     # Generar .aider.conf.yml
     cat > "$PROJECT_DIR/.aider.conf.yml" << 'EOF'

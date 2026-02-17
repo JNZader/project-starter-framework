@@ -1,5 +1,5 @@
 # =============================================================================
-# SYNC-AI-CONFIG: Genera configuración para diferentes AI CLIs (Windows)
+# SYNC-AI-CONFIG: Genera configuracion para diferentes AI CLIs (Windows)
 # =============================================================================
 
 param(
@@ -12,6 +12,8 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectDir = Split-Path -Parent $ScriptDir
 $AiConfigDir = "$ProjectDir\.ai-config"
 
+Import-Module "$ScriptDir\..\lib\Common.psm1" -Force
+
 Write-Host "=== Sync AI Config ===" -ForegroundColor Cyan
 
 function Generate-Claude {
@@ -19,6 +21,9 @@ function Generate-Claude {
 
     # Crear directorio .claude
     New-Item -ItemType Directory -Path "$ProjectDir\.claude" -Force | Out-Null
+
+    # Backup existing file before overwrite
+    Backup-IfExists "$ProjectDir\CLAUDE.md"
 
     # Iniciar CLAUDE.md
     $content = @"
@@ -59,6 +64,9 @@ function Generate-Claude {
 function Generate-OpenCode {
     Write-Host "Generating OpenCode config..." -ForegroundColor Yellow
 
+    # Backup existing file before overwrite
+    Backup-IfExists "$ProjectDir\AGENTS.md"
+
     $content = @"
 # OpenCode Agents
 
@@ -81,6 +89,9 @@ function Generate-OpenCode {
 function Generate-Cursor {
     Write-Host "Generating Cursor config..." -ForegroundColor Yellow
 
+    # Backup existing file before overwrite
+    Backup-IfExists "$ProjectDir\.cursorrules"
+
     $content = @"
 # Cursor Rules
 # Auto-generated from .ai-config/
@@ -100,6 +111,9 @@ function Generate-Cursor {
 
 function Generate-Aider {
     Write-Host "Generating Aider config..." -ForegroundColor Yellow
+
+    # Backup existing file before overwrite
+    Backup-IfExists "$ProjectDir\.aider.conf.yml"
 
     $content = @"
 # Aider Configuration

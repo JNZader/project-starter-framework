@@ -1,0 +1,94 @@
+# ===========================================
+# Workflow: Auto Version
+# ===========================================
+# Runs semantic-release on push to main and updates
+# .framework-version with the latest tag (without 'v' prefix).
+#
+# Trigger: push to main (ignores docs-only changes)
+# ===========================================
+
+name: Auto Version
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - '.gitignore'
+      - 'LICENSE'
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    name: Semantic Release + Version File
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache semantic-release
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: semantic-release-${{ runner.os }}-${{ hashFiles('.releaserc*') }}
+          restore-keys: semantic-release-${{ runner.os }}-
+
+      - name: Install semantic-release
+        run: |
+          npm install -g semantic-release \
+            @semantic-release/commit-analyzer \
+            @semantic-release/release-notes-generator \
+            @semantic-release/changelog \
+            @semantic-release/git \
+            @semantic-release/github \
+            conventional-changelog-conventionalcommits
+
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
+
+      - name: Update .framework-version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Fetch tags created by semantic-release
+          git fetch --tags
+
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No tags found, skipping version file update"
+            exit 0
+          fi
+
+          # Strip 'v' prefix
+          VERSION="${LATEST_TAG#v}"
+          CURRENT_VERSION=""
+          if [ -f .framework-version ]; then
+            CURRENT_VERSION=$(cat .framework-version | tr -d '[:space:]')
+          fi
+
+          if [ "$VERSION" = "$CURRENT_VERSION" ]; then
+            echo "Version file already up to date ($VERSION)"
+            exit 0
+          fi
+
+          echo "$VERSION" > .framework-version
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .framework-version
+          git diff --cached --quiet || git commit -m "chore: update .framework-version to $VERSION [skip ci]"
+          git push

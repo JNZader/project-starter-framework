@@ -13,6 +13,98 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 # Source shared library
 source "$SCRIPT_DIR/../lib/common.sh"
 
+# =============================================================================
+# Argument parsing
+# =============================================================================
+DRY_RUN=false
+
+show_help() {
+    echo "Usage: $(basename "$0") [OPTIONS]"
+    echo ""
+    echo "Setup inicial para nuevo proyecto."
+    echo ""
+    echo "Options:"
+    echo "  --dry-run   Show what would be done without making changes"
+    echo "  --help      Show this help message"
+    echo ""
+}
+
+for arg in "$@"; do
+    case "$arg" in
+        --dry-run)
+            DRY_RUN=true
+            ;;
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+    esac
+done
+
+# =============================================================================
+# Dry-run helpers
+# =============================================================================
+# Tracks actions that would be performed in dry-run mode
+DRY_RUN_ACTIONS=()
+
+# run_cmd - Execute a command or print what would be executed
+# Usage: run_cmd <description> <command> [args...]
+run_cmd() {
+    local desc="$1"
+    shift
+    if [[ "$DRY_RUN" == true ]]; then
+        echo -e "  ${CYAN}[DRY-RUN] Would execute: $*${NC}"
+        DRY_RUN_ACTIONS+=("$desc")
+    else
+        "$@"
+    fi
+}
+
+# run_copy - Copy a file/directory or print what would be copied
+# Usage: run_copy <source> <dest> [cp flags...]
+run_copy() {
+    local src="$1"
+    local dest="$2"
+    shift 2
+    if [[ "$DRY_RUN" == true ]]; then
+        echo -e "  ${CYAN}[DRY-RUN] Would copy: $src -> $dest${NC}"
+        DRY_RUN_ACTIONS+=("Copy $src -> $dest")
+    else
+        cp "$@" "$src" "$dest"
+    fi
+}
+
+# run_mkdir - Create directory or print what would be created
+# Usage: run_mkdir <path>
+run_mkdir() {
+    local dir="$1"
+    if [[ "$DRY_RUN" == true ]]; then
+        echo -e "  ${CYAN}[DRY-RUN] Would create directory: $dir${NC}"
+        DRY_RUN_ACTIONS+=("Create directory $dir")
+    else
+        mkdir -p "$dir"
+    fi
+}
+
+# run_write - Write content to a file or print what would be written
+# Usage: echo "content" | run_write <dest> [description]
+run_write() {
+    local dest="$1"
+    local desc="${2:-$dest}"
+    if [[ "$DRY_RUN" == true ]]; then
+        cat > /dev/null  # consume stdin
+        echo -e "  ${CYAN}[DRY-RUN] Would write file: $dest${NC}"
+        DRY_RUN_ACTIONS+=("Write $desc")
+    else
+        cat > "$dest"
+    fi
+}
+
+if [[ "$DRY_RUN" == true ]]; then
+    echo -e "${YELLOW}=== DRY-RUN MODE: No changes will be made ===${NC}"
+    echo ""
+fi
+
 echo -e "${CYAN}"
 echo "╔════════════════════════════════════════════════════════════╗"
 echo "║           PROJECT STARTER FRAMEWORK v2.0                   ║"
@@ -28,8 +120,8 @@ cd "$PROJECT_DIR"
 echo -e "${YELLOW}[1/8] Verificando repositorio Git...${NC}"
 if [[ ! -d ".git" ]]; then
     echo -e "${YELLOW}  No es un repo git. Inicializando...${NC}"
-    git init
-    git checkout -b main
+    run_cmd "Initialize git repo" git init
+    run_cmd "Create main branch" git checkout -b main
     echo -e "${GREEN}  ✓ Repo inicializado con branch main${NC}"
 else
     echo -e "${GREEN}  ✓ Repo git existente${NC}"
@@ -40,9 +132,9 @@ fi
 # =============================================================================
 echo -e "${YELLOW}[2/8] Configurando git hooks...${NC}"
 if [[ -d ".ci-local/hooks" ]]; then
-    git config core.hooksPath .ci-local/hooks
-    chmod +x .ci-local/hooks/* 2>/dev/null || true
-    chmod +x .ci-local/*.sh 2>/dev/null || true
+    run_cmd "Set git hooks path" git config core.hooksPath .ci-local/hooks
+    run_cmd "Make hooks executable" chmod +x .ci-local/hooks/* 2>/dev/null || true
+    run_cmd "Make ci-local scripts executable" chmod +x .ci-local/*.sh 2>/dev/null || true
     echo -e "${GREEN}  ✓ Hooks configurados${NC}"
 else
     echo -e "${YELLOW}  ⚠ .ci-local/hooks no encontrado${NC}"
@@ -86,7 +178,7 @@ fi
 # =============================================================================
 echo -e "${YELLOW}[5/8] Verificando .gitignore...${NC}"
 if [[ ! -f ".gitignore" ]]; then
-    cat > .gitignore << 'EOF'
+    cat << 'EOF' | run_write ".gitignore"
 # CI Local
 .ci-local/docker/
 .ci-local-image-built
@@ -154,8 +246,8 @@ detect_framework
 
 if [[ -n "$FRAMEWORK_DIR" ]]; then
     # Copy shared library to target project
-    mkdir -p lib
-    cp "$FRAMEWORK_DIR/lib/common.sh" lib/common.sh
+    run_mkdir "lib"
+    run_copy "$FRAMEWORK_DIR/lib/common.sh" "lib/common.sh"
     echo -e "${GREEN}  lib/common.sh copied${NC}"
 
     if [[ "$HAS_OPTIONAL" == true ]]; then
@@ -173,17 +265,22 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
         case "$MEMORY_CHOICE" in
             1)
                 if [[ -d "$FRAMEWORK_DIR/optional/obsidian-brain/.project" ]]; then
-                    cp -r "$FRAMEWORK_DIR/optional/obsidian-brain/.project" .
-                    cp -r "$FRAMEWORK_DIR/optional/obsidian-brain/.obsidian" .
+                    run_copy "$FRAMEWORK_DIR/optional/obsidian-brain/.project" "." -r
+                    run_copy "$FRAMEWORK_DIR/optional/obsidian-brain/.obsidian" "." -r
                     backup_if_exists "scripts/new-wave.sh"
-                    cp "$FRAMEWORK_DIR/optional/obsidian-brain/new-wave.sh" scripts/ 2>/dev/null || true
+                    run_copy "$FRAMEWORK_DIR/optional/obsidian-brain/new-wave.sh" "scripts/" 2>/dev/null || true
                     backup_if_exists "scripts/new-wave.ps1"
-                    cp "$FRAMEWORK_DIR/optional/obsidian-brain/new-wave.ps1" scripts/ 2>/dev/null || true
-                    chmod +x scripts/new-wave.sh 2>/dev/null || true
+                    run_copy "$FRAMEWORK_DIR/optional/obsidian-brain/new-wave.ps1" "scripts/" 2>/dev/null || true
+                    run_cmd "Make new-wave.sh executable" chmod +x scripts/new-wave.sh 2>/dev/null || true
                     # Append gitignore snippet
                     if [[ -f "$FRAMEWORK_DIR/optional/obsidian-brain/.obsidian-gitignore-snippet.txt" ]]; then
-                        echo "" >> .gitignore
-                        cat "$FRAMEWORK_DIR/optional/obsidian-brain/.obsidian-gitignore-snippet.txt" >> .gitignore
+                        if [[ "$DRY_RUN" == true ]]; then
+                            echo -e "  ${CYAN}[DRY-RUN] Would append .obsidian-gitignore-snippet.txt to .gitignore${NC}"
+                            DRY_RUN_ACTIONS+=("Append obsidian gitignore snippet")
+                        else
+                            echo "" >> .gitignore
+                            cat "$FRAMEWORK_DIR/optional/obsidian-brain/.obsidian-gitignore-snippet.txt" >> .gitignore
+                        fi
                     fi
                     echo -e "${GREEN}  ✓ Obsidian Brain instalado${NC}"
                     echo -e "  ${CYAN}Nota: Instala plugins Kanban, Dataview y Templater desde Obsidian${NC}"
@@ -191,18 +288,18 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
                 ;;
             2)
                 if [[ -d "$FRAMEWORK_DIR/optional/vibekanban/.project" ]]; then
-                    cp -r "$FRAMEWORK_DIR/optional/vibekanban/.project" .
+                    run_copy "$FRAMEWORK_DIR/optional/vibekanban/.project" "." -r
                     backup_if_exists "scripts/new-wave.sh"
-                    cp "$FRAMEWORK_DIR/optional/vibekanban/new-wave.sh" scripts/ 2>/dev/null || true
+                    run_copy "$FRAMEWORK_DIR/optional/vibekanban/new-wave.sh" "scripts/" 2>/dev/null || true
                     backup_if_exists "scripts/new-wave.ps1"
-                    cp "$FRAMEWORK_DIR/optional/vibekanban/new-wave.ps1" scripts/ 2>/dev/null || true
-                    chmod +x scripts/new-wave.sh 2>/dev/null || true
+                    run_copy "$FRAMEWORK_DIR/optional/vibekanban/new-wave.ps1" "scripts/" 2>/dev/null || true
+                    run_cmd "Make new-wave.sh executable" chmod +x scripts/new-wave.sh 2>/dev/null || true
                     echo -e "${GREEN}  ✓ VibeKanban instalado (legacy)${NC}"
                 fi
                 ;;
             3)
                 if [[ -d "$FRAMEWORK_DIR/optional/memory-simple/.project" ]]; then
-                    cp -r "$FRAMEWORK_DIR/optional/memory-simple/.project" .
+                    run_copy "$FRAMEWORK_DIR/optional/memory-simple/.project" "." -r
                     echo -e "${GREEN}  ✓ Memory simple instalado${NC}"
                 fi
                 ;;
@@ -213,8 +310,13 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
                     escaped_name=$(escape_sed "$project_name")
                     if [[ -f "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" ]]; then
                         if [[ ! -f ".mcp.json" ]]; then
-                            sed "s/__PROJECT_NAME__/$escaped_name/g" \
-                                "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" > .mcp.json
+                            if [[ "$DRY_RUN" == true ]]; then
+                                echo -e "  ${CYAN}[DRY-RUN] Would generate .mcp.json from template${NC}"
+                                DRY_RUN_ACTIONS+=("Generate .mcp.json")
+                            else
+                                sed "s/__PROJECT_NAME__/$escaped_name/g" \
+                                    "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" > .mcp.json
+                            fi
                         else
                             echo -e "${YELLOW}  .mcp.json ya existe - agrega engram manualmente${NC}"
                             echo -e "  Ver: optional/engram/.mcp-config-snippet.json"
@@ -222,14 +324,19 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
                     fi
                     # Copiar script de instalacion
                     backup_if_exists "scripts/install-engram.sh"
-                    cp "$FRAMEWORK_DIR/optional/engram/install-engram.sh" scripts/ 2>/dev/null || true
+                    run_copy "$FRAMEWORK_DIR/optional/engram/install-engram.sh" "scripts/" 2>/dev/null || true
                     backup_if_exists "scripts/install-engram.ps1"
-                    cp "$FRAMEWORK_DIR/optional/engram/install-engram.ps1" scripts/ 2>/dev/null || true
-                    chmod +x scripts/install-engram.sh 2>/dev/null || true
+                    run_copy "$FRAMEWORK_DIR/optional/engram/install-engram.ps1" "scripts/" 2>/dev/null || true
+                    run_cmd "Make install-engram.sh executable" chmod +x scripts/install-engram.sh 2>/dev/null || true
                     # Append gitignore snippet
                     if [[ -f "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" ]]; then
-                        echo "" >> .gitignore
-                        cat "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" >> .gitignore
+                        if [[ "$DRY_RUN" == true ]]; then
+                            echo -e "  ${CYAN}[DRY-RUN] Would append engram gitignore snippet to .gitignore${NC}"
+                            DRY_RUN_ACTIONS+=("Append engram gitignore snippet")
+                        else
+                            echo "" >> .gitignore
+                            cat "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" >> .gitignore
+                        fi
                     fi
                     echo -e "${GREEN}  ✓ Engram configurado${NC}"
                     echo -e "  ${CYAN}Ejecuta: ./scripts/install-engram.sh para instalar el binario${NC}"
@@ -248,17 +355,27 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
                 project_name=$(basename "$(pwd)")
                 escaped_name=$(escape_sed "$project_name")
                 if [[ ! -f ".mcp.json" ]]; then
-                    sed "s/__PROJECT_NAME__/$escaped_name/g" \
-                        "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" > .mcp.json
+                    if [[ "$DRY_RUN" == true ]]; then
+                        echo -e "  ${CYAN}[DRY-RUN] Would generate .mcp.json from template${NC}"
+                        DRY_RUN_ACTIONS+=("Generate .mcp.json")
+                    else
+                        sed "s/__PROJECT_NAME__/$escaped_name/g" \
+                            "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" > .mcp.json
+                    fi
                 fi
                 backup_if_exists "scripts/install-engram.sh"
-                cp "$FRAMEWORK_DIR/optional/engram/install-engram.sh" scripts/ 2>/dev/null || true
+                run_copy "$FRAMEWORK_DIR/optional/engram/install-engram.sh" "scripts/" 2>/dev/null || true
                 backup_if_exists "scripts/install-engram.ps1"
-                cp "$FRAMEWORK_DIR/optional/engram/install-engram.ps1" scripts/ 2>/dev/null || true
-                chmod +x scripts/install-engram.sh 2>/dev/null || true
+                run_copy "$FRAMEWORK_DIR/optional/engram/install-engram.ps1" "scripts/" 2>/dev/null || true
+                run_cmd "Make install-engram.sh executable" chmod +x scripts/install-engram.sh 2>/dev/null || true
                 if [[ -f "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" ]]; then
-                    echo "" >> .gitignore
-                    cat "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" >> .gitignore
+                    if [[ "$DRY_RUN" == true ]]; then
+                        echo -e "  ${CYAN}[DRY-RUN] Would append engram gitignore snippet to .gitignore${NC}"
+                        DRY_RUN_ACTIONS+=("Append engram gitignore snippet")
+                    else
+                        echo "" >> .gitignore
+                        cat "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" >> .gitignore
+                    fi
                 fi
                 echo -e "${GREEN}  ✓ Engram agregado (complementa Obsidian Brain)${NC}"
                 echo -e "  ${CYAN}Ejecuta: ./scripts/install-engram.sh para instalar el binario${NC}"
@@ -267,11 +384,16 @@ if [[ -n "$FRAMEWORK_DIR" ]]; then
     else
         # Framework detected but optional/ dir not present - create basic memory structure
         echo -e "  ${YELLOW}optional/ no disponible. Creando estructura básica de memoria...${NC}"
-        mkdir -p .project/Memory
-        touch .project/Memory/CONTEXT.md
-        touch .project/Memory/DECISIONS.md
-        touch .project/Memory/BLOCKERS.md
-        touch .project/Memory/KANBAN.md
+        run_mkdir ".project/Memory"
+        if [[ "$DRY_RUN" == true ]]; then
+            echo -e "  ${CYAN}[DRY-RUN] Would create CONTEXT.md, DECISIONS.md, BLOCKERS.md, KANBAN.md${NC}"
+            DRY_RUN_ACTIONS+=("Create basic memory files")
+        else
+            touch .project/Memory/CONTEXT.md
+            touch .project/Memory/DECISIONS.md
+            touch .project/Memory/BLOCKERS.md
+            touch .project/Memory/KANBAN.md
+        fi
         echo -e "${GREEN}  ✓ Estructura básica .project/Memory/ creada${NC}"
     fi
 else
@@ -279,145 +401,43 @@ else
 fi
 
 # =============================================================================
-# Helper: Generate dependabot.yml based on detected stack
+# Helper: Assemble dependabot.yml from template files
+# =============================================================================
+# Reads template fragments from templates/common/dependabot/ and concatenates
+# them based on the detected stack.
 # =============================================================================
 generate_dependabot_yml() {
     local stack="$1"
-    cat << 'HEADER'
-version: 2
+    local template_dir="$FRAMEWORK_DIR/templates/common/dependabot"
 
-updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      # timezone: "UTC"  # Change to your timezone
-    labels:
-      - "dependencies"
-      - "github-actions"
-    commit-message:
-      prefix: "chore(deps)"
-    groups:
-      actions:
-        patterns:
-          - "*"
-HEADER
+    # Header (version + updates key)
+    if [[ -f "$template_dir/header.yml" ]]; then
+        cat "$template_dir/header.yml"
+    else
+        echo "version: 2"
+        echo ""
+        echo "updates:"
+    fi
 
+    # GitHub Actions ecosystem (always included)
+    if [[ -f "$template_dir/github-actions.yml" ]]; then
+        cat "$template_dir/github-actions.yml"
+    fi
+
+    # Stack-specific ecosystem
+    local ecosystem_file=""
     case "$stack" in
-        java-gradle)
-            cat << 'GRADLE'
-
-  - package-ecosystem: "gradle"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    labels:
-      - "dependencies"
-      - "java"
-    commit-message:
-      prefix: "chore(deps)"
-    groups:
-      java-dependencies:
-        patterns:
-          - "*"
-GRADLE
-            ;;
-        java-maven)
-            cat << 'MAVEN'
-
-  - package-ecosystem: "maven"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    labels:
-      - "dependencies"
-      - "java"
-    commit-message:
-      prefix: "chore(deps)"
-    groups:
-      maven-dependencies:
-        patterns:
-          - "*"
-MAVEN
-            ;;
-        node)
-            cat << 'NODE'
-
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    labels:
-      - "dependencies"
-      - "javascript"
-    commit-message:
-      prefix: "chore(deps)"
-    groups:
-      npm-dependencies:
-        patterns:
-          - "*"
-        exclude-patterns:
-          - "@types/*"
-      npm-types:
-        patterns:
-          - "@types/*"
-NODE
-            ;;
-        python)
-            cat << 'PYTHON'
-
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    labels:
-      - "dependencies"
-      - "python"
-    commit-message:
-      prefix: "chore(deps)"
-PYTHON
-            ;;
-        go)
-            cat << 'GO'
-
-  - package-ecosystem: "gomod"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    labels:
-      - "dependencies"
-      - "go"
-    commit-message:
-      prefix: "chore(deps)"
-    groups:
-      go-dependencies:
-        patterns:
-          - "*"
-GO
-            ;;
-        rust)
-            cat << 'RUST'
-
-  - package-ecosystem: "cargo"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    labels:
-      - "dependencies"
-      - "rust"
-    commit-message:
-      prefix: "chore(deps)"
-RUST
-            ;;
+        java-gradle) ecosystem_file="gradle.yml" ;;
+        java-maven)  ecosystem_file="maven.yml" ;;
+        node)        ecosystem_file="npm.yml" ;;
+        python)      ecosystem_file="pip.yml" ;;
+        go)          ecosystem_file="gomod.yml" ;;
+        rust)        ecosystem_file="cargo.yml" ;;
     esac
+
+    if [[ -n "$ecosystem_file" && -f "$template_dir/$ecosystem_file" ]]; then
+        cat "$template_dir/$ecosystem_file"
+    fi
 }
 
 # =============================================================================
@@ -446,13 +466,13 @@ if [[ -n "$FRAMEWORK_DIR" && -n "$TEMPLATE_SUFFIX" ]]; then
 
     case "$CI_CHOICE" in
         1)
-            mkdir -p .github/workflows
-            mkdir -p .github/ISSUE_TEMPLATE
+            run_mkdir ".github/workflows"
+            run_mkdir ".github/ISSUE_TEMPLATE"
 
             # CI workflow
             if [[ -f "$FRAMEWORK_DIR/templates/github/ci-${TEMPLATE_SUFFIX}.yml" ]]; then
                 backup_if_exists ".github/workflows/ci.yml"
-                cp "$FRAMEWORK_DIR/templates/github/ci-${TEMPLATE_SUFFIX}.yml" .github/workflows/ci.yml
+                run_copy "$FRAMEWORK_DIR/templates/github/ci-${TEMPLATE_SUFFIX}.yml" ".github/workflows/ci.yml"
                 echo -e "${GREEN}  ✓ GitHub Actions configurado (.github/workflows/ci.yml)${NC}"
             else
                 echo -e "${YELLOW}  ⚠ Template github/ci-${TEMPLATE_SUFFIX}.yml no encontrado${NC}"
@@ -461,23 +481,28 @@ if [[ -n "$FRAMEWORK_DIR" && -n "$TEMPLATE_SUFFIX" ]]; then
             # Dependabot auto-merge workflow
             if [[ -f "$FRAMEWORK_DIR/templates/github/dependabot-automerge.yml" ]]; then
                 backup_if_exists ".github/workflows/dependabot-automerge.yml"
-                cp "$FRAMEWORK_DIR/templates/github/dependabot-automerge.yml" .github/workflows/dependabot-automerge.yml
+                run_copy "$FRAMEWORK_DIR/templates/github/dependabot-automerge.yml" ".github/workflows/dependabot-automerge.yml"
                 echo -e "${GREEN}  ✓ Dependabot auto-merge configurado${NC}"
             fi
 
-            # Generate dependabot.yml with detected stack
+            # Assemble dependabot.yml from template fragments
             backup_if_exists ".github/dependabot.yml"
-            generate_dependabot_yml "$STACK" > .github/dependabot.yml
+            generate_dependabot_yml "$STACK" | run_write ".github/dependabot.yml" "dependabot.yml (assembled from templates)"
             echo -e "${GREEN}  ✓ Dependabot configurado (.github/dependabot.yml)${NC}"
 
             # Issue and PR templates
             if [[ -d "$FRAMEWORK_DIR/.github/ISSUE_TEMPLATE" ]]; then
-                cp "$FRAMEWORK_DIR/.github/ISSUE_TEMPLATE/"*.md .github/ISSUE_TEMPLATE/ 2>/dev/null || true
+                if [[ "$DRY_RUN" == true ]]; then
+                    echo -e "  ${CYAN}[DRY-RUN] Would copy issue templates from $FRAMEWORK_DIR/.github/ISSUE_TEMPLATE/${NC}"
+                    DRY_RUN_ACTIONS+=("Copy issue templates")
+                else
+                    cp "$FRAMEWORK_DIR/.github/ISSUE_TEMPLATE/"*.md .github/ISSUE_TEMPLATE/ 2>/dev/null || true
+                fi
                 echo -e "${GREEN}  ✓ Issue templates copiados${NC}"
             fi
             if [[ -f "$FRAMEWORK_DIR/.github/PULL_REQUEST_TEMPLATE.md" ]]; then
                 backup_if_exists ".github/PULL_REQUEST_TEMPLATE.md"
-                cp "$FRAMEWORK_DIR/.github/PULL_REQUEST_TEMPLATE.md" .github/PULL_REQUEST_TEMPLATE.md
+                run_copy "$FRAMEWORK_DIR/.github/PULL_REQUEST_TEMPLATE.md" ".github/PULL_REQUEST_TEMPLATE.md"
                 echo -e "${GREEN}  ✓ PR template copiado${NC}"
             fi
 
@@ -486,10 +511,14 @@ if [[ -n "$FRAMEWORK_DIR" && -n "$TEMPLATE_SUFFIX" ]]; then
                 echo -e ""
                 read -p "  ¿Agregar AI code review con GHAGGA? [y/N]: " ADD_GHAGGA
                 if [[ "$ADD_GHAGGA" == "y" || "$ADD_GHAGGA" == "Y" ]]; then
-                    cp "$FRAMEWORK_DIR/.github/workflows/reusable-ghagga-review.yml" .github/workflows/ 2>/dev/null || true
-                    bash "$FRAMEWORK_DIR/optional/ghagga/setup-ghagga.sh" --workflow 2>/dev/null || {
-                        # Fallback: copiar workflow directamente
-                        cat > .github/workflows/ghagga-review.yml << 'GHAGGA_WF'
+                    run_copy "$FRAMEWORK_DIR/.github/workflows/reusable-ghagga-review.yml" ".github/workflows/" 2>/dev/null || true
+                    if [[ "$DRY_RUN" == true ]]; then
+                        echo -e "  ${CYAN}[DRY-RUN] Would run setup-ghagga.sh or create fallback workflow${NC}"
+                        DRY_RUN_ACTIONS+=("Setup GHAGGA review workflow")
+                    else
+                        bash "$FRAMEWORK_DIR/optional/ghagga/setup-ghagga.sh" --workflow 2>/dev/null || {
+                            # Fallback: copiar workflow directamente
+                            cat > .github/workflows/ghagga-review.yml << 'GHAGGA_WF'
 name: AI Code Review
 on:
   pull_request:
@@ -507,7 +536,8 @@ jobs:
     secrets:
       ghagga-token: ${{ secrets.GHAGGA_TOKEN }}
 GHAGGA_WF
-                    }
+                        }
+                    fi
                     echo -e "${GREEN}  ✓ GHAGGA AI review configurado${NC}"
                     echo -e "  ${CYAN}Configura GHAGGA_URL (variable) y GHAGGA_TOKEN (secret) en repo settings${NC}"
                 fi
@@ -516,7 +546,7 @@ GHAGGA_WF
         2)
             if [[ -f "$FRAMEWORK_DIR/templates/gitlab/gitlab-ci-${TEMPLATE_SUFFIX}.yml" ]]; then
                 backup_if_exists ".gitlab-ci.yml"
-                cp "$FRAMEWORK_DIR/templates/gitlab/gitlab-ci-${TEMPLATE_SUFFIX}.yml" .gitlab-ci.yml
+                run_copy "$FRAMEWORK_DIR/templates/gitlab/gitlab-ci-${TEMPLATE_SUFFIX}.yml" ".gitlab-ci.yml"
                 echo -e "${GREEN}  ✓ GitLab CI configurado (.gitlab-ci.yml)${NC}"
             else
                 echo -e "${YELLOW}  ⚠ Template gitlab/gitlab-ci-${TEMPLATE_SUFFIX}.yml no encontrado${NC}"
@@ -525,7 +555,7 @@ GHAGGA_WF
         3)
             if [[ -f "$FRAMEWORK_DIR/templates/woodpecker/woodpecker-${TEMPLATE_SUFFIX}.yml" ]]; then
                 backup_if_exists ".woodpecker.yml"
-                cp "$FRAMEWORK_DIR/templates/woodpecker/woodpecker-${TEMPLATE_SUFFIX}.yml" .woodpecker.yml
+                run_copy "$FRAMEWORK_DIR/templates/woodpecker/woodpecker-${TEMPLATE_SUFFIX}.yml" ".woodpecker.yml"
                 echo -e "${GREEN}  ✓ Woodpecker CI configurado (.woodpecker.yml)${NC}"
             else
                 echo -e "${YELLOW}  ⚠ Template woodpecker/woodpecker-${TEMPLATE_SUFFIX}.yml no encontrado${NC}"
@@ -550,8 +580,13 @@ PROJECT_NAME=$(basename "$PROJECT_DIR")
 escaped_name=$(escape_sed "$PROJECT_NAME")
 
 if [[ -f "CLAUDE.md" ]]; then
-    sed_inplace "s/\[NOMBRE_PROYECTO\]/$escaped_name/g" CLAUDE.md 2>/dev/null || true
-    sed_inplace "s/\[STACK\]/$STACK/g" CLAUDE.md 2>/dev/null || true
+    if [[ "$DRY_RUN" == true ]]; then
+        echo -e "  ${CYAN}[DRY-RUN] Would update CLAUDE.md with project name and stack${NC}"
+        DRY_RUN_ACTIONS+=("Update CLAUDE.md placeholders")
+    else
+        sed_inplace "s/\[NOMBRE_PROYECTO\]/$escaped_name/g" CLAUDE.md 2>/dev/null || true
+        sed_inplace "s/\[STACK\]/$STACK/g" CLAUDE.md 2>/dev/null || true
+    fi
     echo -e "${GREEN}  ✓ CLAUDE.md actualizado${NC}"
 else
     echo -e "${YELLOW}  ⚠ CLAUDE.md no encontrado${NC}"
@@ -560,8 +595,13 @@ fi
 # Actualizar CONTEXT.md si existe
 if [[ -f ".project/Memory/CONTEXT.md" ]]; then
     TODAY=$(date +%Y-%m-%d)
-    sed_inplace "s/\[NOMBRE_PROYECTO\]/$escaped_name/g" .project/Memory/CONTEXT.md 2>/dev/null || true
-    sed_inplace "s/\[FECHA\]/$TODAY/g" .project/Memory/CONTEXT.md 2>/dev/null || true
+    if [[ "$DRY_RUN" == true ]]; then
+        echo -e "  ${CYAN}[DRY-RUN] Would update CONTEXT.md with project name and date${NC}"
+        DRY_RUN_ACTIONS+=("Update CONTEXT.md placeholders")
+    else
+        sed_inplace "s/\[NOMBRE_PROYECTO\]/$escaped_name/g" .project/Memory/CONTEXT.md 2>/dev/null || true
+        sed_inplace "s/\[FECHA\]/$TODAY/g" .project/Memory/CONTEXT.md 2>/dev/null || true
+    fi
 fi
 
 # =============================================================================
@@ -580,7 +620,7 @@ echo -e "  • pre-commit: AI attribution check + lint + security"
 echo -e "  • commit-msg: Valida mensaje sin AI attribution"
 echo -e "  • pre-push:   CI simulation en Docker"
 echo -e ""
-if [[ -f ".github/dependabot.yml" ]]; then
+if [[ -f ".github/dependabot.yml" ]] || [[ "$DRY_RUN" == true && "$CI_CHOICE" == "1" ]]; then
 echo -e "${GREEN}Dependabot:${NC}"
 echo -e "  • Updates semanales (lunes 9am)"
 echo -e "  • Auto-merge de patches habilitado"
@@ -592,3 +632,20 @@ echo -e "  ./.ci-local/ci-local.sh quick   # Check rápido"
 echo -e "  ./.ci-local/ci-local.sh full    # CI completo"
 echo -e "  ./.ci-local/ci-local.sh shell   # Shell en entorno CI"
 echo -e ""
+
+# =============================================================================
+# Dry-run summary
+# =============================================================================
+if [[ "$DRY_RUN" == true ]]; then
+    echo -e "${YELLOW}╔════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${YELLOW}║               DRY-RUN SUMMARY                              ║${NC}"
+    echo -e "${YELLOW}╚════════════════════════════════════════════════════════════╝${NC}"
+    echo -e ""
+    echo -e "${YELLOW}The following ${#DRY_RUN_ACTIONS[@]} action(s) would have been performed:${NC}"
+    for i in "${!DRY_RUN_ACTIONS[@]}"; do
+        echo -e "  $((i+1)). ${DRY_RUN_ACTIONS[$i]}"
+    done
+    echo -e ""
+    echo -e "${YELLOW}Run without --dry-run to apply these changes.${NC}"
+    echo -e ""
+fi

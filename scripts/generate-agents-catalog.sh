@@ -1,0 +1,212 @@
+#!/bin/bash
+# =============================================================================
+# GENERATE-AGENTS-CATALOG: Generates AGENTS.md catalog from agent files
+# =============================================================================
+# Scans .ai-config/agents/ for agent .md files, extracts name and description
+# from YAML frontmatter, and produces a categorized markdown catalog.
+#
+# Usage:
+#   ./scripts/generate-agents-catalog.sh
+#
+# Output:
+#   .ai-config/AGENTS.md
+# =============================================================================
+
+set -e
+
+source "$(cd "$(dirname "$0")" && pwd)/../lib/common.sh"
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+AI_CONFIG_DIR="$PROJECT_DIR/.ai-config"
+AGENTS_DIR="$AI_CONFIG_DIR/agents"
+OUTPUT_FILE="$AI_CONFIG_DIR/AGENTS.md"
+
+echo -e "${CYAN}=== Generate Agents Catalog ===${NC}"
+
+if [ ! -d "$AGENTS_DIR" ]; then
+    echo -e "${RED}Error: Agents directory not found at $AGENTS_DIR${NC}"
+    exit 1
+fi
+
+# =============================================================================
+# Extract frontmatter field from a file
+# =============================================================================
+# Extracts the YAML frontmatter block (between first --- and second ---),
+# then pulls out the value of the given field.
+# Usage: extract_field "file.md" "name"
+# =============================================================================
+extract_field() {
+    local file="$1"
+    local field="$2"
+
+    # Extract frontmatter between first --- and second ---, stripping \r for CRLF
+    local frontmatter
+    frontmatter=$(tr -d '\r' < "$file" | sed -n '/^---$/,/^---$/p' | sed '1d;$d')
+
+    # Extract the field value (first line only, handles both inline and multiline >)
+    local value=""
+    value=$(printf '%s\n' "$frontmatter" | grep "^${field}:" | head -1 | sed "s/^${field}:[[:space:]]*//" | sed 's/[[:space:]]*>$//')
+
+    # If value is empty or just ">", the actual content is on the next line
+    if [ -z "$value" ] || [ "$value" = ">" ]; then
+        value=$(printf '%s\n' "$frontmatter" | grep -A 1 "^${field}:" | tail -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    fi
+
+    # Remove surrounding quotes if present
+    value=$(printf '%s' "$value" | sed "s/^['\"]//;s/['\"]$//")
+
+    printf '%s' "$value"
+}
+
+# =============================================================================
+# Capitalize a category name for display
+# =============================================================================
+# Handles simple names and hyphenated names:
+#   core -> Core
+#   data-ai -> Data Ai
+# =============================================================================
+capitalize_category() {
+    local input="$1"
+    # Replace hyphens with spaces, then capitalize each word
+    local result=""
+    local IFS_SAVE="$IFS"
+    IFS='-'
+    for word in $input; do
+        local first rest
+        first=$(printf '%s' "$word" | cut -c1 | tr '[:lower:]' '[:upper:]')
+        rest=$(printf '%s' "$word" | cut -c2-)
+        if [ -n "$result" ]; then
+            result="$result $first$rest"
+        else
+            result="$first$rest"
+        fi
+    done
+    IFS="$IFS_SAVE"
+    printf '%s' "$result"
+}
+
+# =============================================================================
+# Collect all categories (subdirectories) and root-level agents
+# =============================================================================
+
+# Temporary directory for collecting data
+TMPDIR_CATALOG=$(mktemp -d)
+trap 'rm -rf "$TMPDIR_CATALOG"' EXIT
+
+agent_count=0
+category_count=0
+
+# Process all .md files in agents directory
+while IFS= read -r -d '' agent_file; do
+    basename_file=$(basename "$agent_file")
+
+    # Skip template
+    if [ "$basename_file" = "_TEMPLATE.md" ]; then
+        continue
+    fi
+
+    # Extract name and description from frontmatter
+    name=$(extract_field "$agent_file" "name")
+    if [ -z "$name" ]; then
+        continue
+    fi
+
+    description=$(extract_field "$agent_file" "description")
+
+    # Determine category from directory structure
+    # Get relative path from agents dir
+    rel_path="${agent_file#"$AGENTS_DIR/"}"
+    dir_part=$(dirname "$rel_path")
+
+    if [ "$dir_part" = "." ]; then
+        category="root"
+    else
+        # Use first directory component as category
+        category=$(printf '%s' "$dir_part" | cut -d'/' -f1)
+    fi
+
+    # Write to category file for sorting later
+    category_file="$TMPDIR_CATALOG/$category"
+    printf '%s\t%s\n' "$name" "$description" >> "$category_file"
+
+    agent_count=$((agent_count + 1))
+done < <(find "$AGENTS_DIR" -type f -name "*.md" -print0)
+
+# =============================================================================
+# Generate the output file
+# =============================================================================
+
+# Backup existing file before overwrite
+backup_if_exists "$OUTPUT_FILE"
+
+# Write header
+cat > "$OUTPUT_FILE" << 'HEADER'
+# Available Agents
+
+> Auto-generated catalog. Do not edit manually.
+> Generated by: scripts/generate-agents-catalog.sh
+
+HEADER
+
+# Get sorted list of categories
+categories=""
+for cat_file in "$TMPDIR_CATALOG"/*; do
+    if [ -f "$cat_file" ]; then
+        cat_name=$(basename "$cat_file")
+        categories="$categories $cat_name"
+    fi
+done
+
+# Sort categories alphabetically, but put "root" first if it exists
+sorted_categories=$(printf '%s\n' $categories | sort)
+has_root=0
+other_cats=""
+for cat_name in $sorted_categories; do
+    if [ "$cat_name" = "root" ]; then
+        has_root=1
+    else
+        other_cats="$other_cats $cat_name"
+    fi
+done
+
+# Build final ordered list: root first, then alphabetical
+final_categories=""
+if [ "$has_root" -eq 1 ]; then
+    final_categories="root"
+fi
+for cat_name in $other_cats; do
+    final_categories="$final_categories $cat_name"
+done
+
+# Write each category section
+for cat_name in $final_categories; do
+    cat_file="$TMPDIR_CATALOG/$cat_name"
+    if [ ! -f "$cat_file" ]; then
+        continue
+    fi
+
+    # Capitalize category name for display
+    if [ "$cat_name" = "root" ]; then
+        display_name="General"
+    else
+        display_name=$(capitalize_category "$cat_name")
+    fi
+
+    printf '## %s\n\n' "$display_name" >> "$OUTPUT_FILE"
+    printf '| Agent | Description |\n' >> "$OUTPUT_FILE"
+    printf '|-------|-------------|\n' >> "$OUTPUT_FILE"
+
+    # Sort agents alphabetically within category and write table rows
+    sort "$cat_file" | while IFS="	" read -r agent_name agent_desc; do
+        # Escape pipe characters in description for markdown table
+        agent_desc=$(printf '%s' "$agent_desc" | sed 's/|/\\|/g')
+        printf '| %s | %s |\n' "$agent_name" "$agent_desc" >> "$OUTPUT_FILE"
+    done
+
+    printf '\n' >> "$OUTPUT_FILE"
+    category_count=$((category_count + 1))
+done
+
+echo -e "${GREEN}Generated catalog with $agent_count agents in $category_count categories${NC}"
+echo -e "  Output: $OUTPUT_FILE"

@@ -4,7 +4,7 @@ Templates de CI mínimos para ahorrar minutos.
 
 ## Filosofía
 
-1. **CI remoto mínimo**: Solo build verification en PRs
+1. **CI remoto mínimo**: Build + lint en push a main, CI completo en PRs
 2. **CI local completo**: Tests, lint, security (con `.ci-local/`)
 3. **Releases en tags**: Docker/publish solo en version tags
 4. **Sin schedules**: Nada automático que consuma minutos

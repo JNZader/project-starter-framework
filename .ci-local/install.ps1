@@ -26,9 +26,11 @@ try {
 }
 
 if (Get-Command semgrep -ErrorAction SilentlyContinue) {
-    Write-Host "Semgrep: installed" -ForegroundColor Green
+    Write-Host "Semgrep: installed (native)" -ForegroundColor Green
+} elseif ((Get-Command docker -ErrorAction SilentlyContinue) -and ((docker info 2>$null) -ne $null)) {
+    Write-Host "Semgrep: available via Docker (returntocorp/semgrep)" -ForegroundColor Green
 } else {
-    Write-Host "Semgrep: not installed (pip install semgrep)" -ForegroundColor Yellow
+    Write-Host "Semgrep: not available (install semgrep or Docker)" -ForegroundColor Yellow
 }
 
 Write-Host ""

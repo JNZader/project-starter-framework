@@ -18,8 +18,9 @@ Reproduce tu CI/CD localmente antes de push. Si pasa local → pasa en GitHub Ac
 ### Copiar a un proyecto nuevo
 
 ```bash
-# Copiar carpeta completa
+# Copiar CI-Local y su dependencia lib/
 cp -r .ci-local /path/to/new-project/
+cp -r lib /path/to/new-project/
 
 # En el nuevo proyecto
 cd /path/to/new-project
@@ -27,6 +28,8 @@ cd /path/to/new-project
 # o
 .\.ci-local\install.ps1     # Windows
 ```
+
+> **Importante:** CI-Local depende de `lib/common.sh` (funciones compartidas). Copiar siempre ambos directorios.
 
 ### Dependencias opcionales
 
@@ -125,6 +128,10 @@ Developer workflow:
 │   └── pre-push      # CI simulation en Docker
 └── docker/
     └── *.Dockerfile  # Se generan automáticamente
+
+lib/                  # Dependencia requerida (copiar junto con .ci-local/)
+├── common.sh         # Funciones compartidas (Bash)
+└── Common.psm1       # Funciones compartidas (PowerShell)
 ```
 
 ## Personalización
@@ -135,7 +142,7 @@ Editar `.ci-local/semgrep.yml` o crear `.semgrep.yml` en la raíz.
 
 ### Cambiar comandos de lint/test
 
-Editar las funciones `detect_stack()` en los scripts.
+Editar `lib/common.sh` (detección de stack) o `setup_ci_commands()` en `ci-local.sh` (comandos CI).
 
 ### Docker image custom
 
@@ -148,7 +155,7 @@ Editar los Dockerfiles en `.ci-local/docker/` después de la primera ejecución.
 - Usa `ci-local.sh shell` para debug interactivo
 
 **¿Cómo acelerar el pre-push?**
-- El script detecta módulos modificados y solo testea esos
+- Usa Docker image cache para evitar rebuilds innecesarios
 - Usa `--no-verify` si estás seguro (no recomendado)
 
 **¿Funciona sin Docker?**

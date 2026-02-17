@@ -34,9 +34,11 @@ else
 fi
 
 if command -v semgrep &> /dev/null; then
-    echo -e "${GREEN}✓ Semgrep: installed${NC}"
+    echo -e "${GREEN}✓ Semgrep: installed (native)${NC}"
+elif command -v docker &> /dev/null && docker info &> /dev/null 2>&1; then
+    echo -e "${GREEN}✓ Semgrep: available via Docker (returntocorp/semgrep)${NC}"
 else
-    echo -e "${YELLOW}⚠ Semgrep: not installed (pip install semgrep)${NC}"
+    echo -e "${YELLOW}⚠ Semgrep: not available (install semgrep or Docker)${NC}"
 fi
 
 echo -e ""

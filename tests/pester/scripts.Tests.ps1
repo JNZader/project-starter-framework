@@ -110,7 +110,7 @@ Describe 'Scripts - PowerShell smoke tests' {
             New-Item -Path (Join-Path $proj 'scripts') -ItemType Directory | Out-Null
             New-Item -Path (Join-Path $proj 'lib') -ItemType Directory | Out-Null
 
-            "---`nname: opencode-agent`ndescription: OC`n---`n" | Out-File -FilePath (Join-Path $proj '.ai-config\agents\opencode-agent.md') -Encoding utf8
+            "---`nname: opencode-agent`ndescription: OC`n---`n# opencode-agent`nBody content for test." | Out-File -FilePath (Join-Path $proj '.ai-config\agents\opencode-agent.md') -Encoding utf8
             Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\scripts\sync-ai-config.ps1") -Destination (Join-Path $proj 'scripts\sync-ai-config.ps1') -Force
             Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\lib\Common.psm1") -Destination (Join-Path $proj 'lib\Common.psm1') -Force
 

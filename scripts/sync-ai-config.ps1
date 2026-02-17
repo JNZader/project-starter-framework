@@ -32,7 +32,7 @@ function Generate-Claude {
     # Crear directorio .claude
     New-Item -ItemType Directory -Path "$ProjectDir\.claude" -Force | Out-Null
 
-    if (Test-Path "$ProjectDir\CLAUDE.md" -and $mergeMode) {
+    if ((Test-Path "$ProjectDir\CLAUDE.md") -and $mergeMode) {
         Write-Host "CLAUDE.md exists — performing safe merge (append/update generated section)" -ForegroundColor Yellow
         Backup-IfExists "$ProjectDir\CLAUDE.md"
 

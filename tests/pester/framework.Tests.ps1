@@ -58,10 +58,13 @@ Describe 'Common.psm1 - PowerShell parity tests' {
 
     It 'Detect-Framework locates the framework when templates exist' {
         # Use repo root relative to test file
-        Push-Location (Split-Path -Parent $PSScriptRoot + '\..')
-        $fw = Detect-Framework
-        $fw.FrameworkDir | Should -Not -BeNullOrEmpty
-        Pop-Location
+        Push-Location (Join-Path (Split-Path -Parent $PSScriptRoot) '..')
+        try {
+            $fw = Detect-Framework
+            $fw.FrameworkDir | Should -Not -BeNullOrEmpty
+        } finally {
+            Pop-Location
+        }
     }
 
     It 'sync-ai-config.ps1 merge mode appends generated section without overwriting custom content' {
@@ -86,10 +89,13 @@ description: Test agent
         Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\scripts\sync-ai-config.ps1") -Destination (Join-Path $tmpDir 'scripts\sync-ai-config.ps1') -Force
         Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\lib\Common.psm1") -Destination (Join-Path $tmpDir 'lib\Common.psm1') -Force
         Push-Location $tmpDir
-        $env:SYNC_AI_CONFIG_MODE = 'merge'
-        & .\scripts\sync-ai-config.ps1 -Target claude | Out-Null
-        Pop-Location
-        Remove-Item Env:SYNC_AI_CONFIG_MODE -ErrorAction SilentlyContinue
+        try {
+            $env:SYNC_AI_CONFIG_MODE = 'merge'
+            & .\scripts\sync-ai-config.ps1 -Target claude *>&1 | Out-Null
+        } finally {
+            Pop-Location
+            Remove-Item Env:SYNC_AI_CONFIG_MODE -ErrorAction SilentlyContinue
+        }
 
         # assert CLAUDE.md preserved custom section and contains generated agent
         (Get-Content (Join-Path $tmpDir 'CLAUDE.md') -Raw) | Should -Match 'Project manual instructions'

@@ -63,4 +63,36 @@ Describe 'Common.psm1 - PowerShell parity tests' {
         $fw.FrameworkDir | Should -Not -BeNullOrEmpty
         Pop-Location
     }
+
+    It 'sync-ai-config.ps1 merge mode appends generated section without overwriting custom content' {
+        $tmpDir = Join-Path $tmp 'sync-merge-test'
+        New-Item -Path $tmpDir -ItemType Directory -Force | Out-Null
+        New-Item -Path (Join-Path $tmpDir '.ai-config\agents') -ItemType Directory -Force | Out-Null
+        New-Item -Path (Join-Path $tmpDir 'scripts') -ItemType Directory -Force | Out-Null
+
+        # minimal agent
+        @'
+---
+name: test-agent
+description: Test agent
+---
+'@ | Out-File -FilePath (Join-Path $tmpDir '.ai-config\agents\test-agent.md') -Encoding utf8
+
+        # existing CLAUDE.md with custom content
+        "# Project manual instructions`n`nDo not overwrite this section." | Out-File -FilePath (Join-Path $tmpDir 'CLAUDE.md') -Encoding utf8
+
+        # copy sync script into temp project and run in merge mode
+        Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\scripts\sync-ai-config.ps1") -Destination (Join-Path $tmpDir 'scripts\sync-ai-config.ps1') -Force
+        Push-Location $tmpDir
+        $env:SYNC_AI_CONFIG_MODE = 'merge'
+        & .\scripts\sync-ai-config.ps1 -Target claude | Out-Null
+        Pop-Location
+        Remove-Item Env:SYNC_AI_CONFIG_MODE -ErrorAction SilentlyContinue
+
+        # assert CLAUDE.md preserved custom section and contains generated agent
+        (Get-Content (Join-Path $tmpDir 'CLAUDE.md') -Raw) | Should -Match 'Project manual instructions'
+        (Get-Content (Join-Path $tmpDir 'CLAUDE.md') -Raw) | Should -Match 'test-agent'
+
+        Remove-Item -Recurse -Force $tmpDir
+    }
 }

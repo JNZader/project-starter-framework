@@ -337,6 +337,32 @@ EOF
     rm -rf "$tmpdir"
 }
 
+@test "validate-framework fails on invalid agent name (frontmatter schema)" {
+    tmpdir=$(mktemp -d)
+    mkdir -p "$tmpdir/.ai-config/agents" "$tmpdir/lib" "$tmpdir/scripts"
+
+    # copy minimal runtime pieces
+    cp "$FRAMEWORK_DIR/lib/common.sh" "$tmpdir/lib/common.sh"
+    cp "$FRAMEWORK_DIR/scripts/validate-framework.sh" "$tmpdir/scripts/validate-framework.sh"
+    chmod +x "$tmpdir/scripts/validate-framework.sh"
+
+    # invalid agent name (not kebab-case)
+    cat > "$tmpdir/.ai-config/agents/bad-agent.md" <<'EOF'
+---
+name: Bad_Name
+description: Example
+---
+EOF
+
+    (cd "$tmpdir" && ./scripts/validate-framework.sh) && {
+        echo "validate-framework should have failed for invalid agent name"
+        rm -rf "$tmpdir"
+        return 1
+    } || true
+
+    rm -rf "$tmpdir"
+}
+
 @test "lib/Common.psm1 exists as PowerShell counterpart" {
     [ -f "$FRAMEWORK_DIR/lib/Common.psm1" ]
 }

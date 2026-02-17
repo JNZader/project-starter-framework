@@ -1,3 +1,23 @@
+## [1.1.0](https://github.com/JNZader/project-starter-framework/compare/v1.0.1...v1.1.0) (2026-02-17)
+
+### Features
+
+* **ci:** add shellcheck, PSScriptAnalyzer, validate-framework.ps1 and hook tests ([fec7b8d](https://github.com/JNZader/project-starter-framework/commit/fec7b8d37d1ef940ad192528820b5e7d952b80f6))
+* **validate:** add YAML frontmatter parser + tests; wire into validate-framework ([fbc9b34](https://github.com/JNZader/project-starter-framework/commit/fbc9b3420530403d5cbe001b89b5876692b97444))
+
+### Bug Fixes
+
+* add executable bit to all shell scripts and hooks ([fb1557f](https://github.com/JNZader/project-starter-framework/commit/fb1557f61348bdd4f9928aa75e2bd2fb01d5d247))
+* **ci:** exclude noisy PSScriptAnalyzer rules and fix real issues ([10049ae](https://github.com/JNZader/project-starter-framework/commit/10049ae2a8d2b136c23ce999c6da3ddba4c41f2f))
+* **ci:** exclude PSAvoidUsingWriteHost from PSScriptAnalyzer ([2e693ba](https://github.com/JNZader/project-starter-framework/commit/2e693ba7b76020f3ff43c6d06b94ff5049ef1738))
+* **ci:** remove unused PS params and exclude PSUseSingularNouns ([898e33c](https://github.com/JNZader/project-starter-framework/commit/898e33cc0ef7d03954da3ae160d8340fd752d2d4))
+* **lint:** move shellcheck disable to function level for SC2034 ([b1f47d8](https://github.com/JNZader/project-starter-framework/commit/b1f47d81819b4206e88e0e29afe1303c3013eeb1))
+* **lint:** resolve all shellcheck warnings for CI ([70c41d1](https://github.com/JNZader/project-starter-framework/commit/70c41d1e48bf464f4df2a711a60186a5f9dcad0f))
+* **pr:** remove tracked local files, fix test bugs and CI workflow ([1cd2186](https://github.com/JNZader/project-starter-framework/commit/1cd2186524e103e821897bc34ab1bac2437fa011))
+* **tests:** fix escape_sed grep and pre-commit test working dir ([1f5c8f7](https://github.com/JNZader/project-starter-framework/commit/1f5c8f749d0e193db9ced02ce376c76f8f810bd6))
+* **tests:** fix Pester test Write-Host capture and missing lib copies ([cf80d70](https://github.com/JNZader/project-starter-framework/commit/cf80d70048b20b63edd88064754993b984a38567))
+* **tests:** fix PS operator parsing and test assertions ([e841a9a](https://github.com/JNZader/project-starter-framework/commit/e841a9a40f085b7b014aaea3cdde0efb9a52cd65))
+
 ## [1.0.1](https://github.com/JNZader/project-starter-framework/compare/v1.0.0...v1.0.1) (2026-02-17)
 
 ### Bug Fixes

@@ -261,6 +261,35 @@ setup() {
     [ "$errors" -eq 0 ]
 }
 
+@test "validate-frontmatter.py accepts multi-line description and valid name" {
+    tmpfile=$(mktemp)
+    cat > "$tmpfile" <<'EOF'
+---
+name: valid-name
+description: |
+  First line
+  Second line
+---
+EOF
+    python3 scripts/validate-frontmatter.py "$tmpfile"
+    [ $? -eq 0 ]
+    rm -f "$tmpfile"
+}
+
+@test "validate-frontmatter.py rejects invalid name" {
+    tmpfile=$(mktemp)
+    cat > "$tmpfile" <<'EOF'
+---
+name: Bad_Name
+description: Example
+---
+EOF
+    python3 scripts/validate-frontmatter.py "$tmpfile" >/dev/null 2>&1 || true
+    [ $? -ne 0 ]
+    rm -f "$tmpfile"
+}
+}
+
 @test "reusable workflows have workflow_call trigger" {
     for wf in "$FRAMEWORK_DIR"/.github/workflows/reusable-*.yml; do
         [ -f "$wf" ] || continue

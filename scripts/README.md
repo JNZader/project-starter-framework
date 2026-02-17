@@ -145,6 +145,8 @@ Valida la estructura y consistencia interna del framework. Comprueba:
 - Que los agentes y skills cumplen el esquema requerido
 - Que los workflows son YAML válido
 
+`validate-framework` usa `scripts/validate-frontmatter.py` (si Python está disponible) para validar frontmatter YAML de agentes/skills.
+
 ```bash
 ./scripts/validate-framework.sh
 ```

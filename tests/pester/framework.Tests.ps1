@@ -95,4 +95,32 @@ description: Test agent
 
         Remove-Item -Recurse -Force $tmpDir
     }
+
+    It 'validate-frontmatter.py accepts multi-line description and valid name' {
+        $tmpFile = Join-Path $tmp 'fm-valid.md'
+        @'
+---
+name: valid-name
+description: |
+  line1
+  line2
+---
+'@ | Out-File -FilePath $tmpFile -Encoding utf8
+        & python3 "$PSScriptRoot\..\..\scripts\validate-frontmatter.py" $tmpFile
+        $LASTEXITCODE | Should -Be 0
+        Remove-Item $tmpFile -Force
+    }
+
+    It 'validate-frontmatter.py rejects invalid name' {
+        $tmpFile = Join-Path $tmp 'fm-bad.md'
+        @'
+---
+name: Bad_Name
+description: Example
+---
+'@ | Out-File -FilePath $tmpFile -Encoding utf8
+        & python3 "$PSScriptRoot\..\..\scripts\validate-frontmatter.py" $tmpFile
+        $LASTEXITCODE | Should -Not -Be 0
+        Remove-Item $tmpFile -Force
+    }
 }

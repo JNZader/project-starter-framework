@@ -38,6 +38,28 @@ agent_count=$(find .ai-config/agents -name "*.md" ! -name "_TEMPLATE.md" 2>/dev/
 skill_count=$(find .ai-config/skills -name "*.md" ! -name "_TEMPLATE.md" 2>/dev/null | wc -l)
 echo -e "  Agents: $agent_count, Skills: $skill_count"
 
+# --- New: robust frontmatter validation using scripts/validate-frontmatter.py ---
+if command -v python3 >/dev/null 2>&1; then
+    echo -e "  Using Python frontmatter validator (scripts/validate-frontmatter.py)" 
+    while IFS= read -r -d '' file; do
+        if python3 "$FRAMEWORK_DIR/scripts/validate-frontmatter.py" "$file" >/dev/null 2>&1; then
+            check_pass "Frontmatter OK: $file"
+        else
+            check_fail "Frontmatter schema invalid: $file"
+        fi
+    done < <(find .ai-config/agents -name "*.md" ! -name "_TEMPLATE.md" -print0 2>/dev/null)
+
+    while IFS= read -r -d '' file; do
+        if python3 "$FRAMEWORK_DIR/scripts/validate-frontmatter.py" "$file" >/dev/null 2>&1; then
+            check_pass "Frontmatter OK: $file"
+        else
+            check_fail "Frontmatter schema invalid: $file"
+        fi
+    done < <(find .ai-config/skills -name "*.md" ! -name "_TEMPLATE.md" -print0 2>/dev/null)
+else
+    echo -e "  Python3 not found — using legacy checks (less strict)"
+fi
+
 # Strict frontmatter validation (treat malformed frontmatter as errors)
 # - required: name (kebab-case), description (non-empty)
 # - missing/invalid fields -> check_fail (fail validation)

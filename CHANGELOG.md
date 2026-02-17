@@ -1,3 +1,9 @@
+## [1.0.1](https://github.com/JNZader/project-starter-framework/compare/v1.0.0...v1.0.1) (2026-02-17)
+
+### Bug Fixes
+
+* critical run_in_ci injection, shared logging, script hardening and docs ([e2fadaa](https://github.com/JNZader/project-starter-framework/commit/e2fadaae7c94786c138e2bd245b1b4a66fb87f2a))
+
 ## 1.0.0 (2026-02-17)
 
 ### ⚠ BREAKING CHANGES

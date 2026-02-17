@@ -40,6 +40,7 @@ Genera configuración para diferentes AI CLIs desde `.ai-config/`:
 ```bash
 # Para Claude Code
 ./scripts/sync-ai-config.sh claude
+./scripts/sync-ai-config.sh claude merge   # Safe-merge: append/update only the auto-generated section
 
 # Para OpenCode
 ./scripts/sync-ai-config.sh opencode
@@ -143,6 +144,8 @@ Valida la estructura y consistencia interna del framework. Comprueba:
 - Que los templates tienen el formato correcto
 - Que los agentes y skills cumplen el esquema requerido
 - Que los workflows son YAML válido
+
+`validate-framework` usa `scripts/validate-frontmatter.py` (si Python está disponible) para validar frontmatter YAML de agentes/skills.
 
 ```bash
 ./scripts/validate-framework.sh

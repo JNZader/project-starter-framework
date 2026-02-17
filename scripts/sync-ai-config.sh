@@ -3,10 +3,12 @@
 # SYNC-AI-CONFIG: Genera configuracion para diferentes AI CLIs
 # =============================================================================
 # Uso:
-#   ./scripts/sync-ai-config.sh claude    # Solo Claude Code
-#   ./scripts/sync-ai-config.sh opencode  # Solo OpenCode
-#   ./scripts/sync-ai-config.sh cursor    # Solo Cursor
-#   ./scripts/sync-ai-config.sh all       # Todos
+#   ./scripts/sync-ai-config.sh claude            # Solo Claude Code
+#   ./scripts/sync-ai-config.sh claude merge      # Merge safe (append/update generated section)
+#   ./scripts/sync-ai-config.sh opencode          # Solo OpenCode
+#   ./scripts/sync-ai-config.sh cursor            # Solo Cursor
+#   ./scripts/sync-ai-config.sh all               # Todos
+#   ./scripts/sync-ai-config.sh all merge         # Todos (Claude in merge mode)
 # =============================================================================
 
 set -e
@@ -26,7 +28,68 @@ echo -e "${CYAN}=== Sync AI Config ===${NC}"
 generate_claude() {
     echo -e "${YELLOW}Generating Claude Code config...${NC}"
 
-    # Check if CLAUDE.md already exists and prompt for overwrite
+    # MODE: overwrite (default) or merge/append when caller passes 'merge' or '--merge'
+    if [[ "$1" == "merge" || "$1" == "--merge" ]]; then
+        MERGE_MODE=1
+    else
+        MERGE_MODE=0
+    fi
+
+    # Crear directorio .claude si no existe
+    mkdir -p "$PROJECT_DIR/.claude"
+
+    # If file exists and MERGE_MODE requested -> append/update generated section
+    if [[ -f "$PROJECT_DIR/CLAUDE.md" && $MERGE_MODE -eq 1 ]]; then
+        echo -e "${YELLOW}CLAUDE.md exists — performing safe merge (append/update generated section)${NC}"
+        backup_if_exists "$PROJECT_DIR/CLAUDE.md"
+
+        # Prepare generated snippet
+        genfile="$(mktemp)"
+        cat > "$genfile" << 'HEADER'
+
+## Auto-generated from .ai-config/
+
+HEADER
+        if [[ -f "$AI_CONFIG_DIR/prompts/base.md" ]]; then
+            sed -n '1,200p' "$AI_CONFIG_DIR/prompts/base.md" >> "$genfile" || true
+            echo -e "\n---\n" >> "$genfile"
+        fi
+
+        echo -e "## Agentes Disponibles\n" >> "$genfile"
+        while IFS= read -r -d '' agent; do
+            [[ "$(basename "$agent")" == "_TEMPLATE.md" ]] && continue
+            name=$(grep "^name:" "$agent" | head -1 | sed 's/name: *//')
+            [[ -z "$name" ]] && continue
+            desc=$(grep "^description:" "$agent" | head -1 | sed 's/description: *//')
+            echo "- **$name**: $desc" >> "$genfile"
+        done < <(find "$AI_CONFIG_DIR/agents" -type f -name "*.md" -print0)
+
+        echo -e "\n## Skills Disponibles\n" >> "$genfile"
+        while IFS= read -r -d '' skill; do
+            [[ "$(basename "$skill")" == "_TEMPLATE.md" ]] && continue
+            name=$(grep "^name:" "$skill" | head -1 | sed 's/name: *//')
+            [[ -z "$name" ]] && continue
+            echo "- $name" >> "$genfile"
+        done < <(find "$AI_CONFIG_DIR/skills" -type f -name "*.md" -print0)
+
+        # If existing file already contains our auto-generated marker, replace that section
+        if grep -q "^## Auto-generated from \.ai-config/" "$PROJECT_DIR/CLAUDE.md" 2>/dev/null; then
+            # Delete from marker to EOF, then append generated content
+            awk 'BEGIN{p=1} /## Auto-generated from \.ai-config\//{p=0; exit} p{print}' "$PROJECT_DIR/CLAUDE.md" > "${PROJECT_DIR}/.claude.tmp" || true
+            cat "${PROJECT_DIR}/.claude.tmp" > "$PROJECT_DIR/CLAUDE.md"
+            cat "$genfile" >> "$PROJECT_DIR/CLAUDE.md"
+            rm -f "${PROJECT_DIR}/.claude.tmp"
+        else
+            # Append generated section to the end (safe - won't overwrite custom content)
+            cat "$genfile" >> "$PROJECT_DIR/CLAUDE.md"
+        fi
+
+        rm -f "$genfile"
+        echo -e "${GREEN}Merged CLAUDE.md (auto-generated section updated)${NC}"
+        return
+    fi
+
+    # Default behavior: overwrite (prompt if exists)
     if [[ -f "$PROJECT_DIR/CLAUDE.md" ]]; then
         echo -e "${YELLOW}CLAUDE.md already exists. Overwrite? [y/N]${NC}"
         read -r OVERWRITE
@@ -36,13 +99,10 @@ generate_claude() {
         fi
     fi
 
-    # Crear directorio .claude si no existe
-    mkdir -p "$PROJECT_DIR/.claude"
-
     # Backup existing file before overwrite
     backup_if_exists "$PROJECT_DIR/CLAUDE.md"
 
-    # Generar CLAUDE.md combinando prompts y agentes
+    # Generar CLAUDE.md combinando prompts y agentes (overwrite)
     cat > "$PROJECT_DIR/CLAUDE.md" << 'HEADER'
 # Claude Code Instructions
 
@@ -200,7 +260,7 @@ EOF
 
 case "${1:-all}" in
     claude)
-        generate_claude
+        generate_claude "$2"
         ;;
     opencode)
         generate_opencode
@@ -215,7 +275,7 @@ case "${1:-all}" in
         generate_continue
         ;;
     all)
-        generate_claude
+        generate_claude "$2"
         generate_opencode
         generate_cursor
         generate_aider

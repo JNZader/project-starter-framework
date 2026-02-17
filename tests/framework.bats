@@ -126,7 +126,7 @@ setup() {
 @test "escape_sed escapes special characters" {
     local result
     result=$(escape_sed "foo/bar&baz")
-    echo "$result" | grep -q 'foo\/bar\&baz'
+    echo "$result" | grep -qF 'foo\/bar\&baz'
 }
 
 @test "backup_if_exists creates .bak file" {
@@ -214,6 +214,81 @@ setup() {
     [ "$missing" -eq 0 ]
 }
 
+# --- New: stricter frontmatter checks ---
+@test "agents have required frontmatter fields (name & description)" {
+    local errors=0
+    while IFS= read -r agent; do
+        [ -f "$agent" ] || continue
+        [[ "$(basename "$agent")" == "_TEMPLATE.md" ]] && continue
+        if ! grep -q "^name:\s*" "$agent"; then
+            echo "Missing 'name' in agent: $agent"
+            errors=$((errors + 1))
+        fi
+        if ! grep -q "^description:\s*" "$agent"; then
+            echo "Missing 'description' in agent: $agent"
+            errors=$((errors + 1))
+        fi
+        # name should be kebab-case
+        name=$(grep "^name:" "$agent" | head -1 | sed 's/name:\s*//')
+        if [ -n "$name" ] && ! echo "$name" | grep -qE '^[a-z0-9]+(-[a-z0-9]+)*$'; then
+            echo "Invalid agent name (should be kebab-case): $agent -> $name"
+            errors=$((errors + 1))
+        fi
+    done < <(find "$FRAMEWORK_DIR/.ai-config/agents" -name "*.md" 2>/dev/null)
+    [ "$errors" -eq 0 ]
+}
+
+@test "skills have required frontmatter fields (name & description)" {
+    local errors=0
+    while IFS= read -r skill; do
+        [ -f "$skill" ] || continue
+        [[ "$(basename "$skill")" == "_TEMPLATE.md" ]] && continue
+        if ! grep -q "^name:\s*" "$skill"; then
+            echo "Missing 'name' in skill: $skill"
+            errors=$((errors + 1))
+        fi
+        if ! grep -q "^description:\s*" "$skill"; then
+            echo "Missing 'description' in skill: $skill"
+            errors=$((errors + 1))
+        fi
+        # name should be kebab-case
+        name=$(grep "^name:" "$skill" | head -1 | sed 's/name:\s*//')
+        if [ -n "$name" ] && ! echo "$name" | grep -qE '^[a-z0-9]+(-[a-z0-9]+)*$'; then
+            echo "Invalid skill name (should be kebab-case): $skill -> $name"
+            errors=$((errors + 1))
+        fi
+    done < <(find "$FRAMEWORK_DIR/.ai-config/skills" -name "*.md" 2>/dev/null)
+    [ "$errors" -eq 0 ]
+}
+
+@test "validate-frontmatter.py accepts multi-line description and valid name" {
+    tmpfile=$(mktemp)
+    cat > "$tmpfile" <<'EOF'
+---
+name: valid-name
+description: |
+  First line
+  Second line
+---
+EOF
+    python3 scripts/validate-frontmatter.py "$tmpfile"
+    [ $? -eq 0 ]
+    rm -f "$tmpfile"
+}
+
+@test "validate-frontmatter.py rejects invalid name" {
+    tmpfile=$(mktemp)
+    cat > "$tmpfile" <<'EOF'
+---
+name: Bad_Name
+description: Example
+---
+EOF
+    run python3 scripts/validate-frontmatter.py "$tmpfile"
+    [ "$status" -ne 0 ]
+    rm -f "$tmpfile"
+}
+
 @test "reusable workflows have workflow_call trigger" {
     for wf in "$FRAMEWORK_DIR"/.github/workflows/reusable-*.yml; do
         [ -f "$wf" ] || continue
@@ -256,6 +331,163 @@ setup() {
             return 1
         }
     done
+}
+
+@test "sync-ai-config 'merge' mode appends generated section instead of overwriting custom content" {
+    tmpdir=$(mktemp -d)
+    mkdir -p "$tmpdir/.ai-config/agents"
+    mkdir -p "$tmpdir/scripts"
+    mkdir -p "$tmpdir/lib"
+
+    # create a minimal agent
+    cat > "$tmpdir/.ai-config/agents/test-agent.md" <<'EOF'
+---
+name: test-agent
+description: Test agent
+---
+EOF
+
+    # create an existing CLAUDE.md with custom content
+    cat > "$tmpdir/CLAUDE.md" <<'EOF'
+# Project manual instructions
+
+Do not overwrite this section.
+EOF
+
+    # copy the sync script AND shared library
+    cp "$FRAMEWORK_DIR/scripts/sync-ai-config.sh" "$tmpdir/scripts/sync-ai-config.sh"
+    cp "$FRAMEWORK_DIR/lib/common.sh" "$tmpdir/lib/common.sh"
+    chmod +x "$tmpdir/scripts/sync-ai-config.sh"
+    (cd "$tmpdir" && ./scripts/sync-ai-config.sh claude merge)
+
+    # verify CLAUDE.md still contains custom header and has auto-generated block
+    grep -q "Project manual instructions" "$tmpdir/CLAUDE.md"
+    grep -q "test-agent" "$tmpdir/CLAUDE.md"
+
+    rm -rf "$tmpdir"
+}
+
+@test "validate-framework fails on invalid agent name (frontmatter schema)" {
+    tmpdir=$(mktemp -d)
+    mkdir -p "$tmpdir/.ai-config/agents" "$tmpdir/lib" "$tmpdir/scripts"
+
+    # copy minimal runtime pieces
+    cp "$FRAMEWORK_DIR/lib/common.sh" "$tmpdir/lib/common.sh"
+    cp "$FRAMEWORK_DIR/scripts/validate-framework.sh" "$tmpdir/scripts/validate-framework.sh"
+    chmod +x "$tmpdir/scripts/validate-framework.sh"
+
+    # invalid agent name (not kebab-case)
+    cat > "$tmpdir/.ai-config/agents/bad-agent.md" <<'EOF'
+---
+name: Bad_Name
+description: Example
+---
+EOF
+
+    (cd "$tmpdir" && ./scripts/validate-framework.sh) && {
+        echo "validate-framework should have failed for invalid agent name"
+        rm -rf "$tmpdir"
+        return 1
+    } || true
+
+    rm -rf "$tmpdir"
+}
+
+# =============================================================================
+# Hook Tests
+# =============================================================================
+
+@test "hook files exist and are executable" {
+    for hook in pre-commit commit-msg pre-push; do
+        [ -f "$FRAMEWORK_DIR/.ci-local/hooks/$hook" ] || {
+            echo "Missing hook file: $hook"
+            return 1
+        }
+        head -1 "$FRAMEWORK_DIR/.ci-local/hooks/$hook" | grep -q "#!/bin/bash" || {
+            echo "Missing #!/bin/bash shebang in: $hook"
+            return 1
+        }
+    done
+}
+
+@test "pre-commit blocks AI attribution in staged content" {
+    tmpdir=$(mktemp -d)
+    git -C "$tmpdir" init
+    git -C "$tmpdir" config user.email "test@test.com"
+    git -C "$tmpdir" config user.name "Test"
+    # copy hooks and lib
+    cp -r "$FRAMEWORK_DIR/.ci-local" "$tmpdir/.ci-local"
+    cp -r "$FRAMEWORK_DIR/lib" "$tmpdir/lib"
+
+    # Create a file with AI attribution and stage it
+    echo "Co-Authored-By: Claude" > "$tmpdir/bad-file.txt"
+    git -C "$tmpdir" add bad-file.txt
+
+    # Run pre-commit hook — should exit non-zero
+    cd "$tmpdir"
+    run bash "$tmpdir/.ci-local/hooks/pre-commit"
+    [ "$status" -ne 0 ]
+
+    rm -rf "$tmpdir"
+}
+
+@test "pre-commit passes clean files" {
+    tmpdir=$(mktemp -d)
+    git -C "$tmpdir" init
+    git -C "$tmpdir" config user.email "test@test.com"
+    git -C "$tmpdir" config user.name "Test"
+    # copy hooks and lib
+    cp -r "$FRAMEWORK_DIR/.ci-local" "$tmpdir/.ci-local"
+    cp -r "$FRAMEWORK_DIR/lib" "$tmpdir/lib"
+
+    # Create a clean file (no AI attribution, no code extensions to trigger semgrep/compile)
+    echo "Hello world" > "$tmpdir/clean-file.txt"
+    git -C "$tmpdir" add clean-file.txt
+
+    # Run pre-commit hook — should exit zero
+    cd "$tmpdir"
+    run bash "$tmpdir/.ci-local/hooks/pre-commit"
+    [ "$status" -eq 0 ]
+
+    rm -rf "$tmpdir"
+}
+
+@test "commit-msg blocks AI attribution in message" {
+    tmpdir=$(mktemp -d)
+    git -C "$tmpdir" init
+    git -C "$tmpdir" config user.email "test@test.com"
+    git -C "$tmpdir" config user.name "Test"
+    # copy hooks and lib
+    cp -r "$FRAMEWORK_DIR/.ci-local" "$tmpdir/.ci-local"
+    cp -r "$FRAMEWORK_DIR/lib" "$tmpdir/lib"
+
+    # Write a commit message file with AI attribution
+    echo "Generated by Claude" > "$tmpdir/COMMIT_EDITMSG"
+
+    # Run commit-msg hook — should exit non-zero
+    run bash "$tmpdir/.ci-local/hooks/commit-msg" "$tmpdir/COMMIT_EDITMSG"
+    [ "$status" -ne 0 ]
+
+    rm -rf "$tmpdir"
+}
+
+@test "commit-msg passes clean message" {
+    tmpdir=$(mktemp -d)
+    git -C "$tmpdir" init
+    git -C "$tmpdir" config user.email "test@test.com"
+    git -C "$tmpdir" config user.name "Test"
+    # copy hooks and lib
+    cp -r "$FRAMEWORK_DIR/.ci-local" "$tmpdir/.ci-local"
+    cp -r "$FRAMEWORK_DIR/lib" "$tmpdir/lib"
+
+    # Write a clean commit message file
+    echo "feat(core): add new feature" > "$tmpdir/COMMIT_EDITMSG"
+
+    # Run commit-msg hook — should exit zero
+    run bash "$tmpdir/.ci-local/hooks/commit-msg" "$tmpdir/COMMIT_EDITMSG"
+    [ "$status" -eq 0 ]
+
+    rm -rf "$tmpdir"
 }
 
 @test "lib/Common.psm1 exists as PowerShell counterpart" {

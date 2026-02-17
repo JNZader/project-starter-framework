@@ -61,10 +61,24 @@ list_available() {
     echo -e "${CYAN}=== Available Skills ===${NC}"
     echo ""
     echo -e "${GREEN}Curated (official):${NC}"
-    ls -1 "$TEMP_DIR/curated/" 2>/dev/null | grep -v "README" || echo "  (none)"
+    local found=false
+    for f in "$TEMP_DIR/curated/"*; do
+        [[ -e "$f" ]] || continue
+        [[ "$(basename "$f")" == README* ]] && continue
+        basename "$f"
+        found=true
+    done
+    [[ "$found" == true ]] || echo "  (none)"
     echo ""
     echo -e "${GREEN}Community:${NC}"
-    ls -1 "$TEMP_DIR/community/" 2>/dev/null | grep -v "README" || echo "  (none)"
+    found=false
+    for f in "$TEMP_DIR/community/"*; do
+        [[ -e "$f" ]] || continue
+        [[ "$(basename "$f")" == README* ]] && continue
+        basename "$f"
+        found=true
+    done
+    [[ "$found" == true ]] || echo "  (none)"
 }
 
 list_installed() {

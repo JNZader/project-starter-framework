@@ -1,0 +1,42 @@
+# =============================================================================
+# .gitignore - Framework repository
+# =============================================================================
+
+# Claude Code
+CLAUDE.md
+.claude/settings.local.json
+.ai-config/.claude/
+
+# Backups
+*.bak
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# CI Local artifacts
+.ci-local/docker/
+.ci-local-image-built
+semgrep-report.json
+semgrep-results.json
+
+# Test artifacts
+test-results/
+junit.xml
+
+# Planning docs (local only)
+PROPOSALS.md

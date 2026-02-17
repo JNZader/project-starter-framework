@@ -159,7 +159,8 @@ DOCKERFILE
 }
 
 ensure_docker_image() {
-    local image_name=$(get_image_name)
+    local image_name
+    image_name=$(get_image_name)
     local dockerfile="$SCRIPT_DIR/docker/$DOCKERFILE"
 
     # Create Dockerfile if it does not exist yet
@@ -169,8 +170,10 @@ ensure_docker_image() {
     fi
 
     # Detect staleness: rebuild if the Dockerfile content has changed since last build
-    local current_hash=$(sha256sum "$dockerfile" 2>/dev/null | cut -d' ' -f1)
-    local image_hash=$(docker inspect --format='{{index .Config.Labels "dockerfile-hash"}}' "$image_name" 2>/dev/null || echo "")
+    local current_hash
+    current_hash=$(sha256sum "$dockerfile" 2>/dev/null | cut -d' ' -f1)
+    local image_hash
+    image_hash=$(docker inspect --format='{{index .Config.Labels "dockerfile-hash"}}' "$image_name" 2>/dev/null || echo "")
 
     if [[ "$current_hash" != "$image_hash" ]]; then
         echo -e "${YELLOW}Building CI Docker image...${NC}"
@@ -183,7 +186,8 @@ ensure_docker_image() {
 }
 
 run_in_ci() {
-    local image_name=$(get_image_name)
+    local image_name
+    image_name=$(get_image_name)
     local -a docker_flags=(--rm)
     if [ -t 0 ]; then
         docker_flags+=(-it)

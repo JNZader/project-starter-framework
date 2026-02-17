@@ -14,13 +14,19 @@ fi
 _COMMON_SH_LOADED=1
 
 # =============================================================================
-# Colors
+# Colors (exported for callers via source)
 # =============================================================================
+# shellcheck disable=SC2034
 RED='\033[0;31m'
+# shellcheck disable=SC2034
 GREEN='\033[0;32m'
+# shellcheck disable=SC2034
 YELLOW='\033[1;33m'
+# shellcheck disable=SC2034
 CYAN='\033[0;36m'
+# shellcheck disable=SC2034
 BLUE='\033[0;34m'
+# shellcheck disable=SC2034
 NC='\033[0m'
 
 # =============================================================================
@@ -81,6 +87,7 @@ backup_if_exists() {
 # NOTE: Does NOT set LINT_CMD/COMPILE_CMD/TEST_CMD. Those are CI-specific
 #       and should be configured by the caller (e.g., ci-local.sh).
 # =============================================================================
+# shellcheck disable=SC2034  # STACK_TYPE, BUILD_TOOL, JAVA_VERSION used by callers
 detect_stack() {
     local project_dir="${1:-.}"
 
@@ -161,6 +168,7 @@ detect_stack() {
 #
 # Usage: detect_framework
 # =============================================================================
+# shellcheck disable=SC2034  # FRAMEWORK_DIR, HAS_OPTIONAL used by callers
 detect_framework() {
     FRAMEWORK_DIR=""
     HAS_OPTIONAL=false

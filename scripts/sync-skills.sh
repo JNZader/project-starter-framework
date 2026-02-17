@@ -10,10 +10,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 AI_CONFIG="$PROJECT_ROOT/.ai-config"
 SKILLS_DIR="$AI_CONFIG/skills"
-AUTO_INVOKE="$AI_CONFIG/AUTO_INVOKE.md"
-
-# BLUE is not provided by common.sh, define it locally
-BLUE='\033[0;34m'
 
 echo -e "${BLUE}=== Skill Sync Tool ===${NC}"
 echo ""

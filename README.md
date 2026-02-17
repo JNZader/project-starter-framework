@@ -1,5 +1,7 @@
 # Project Starter Framework
 
+![CI](https://github.com/JNZader/project-starter-framework/actions/workflows/ci-framework.yml/badge.svg)
+
 > Framework modular para iniciar proyectos con CI-Local, AI Config y CI mínimo.
 
 ---

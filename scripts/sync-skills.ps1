@@ -10,13 +10,7 @@
 
 param(
     [Parameter(Position=0)]
-    [string]$Command = "help",
-
-    [Parameter(Position=1)]
-    [string]$Param1 = "",
-
-    [Parameter(Position=2)]
-    [string]$Param2 = ""
+    [string]$Command = "help"
 )
 
 $ErrorActionPreference = "Stop"

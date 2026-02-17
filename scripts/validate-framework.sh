@@ -38,23 +38,108 @@ agent_count=$(find .ai-config/agents -name "*.md" ! -name "_TEMPLATE.md" 2>/dev/
 skill_count=$(find .ai-config/skills -name "*.md" ! -name "_TEMPLATE.md" 2>/dev/null | wc -l)
 echo -e "  Agents: $agent_count, Skills: $skill_count"
 
-# Check agents have required frontmatter
+# --- New: robust frontmatter validation using scripts/validate-frontmatter.py ---
+if command -v python3 >/dev/null 2>&1; then
+    echo -e "  Using Python frontmatter validator (scripts/validate-frontmatter.py)" 
+    while IFS= read -r -d '' file; do
+        if python3 "$FRAMEWORK_DIR/scripts/validate-frontmatter.py" "$file" >/dev/null 2>&1; then
+            check_pass "Frontmatter OK: $file"
+        else
+            check_fail "Frontmatter schema invalid: $file"
+        fi
+    done < <(find .ai-config/agents -name "*.md" ! -name "_TEMPLATE.md" -print0 2>/dev/null)
+
+    while IFS= read -r -d '' file; do
+        if python3 "$FRAMEWORK_DIR/scripts/validate-frontmatter.py" "$file" >/dev/null 2>&1; then
+            check_pass "Frontmatter OK: $file"
+        else
+            check_fail "Frontmatter schema invalid: $file"
+        fi
+    done < <(find .ai-config/skills -name "*.md" ! -name "_TEMPLATE.md" -print0 2>/dev/null)
+else
+    echo -e "  Python3 not found — using legacy checks (less strict)"
+fi
+
+# Strict frontmatter validation (treat malformed frontmatter as errors)
+# - required: name (kebab-case), description (non-empty)
+# - missing/invalid fields -> check_fail (fail validation)
 while IFS= read -r -d '' agent; do
     if ! head -1 "$agent" | grep -q "^---"; then
-        check_warn "No frontmatter: $agent"
+        check_fail "No frontmatter: $agent"
+        continue
+    fi
+
+    name_line=$(grep -m1 "^name:\s*" "$agent" || true)
+    desc_line=$(grep -m1 "^description:\s*" "$agent" || true)
+
+    if [[ -z "$name_line" ]]; then
+        check_fail "Missing 'name:' in $agent"
     else
-        grep -q "^name:" "$agent" || check_warn "Missing 'name:' in $agent"
-        grep -q "^description:" "$agent" || check_warn "Missing 'description:' in $agent"
+        name_value=$(echo "$name_line" | sed -e 's/^name:[[:space:]]*//' -e 's/["'"'"']//g' | tr -d '[:space:]')
+        if [[ -z "$name_value" ]]; then
+            check_fail "Empty 'name' in $agent"
+        elif ! echo "$name_value" | grep -qE '^[a-z0-9]+(-[a-z0-9]+)*$'; then
+            check_fail "Invalid 'name' (must be kebab-case) in $agent -> $name_value"
+        else
+            check_pass "Agent name ok: $agent -> $name_value"
+        fi
+    fi
+
+    if [[ -z "$desc_line" ]]; then
+        check_fail "Missing 'description:' in $agent"
+    else
+        desc_value=$(echo "$desc_line" | sed 's/^description:[[:space:]]*//; s/^[|>][-[:space:]]*//')
+        if [[ -z "$desc_value" ]]; then
+            # description might be multi-line; try to inspect the following line
+            next_line=$(sed -n '2p' "$agent" | tr -d '[:space:]') || true
+            if [[ -z "$next_line" ]]; then
+                check_fail "Empty 'description' in $agent"
+            else
+                check_pass "Agent description present for $agent"
+            fi
+        else
+            check_pass "Agent description present for $agent"
+        fi
     fi
 done < <(find .ai-config/agents -name "*.md" ! -name "_TEMPLATE.md" -print0 2>/dev/null)
 
-# Check skills have required frontmatter
+# Skills: same rules as agents
 while IFS= read -r -d '' skill; do
     if ! head -1 "$skill" | grep -q "^---"; then
-        check_warn "No frontmatter: $skill"
+        check_fail "No frontmatter: $skill"
+        continue
+    fi
+
+    name_line=$(grep -m1 "^name:\s*" "$skill" || true)
+    desc_line=$(grep -m1 "^description:\s*" "$skill" || true)
+
+    if [[ -z "$name_line" ]]; then
+        check_fail "Missing 'name:' in $skill"
     else
-        grep -q "^name:" "$skill" || check_warn "Missing 'name:' in $skill"
-        grep -q "^description:" "$skill" || check_warn "Missing 'description:' in $skill"
+        name_value=$(echo "$name_line" | sed -e 's/^name:[[:space:]]*//' -e 's/["'"'"']//g' | tr -d '[:space:]')
+        if [[ -z "$name_value" ]]; then
+            check_fail "Empty 'name' in $skill"
+        elif ! echo "$name_value" | grep -qE '^[a-z0-9]+(-[a-z0-9]+)*$'; then
+            check_fail "Invalid 'name' (must be kebab-case) in $skill -> $name_value"
+        else
+            check_pass "Skill name ok: $skill -> $name_value"
+        fi
+    fi
+
+    if [[ -z "$desc_line" ]]; then
+        check_fail "Missing 'description:' in $skill"
+    else
+        desc_value=$(echo "$desc_line" | sed 's/^description:[[:space:]]*//; s/^[|>][-[:space:]]*//')
+        if [[ -z "$desc_value" ]]; then
+            next_line=$(sed -n '2p' "$skill" | tr -d '[:space:]') || true
+            if [[ -z "$next_line" ]]; then
+                check_fail "Empty 'description' in $skill"
+            else
+                check_pass "Skill description present for $skill"
+            fi
+        else
+            check_pass "Skill description present for $skill"
+        fi
     fi
 done < <(find .ai-config/skills -name "*.md" ! -name "_TEMPLATE.md" -print0 2>/dev/null)
 

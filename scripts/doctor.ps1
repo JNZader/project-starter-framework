@@ -222,7 +222,7 @@ if (-not $isFramework) {
     $hooksPath = ""
     try {
         $hooksPath = (git config --get core.hooksPath 2>$null)
-    } catch { }
+    } catch { $hooksPath = "" }
 
     if ($hooksPath) {
         if ($hooksPath -eq ".ci-local/hooks") {

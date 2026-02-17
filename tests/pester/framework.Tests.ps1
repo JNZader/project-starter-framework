@@ -69,6 +69,7 @@ Describe 'Common.psm1 - PowerShell parity tests' {
         New-Item -Path $tmpDir -ItemType Directory -Force | Out-Null
         New-Item -Path (Join-Path $tmpDir '.ai-config\agents') -ItemType Directory -Force | Out-Null
         New-Item -Path (Join-Path $tmpDir 'scripts') -ItemType Directory -Force | Out-Null
+        New-Item -Path (Join-Path $tmpDir 'lib') -ItemType Directory -Force | Out-Null
 
         # minimal agent
         @'
@@ -81,8 +82,9 @@ description: Test agent
         # existing CLAUDE.md with custom content
         "# Project manual instructions`n`nDo not overwrite this section." | Out-File -FilePath (Join-Path $tmpDir 'CLAUDE.md') -Encoding utf8
 
-        # copy sync script into temp project and run in merge mode
+        # copy sync script and shared library into temp project and run in merge mode
         Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\scripts\sync-ai-config.ps1") -Destination (Join-Path $tmpDir 'scripts\sync-ai-config.ps1') -Force
+        Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\lib\Common.psm1") -Destination (Join-Path $tmpDir 'lib\Common.psm1') -Force
         Push-Location $tmpDir
         $env:SYNC_AI_CONFIG_MODE = 'merge'
         & .\scripts\sync-ai-config.ps1 -Target claude | Out-Null

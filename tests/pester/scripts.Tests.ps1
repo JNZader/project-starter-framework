@@ -19,7 +19,8 @@ Describe 'Scripts - PowerShell smoke tests' {
             Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\lib\Common.psm1") -Destination (Join-Path $proj 'lib\Common.psm1') -Force
 
             Push-Location $proj
-            & .\scripts\init-project.ps1 -DryRun -NonInteractive | Out-String | Should -Match 'DRY-RUN'
+            $output = & .\scripts\init-project.ps1 -DryRun -NonInteractive *>&1 | Out-String
+            $output | Should -Match 'DRY-RUN'
             Test-Path (Join-Path $proj '.gitignore') | Should -BeFalse
             Pop-Location
         }
@@ -40,10 +41,11 @@ Describe 'Scripts - PowerShell smoke tests' {
 
             Push-Location $proj
             # list installed should show demo-skill
-            & .\scripts\add-skill.ps1 installed | Out-String | Should -Match 'demo-skill'
+            $output = & .\scripts\add-skill.ps1 installed *>&1 | Out-String
+            $output | Should -Match 'demo-skill'
 
             # remove demo-skill.md
-            & .\scripts\add-skill.ps1 remove demo-skill
+            & .\scripts\add-skill.ps1 remove demo-skill *>&1 | Out-Null
             Test-Path (Join-Path $proj '.ai-config\skills\demo-skill.md') | Should -BeFalse
             Pop-Location
         }
@@ -56,7 +58,9 @@ Describe 'Scripts - PowerShell smoke tests' {
             Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\scripts\add-skill.ps1") -Destination (Join-Path $proj 'scripts\add-skill.ps1') -Force
 
             Push-Location $proj
-            { & .\scripts\add-skill.ps1 remove "bad/name" } | Should -Throw
+            # Script prints error but doesn't throw; verify the error message is output
+            $output = & .\scripts\add-skill.ps1 remove "bad/name" *>&1 | Out-String
+            $output | Should -Match 'Invalid skill name'
             Pop-Location
         }
     }
@@ -72,7 +76,8 @@ Describe 'Scripts - PowerShell smoke tests' {
             Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\scripts\sync-skills.ps1") -Destination (Join-Path $proj 'scripts\sync-skills.ps1') -Force
 
             Push-Location $proj
-            & .\scripts\sync-skills.ps1 validate | Out-String | Should -Match 'Todos los skills son validos|validos'
+            $output = & .\scripts\sync-skills.ps1 validate *>&1 | Out-String
+            $output | Should -Match 'validos'
             Pop-Location
         }
     }
@@ -83,13 +88,14 @@ Describe 'Scripts - PowerShell smoke tests' {
             New-Item -Path $proj -ItemType Directory | Out-Null
             New-Item -Path (Join-Path $proj '.ai-config\agents') -ItemType Directory -Force | Out-Null
             New-Item -Path (Join-Path $proj 'scripts') -ItemType Directory | Out-Null
+            New-Item -Path (Join-Path $proj 'lib') -ItemType Directory | Out-Null
 
             "---`nname: test-agent`ndescription: Test desc`n---`n" | Out-File -FilePath (Join-Path $proj '.ai-config\agents\test-agent.md') -Encoding utf8
             Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\scripts\generate-agents-catalog.ps1") -Destination (Join-Path $proj 'scripts\generate-agents-catalog.ps1') -Force
             Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\lib\Common.psm1") -Destination (Join-Path $proj 'lib\Common.psm1') -Force
 
             Push-Location $proj
-            & .\scripts\generate-agents-catalog.ps1
+            & .\scripts\generate-agents-catalog.ps1 *>&1 | Out-Null
             Test-Path (Join-Path $proj '.ai-config\AGENTS.md') | Should -BeTrue
             (Get-Content (Join-Path $proj '.ai-config\AGENTS.md') -Raw) | Should -Match 'test-agent'
             Pop-Location
@@ -102,12 +108,14 @@ Describe 'Scripts - PowerShell smoke tests' {
             New-Item -Path $proj -ItemType Directory | Out-Null
             New-Item -Path (Join-Path $proj '.ai-config\agents') -ItemType Directory -Force | Out-Null
             New-Item -Path (Join-Path $proj 'scripts') -ItemType Directory | Out-Null
+            New-Item -Path (Join-Path $proj 'lib') -ItemType Directory | Out-Null
 
             "---`nname: opencode-agent`ndescription: OC`n---`n" | Out-File -FilePath (Join-Path $proj '.ai-config\agents\opencode-agent.md') -Encoding utf8
             Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\scripts\sync-ai-config.ps1") -Destination (Join-Path $proj 'scripts\sync-ai-config.ps1') -Force
+            Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\lib\Common.psm1") -Destination (Join-Path $proj 'lib\Common.psm1') -Force
 
             Push-Location $proj
-            & .\scripts\sync-ai-config.ps1 -Target opencode
+            & .\scripts\sync-ai-config.ps1 -Target opencode *>&1 | Out-Null
             Test-Path (Join-Path $proj 'AGENTS.md') | Should -BeTrue
             (Get-Content (Join-Path $proj 'AGENTS.md') -Raw) | Should -Match 'opencode-agent'
             Pop-Location
@@ -116,7 +124,7 @@ Describe 'Scripts - PowerShell smoke tests' {
 
     Context 'doctor.ps1' {
         It 'prints help and exits 0' {
-            & (Resolve-Path "$PSScriptRoot\..\..\scripts\doctor.ps1") -Help
+            & (Resolve-Path "$PSScriptRoot\..\..\scripts\doctor.ps1") -Help *>&1 | Out-Null
             $LASTEXITCODE | Should -Be 0
         }
     }

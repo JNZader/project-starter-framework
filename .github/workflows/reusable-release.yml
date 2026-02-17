@@ -28,8 +28,11 @@ on:
         type: string
     secrets:
       token:
-        description: 'GitHub token'
+        description: 'GitHub token with contents:write permission'
         required: true
+      npm-token:
+        description: 'NPM token for package publishing (optional)'
+        required: false
 
 jobs:
   release:

@@ -46,10 +46,14 @@ pip install semgrep
 
 ## Quick Start (2 minutos)
 
-### Linux/Mac
+### Opción 1: Framework Core (sin módulos opcionales)
+
+El framework core incluye CI-Local, AI Config y templates CI. Es totalmente funcional sin necesidad de módulos opcionales.
+
+#### Linux/Mac
 
 ```bash
-# 1. Copiar framework (sin optional/)
+# 1. Copiar framework core (sin optional/)
 cp -r /path/to/project-starter-framework/{.ai-config,.ci-local,.github,templates,scripts,CLAUDE.md,.gitignore.template} /path/to/tu-proyecto/
 
 # 2. Ir al proyecto
@@ -62,10 +66,10 @@ mv .gitignore.template .gitignore
 ./scripts/init-project.sh
 ```
 
-### Windows (PowerShell)
+#### Windows (PowerShell)
 
 ```powershell
-# 1. Copiar framework
+# 1. Copiar framework core
 Copy-Item -Recurse C:\path\to\project-starter-framework\{.ai-config,.ci-local,.github,templates,scripts,CLAUDE.md,.gitignore.template} C:\path\to\tu-proyecto\
 
 # 2. Ir al proyecto
@@ -77,6 +81,24 @@ Rename-Item .gitignore.template .gitignore
 # 4. Ejecutar setup
 .\scripts\init-project.ps1
 ```
+
+### Opción 2: Framework con módulos opcionales
+
+Si deseas memoria de proyecto (Obsidian Brain) o code review automatizado (Ghagga):
+
+```bash
+# 1. Copiar framework completo (incluye optional/)
+cp -r /path/to/project-starter-framework/{.ai-config,.ci-local,.github,templates,scripts,optional,CLAUDE.md,.gitignore.template} /path/to/tu-proyecto/
+
+# 2. Continuar con pasos 2-4 de Opción 1
+```
+
+**Módulos opcionales disponibles:**
+- `obsidian-brain`: Memoria de proyecto con Kanban visual, Dataview y Templater
+- `vibekanban`: Metodología de oleadas paralelas (legacy)
+- `memory-simple`: Solo un archivo NOTES.md básico
+
+El script `init-project.sh` te permitirá elegir qué módulos instalar de forma interactiva.
 
 ---
 
@@ -112,7 +134,8 @@ project-starter-framework/
 │   └── dependabot.yml            # Config Dependabot (alternativa)
 │
 ├── optional/                     # Módulos opcionales
-│   ├── vibekanban/               # Oleadas paralelas + memoria
+│   ├── obsidian-brain/           # Memoria de proyecto con Obsidian
+│   ├── vibekanban/               # Oleadas paralelas + memoria (legacy)
 │   └── memory-simple/            # Solo un archivo de notas
 │
 ├── scripts/                      # Automatización
@@ -195,15 +218,17 @@ Config centralizada para múltiples AI CLIs:
 
 **78+ agentes incluidos** organizados por categoría.
 
-### 4. VibeKanban (Opcional)
+### 4. Módulos Opcionales
 
-Metodología de oleadas paralelas. Ver [optional/vibekanban/](optional/vibekanban/).
+Los módulos opcionales agregan funcionalidades extra al framework core:
 
-```bash
-# Instalar si lo necesitas
-cp -r optional/vibekanban/.project tu-proyecto/
-cp optional/vibekanban/new-wave.* tu-proyecto/scripts/
-```
+| Módulo | Qué agrega | Cuándo usarlo |
+|--------|-----------|---------------|
+| `obsidian-brain` | Memoria de proyecto con Kanban, Dataview, Templater | Proyectos con planificación compleja |
+| `vibekanban` | Oleadas paralelas + memoria (legacy) | Proyectos existentes con VibeKanban |
+| `memory-simple` | Solo archivo NOTES.md | Proyectos simples sin Obsidian |
+
+Ver [optional/README.md](optional/README.md) para más detalles.
 
 ---
 
@@ -231,17 +256,6 @@ Los hooks **bloquean automáticamente** cualquier referencia a IA:
 - `@anthropic.com`, `@openai.com`
 
 **Tú eres el único autor de tu código.**
-
----
-
-## Módulos Opcionales
-
-| Módulo | Descripción | Instalación |
-|--------|-------------|-------------|
-| `vibekanban/` | Oleadas paralelas + memoria | `cp -r optional/vibekanban/.project .` |
-| `memory-simple/` | Solo un archivo NOTES.md | `cp -r optional/memory-simple/.project .` |
-
-Ver [optional/README.md](optional/README.md) para más detalles.
 
 ---
 

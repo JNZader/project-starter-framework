@@ -76,13 +76,13 @@ jobs:
           fi
 
       - name: Setup Rust ${{ inputs.toolchain }}
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@7b1c307e0dcbda6122208f10795a713336a9b35a # master 2024-12
         with:
           toolchain: ${{ inputs.toolchain }}
           components: clippy, rustfmt
 
       - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
         with:
           workspaces: ${{ inputs.working-directory }}
 

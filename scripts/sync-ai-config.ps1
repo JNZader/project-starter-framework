@@ -37,7 +37,7 @@ function Generate-Claude {
 
     # Agregar agentes
     $content += "`n## Agentes Disponibles`n`n"
-    Get-ChildItem "$AiConfigDir\agents\*.md" | Where-Object { $_.Name -ne "_TEMPLATE.md" } | ForEach-Object {
+    Get-ChildItem "$AiConfigDir\agents" -Recurse -Filter "*.md" | Where-Object { $_.Name -ne "_TEMPLATE.md" } | ForEach-Object {
         $agentContent = Get-Content $_.FullName -Raw
         if ($agentContent -match "name:\s*(.+)") { $name = $matches[1].Trim() }
         if ($agentContent -match "description:\s*(.+)") { $desc = $matches[1].Trim() }
@@ -46,7 +46,7 @@ function Generate-Claude {
 
     # Agregar skills
     $content += "`n## Skills Disponibles`n`n"
-    Get-ChildItem "$AiConfigDir\skills\*.md" -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "_TEMPLATE.md" } | ForEach-Object {
+    Get-ChildItem "$AiConfigDir\skills" -Recurse -Filter "*.md" -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "_TEMPLATE.md" } | ForEach-Object {
         $skillContent = Get-Content $_.FullName -Raw
         if ($skillContent -match "name:\s*(.+)") { $name = $matches[1].Trim() }
         $content += "- $name`n"
@@ -66,7 +66,7 @@ function Generate-OpenCode {
 
 "@
 
-    Get-ChildItem "$AiConfigDir\agents\*.md" | Where-Object { $_.Name -ne "_TEMPLATE.md" } | ForEach-Object {
+    Get-ChildItem "$AiConfigDir\agents" -Recurse -Filter "*.md" | Where-Object { $_.Name -ne "_TEMPLATE.md" } | ForEach-Object {
         $content += "`n---`n"
         $agentContent = Get-Content $_.FullName -Raw
         # Remover frontmatter YAML

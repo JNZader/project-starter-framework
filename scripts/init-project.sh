@@ -125,6 +125,7 @@ if [[ ! -f ".gitignore" ]]; then
 .ci-local/docker/
 .ci-local-image-built
 semgrep-report.json
+semgrep-results.json
 
 # IDE
 .idea/
@@ -138,6 +139,7 @@ Thumbs.db
 # Env
 .env
 .env.local
+.env.*.local
 *.env
 
 # Credentials
@@ -164,8 +166,13 @@ node_modules/
 __pycache__/
 .pytest_cache/
 
-# Claude Code
+# AI config (generated, not committed)
 CLAUDE.md
+AGENTS.md
+GEMINI.md
+.cursorrules
+.aider.conf.yml
+.continue/
 EOF
     echo -e "${GREEN}  ✓ .gitignore creado${NC}"
 else
@@ -178,116 +185,134 @@ fi
 echo -e "${YELLOW}[6/8] Módulos opcionales...${NC}"
 
 FRAMEWORK_DIR=""
-# Detectar si estamos en el framework o en un proyecto que lo copió
-if [[ -d "optional/vibekanban" || -d "optional/obsidian-brain" ]]; then
+# Detect if we're running from the framework repo (has templates/ and .ai-config/)
+if [[ -d "templates" && -d ".ai-config" ]]; then
     FRAMEWORK_DIR="."
+elif [[ -d "../templates" && -d "../.ai-config" ]]; then
+    FRAMEWORK_DIR=".."
+fi
+
+HAS_OPTIONAL=false
+if [[ -n "$FRAMEWORK_DIR" && -d "$FRAMEWORK_DIR/optional" ]]; then
+    HAS_OPTIONAL=true
 fi
 
 if [[ -n "$FRAMEWORK_DIR" ]]; then
-    echo -e "  ${CYAN}¿Instalar módulo de memoria del proyecto?${NC}"
-    echo -e "    1) obsidian-brain  - Vault Obsidian + Kanban + memoria estructurada (RECOMENDADO)"
-    echo -e "    2) vibekanban      - Oleadas paralelas + memoria (legacy)"
-    echo -e "    3) simple          - Solo un archivo NOTES.md"
-    echo -e "    4) engram          - Memoria persistente para agentes AI (MCP server)"
-    echo -e "    5) ninguno         - Sin memoria de proyecto"
-    echo -e ""
-    echo -e "  ${YELLOW}Nota: engram complementa a obsidian-brain (pueden usarse juntos)${NC}"
-    echo -e ""
-    read -p "  Opción [1/2/3/4/5]: " MEMORY_CHOICE
+    if [[ "$HAS_OPTIONAL" == true ]]; then
+        echo -e "  ${CYAN}¿Instalar módulo de memoria del proyecto?${NC}"
+        echo -e "    1) obsidian-brain  - Vault Obsidian + Kanban + memoria estructurada (RECOMENDADO)"
+        echo -e "    2) vibekanban      - Oleadas paralelas + memoria (legacy)"
+        echo -e "    3) simple          - Solo un archivo NOTES.md"
+        echo -e "    4) engram          - Memoria persistente para agentes AI (MCP server)"
+        echo -e "    5) ninguno         - Sin memoria de proyecto"
+        echo -e ""
+        echo -e "  ${YELLOW}Nota: engram complementa a obsidian-brain (pueden usarse juntos)${NC}"
+        echo -e ""
+        read -p "  Opción [1/2/3/4/5]: " MEMORY_CHOICE
 
-    case "$MEMORY_CHOICE" in
-        1)
-            if [[ -d "$FRAMEWORK_DIR/optional/obsidian-brain/.project" ]]; then
-                cp -r "$FRAMEWORK_DIR/optional/obsidian-brain/.project" .
-                cp -r "$FRAMEWORK_DIR/optional/obsidian-brain/.obsidian" .
-                backup_if_exists "scripts/new-wave.sh"
-                cp "$FRAMEWORK_DIR/optional/obsidian-brain/new-wave.sh" scripts/ 2>/dev/null || true
-                backup_if_exists "scripts/new-wave.ps1"
-                cp "$FRAMEWORK_DIR/optional/obsidian-brain/new-wave.ps1" scripts/ 2>/dev/null || true
-                chmod +x scripts/new-wave.sh 2>/dev/null || true
-                # Append gitignore snippet
-                if [[ -f "$FRAMEWORK_DIR/optional/obsidian-brain/.obsidian-gitignore-snippet.txt" ]]; then
-                    echo "" >> .gitignore
-                    cat "$FRAMEWORK_DIR/optional/obsidian-brain/.obsidian-gitignore-snippet.txt" >> .gitignore
+        case "$MEMORY_CHOICE" in
+            1)
+                if [[ -d "$FRAMEWORK_DIR/optional/obsidian-brain/.project" ]]; then
+                    cp -r "$FRAMEWORK_DIR/optional/obsidian-brain/.project" .
+                    cp -r "$FRAMEWORK_DIR/optional/obsidian-brain/.obsidian" .
+                    backup_if_exists "scripts/new-wave.sh"
+                    cp "$FRAMEWORK_DIR/optional/obsidian-brain/new-wave.sh" scripts/ 2>/dev/null || true
+                    backup_if_exists "scripts/new-wave.ps1"
+                    cp "$FRAMEWORK_DIR/optional/obsidian-brain/new-wave.ps1" scripts/ 2>/dev/null || true
+                    chmod +x scripts/new-wave.sh 2>/dev/null || true
+                    # Append gitignore snippet
+                    if [[ -f "$FRAMEWORK_DIR/optional/obsidian-brain/.obsidian-gitignore-snippet.txt" ]]; then
+                        echo "" >> .gitignore
+                        cat "$FRAMEWORK_DIR/optional/obsidian-brain/.obsidian-gitignore-snippet.txt" >> .gitignore
+                    fi
+                    echo -e "${GREEN}  ✓ Obsidian Brain instalado${NC}"
+                    echo -e "  ${CYAN}Nota: Instala plugins Kanban, Dataview y Templater desde Obsidian${NC}"
                 fi
-                echo -e "${GREEN}  ✓ Obsidian Brain instalado${NC}"
-                echo -e "  ${CYAN}Nota: Instala plugins Kanban, Dataview y Templater desde Obsidian${NC}"
-            fi
-            ;;
-        2)
-            if [[ -d "$FRAMEWORK_DIR/optional/vibekanban/.project" ]]; then
-                cp -r "$FRAMEWORK_DIR/optional/vibekanban/.project" .
-                backup_if_exists "scripts/new-wave.sh"
-                cp "$FRAMEWORK_DIR/optional/vibekanban/new-wave.sh" scripts/ 2>/dev/null || true
-                backup_if_exists "scripts/new-wave.ps1"
-                cp "$FRAMEWORK_DIR/optional/vibekanban/new-wave.ps1" scripts/ 2>/dev/null || true
-                chmod +x scripts/new-wave.sh 2>/dev/null || true
-                echo -e "${GREEN}  ✓ VibeKanban instalado (legacy)${NC}"
-            fi
-            ;;
-        3)
-            if [[ -d "$FRAMEWORK_DIR/optional/memory-simple/.project" ]]; then
-                cp -r "$FRAMEWORK_DIR/optional/memory-simple/.project" .
-                echo -e "${GREEN}  ✓ Memory simple instalado${NC}"
-            fi
-            ;;
-        4)
-            if [[ -d "$FRAMEWORK_DIR/optional/engram" ]]; then
-                # Copiar config MCP
+                ;;
+            2)
+                if [[ -d "$FRAMEWORK_DIR/optional/vibekanban/.project" ]]; then
+                    cp -r "$FRAMEWORK_DIR/optional/vibekanban/.project" .
+                    backup_if_exists "scripts/new-wave.sh"
+                    cp "$FRAMEWORK_DIR/optional/vibekanban/new-wave.sh" scripts/ 2>/dev/null || true
+                    backup_if_exists "scripts/new-wave.ps1"
+                    cp "$FRAMEWORK_DIR/optional/vibekanban/new-wave.ps1" scripts/ 2>/dev/null || true
+                    chmod +x scripts/new-wave.sh 2>/dev/null || true
+                    echo -e "${GREEN}  ✓ VibeKanban instalado (legacy)${NC}"
+                fi
+                ;;
+            3)
+                if [[ -d "$FRAMEWORK_DIR/optional/memory-simple/.project" ]]; then
+                    cp -r "$FRAMEWORK_DIR/optional/memory-simple/.project" .
+                    echo -e "${GREEN}  ✓ Memory simple instalado${NC}"
+                fi
+                ;;
+            4)
+                if [[ -d "$FRAMEWORK_DIR/optional/engram" ]]; then
+                    # Copiar config MCP
+                    project_name=$(basename "$(pwd)")
+                    escaped_name=$(printf '%s\n' "$project_name" | sed 's/[&/\]/\\&/g')
+                    if [[ -f "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" ]]; then
+                        if [[ ! -f ".mcp.json" ]]; then
+                            sed "s/__PROJECT_NAME__/$escaped_name/g" \
+                                "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" > .mcp.json
+                        else
+                            echo -e "${YELLOW}  .mcp.json ya existe - agrega engram manualmente${NC}"
+                            echo -e "  Ver: optional/engram/.mcp-config-snippet.json"
+                        fi
+                    fi
+                    # Copiar script de instalacion
+                    backup_if_exists "scripts/install-engram.sh"
+                    cp "$FRAMEWORK_DIR/optional/engram/install-engram.sh" scripts/ 2>/dev/null || true
+                    backup_if_exists "scripts/install-engram.ps1"
+                    cp "$FRAMEWORK_DIR/optional/engram/install-engram.ps1" scripts/ 2>/dev/null || true
+                    chmod +x scripts/install-engram.sh 2>/dev/null || true
+                    # Append gitignore snippet
+                    if [[ -f "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" ]]; then
+                        echo "" >> .gitignore
+                        cat "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" >> .gitignore
+                    fi
+                    echo -e "${GREEN}  ✓ Engram configurado${NC}"
+                    echo -e "  ${CYAN}Ejecuta: ./scripts/install-engram.sh para instalar el binario${NC}"
+                fi
+                ;;
+            *)
+                echo -e "${GREEN}  ✓ Sin módulo de memoria${NC}"
+                ;;
+        esac
+
+        # Preguntar por engram adicional si eligieron obsidian-brain
+        if [[ "$MEMORY_CHOICE" == "1" && -d "$FRAMEWORK_DIR/optional/engram" ]]; then
+            echo -e ""
+            read -p "  ¿Agregar también Engram para memoria de agentes AI? [y/N]: " ADD_ENGRAM
+            if [[ "$ADD_ENGRAM" == "y" || "$ADD_ENGRAM" == "Y" ]]; then
                 project_name=$(basename "$(pwd)")
                 escaped_name=$(printf '%s\n' "$project_name" | sed 's/[&/\]/\\&/g')
-                if [[ -f "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" ]]; then
-                    if [[ ! -f ".mcp.json" ]]; then
-                        sed "s/__PROJECT_NAME__/$escaped_name/g" \
-                            "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" > .mcp.json
-                    else
-                        echo -e "${YELLOW}  .mcp.json ya existe - agrega engram manualmente${NC}"
-                        echo -e "  Ver: optional/engram/.mcp-config-snippet.json"
-                    fi
+                if [[ ! -f ".mcp.json" ]]; then
+                    sed "s/__PROJECT_NAME__/$escaped_name/g" \
+                        "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" > .mcp.json
                 fi
-                # Copiar script de instalacion
                 backup_if_exists "scripts/install-engram.sh"
                 cp "$FRAMEWORK_DIR/optional/engram/install-engram.sh" scripts/ 2>/dev/null || true
                 backup_if_exists "scripts/install-engram.ps1"
                 cp "$FRAMEWORK_DIR/optional/engram/install-engram.ps1" scripts/ 2>/dev/null || true
                 chmod +x scripts/install-engram.sh 2>/dev/null || true
-                # Append gitignore snippet
                 if [[ -f "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" ]]; then
                     echo "" >> .gitignore
                     cat "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" >> .gitignore
                 fi
-                echo -e "${GREEN}  ✓ Engram configurado${NC}"
+                echo -e "${GREEN}  ✓ Engram agregado (complementa Obsidian Brain)${NC}"
                 echo -e "  ${CYAN}Ejecuta: ./scripts/install-engram.sh para instalar el binario${NC}"
             fi
-            ;;
-        *)
-            echo -e "${GREEN}  ✓ Sin módulo de memoria${NC}"
-            ;;
-    esac
-
-    # Preguntar por engram adicional si eligieron obsidian-brain
-    if [[ "$MEMORY_CHOICE" == "1" && -d "$FRAMEWORK_DIR/optional/engram" ]]; then
-        echo -e ""
-        read -p "  ¿Agregar también Engram para memoria de agentes AI? [y/N]: " ADD_ENGRAM
-        if [[ "$ADD_ENGRAM" == "y" || "$ADD_ENGRAM" == "Y" ]]; then
-            project_name=$(basename "$(pwd)")
-            escaped_name=$(printf '%s\n' "$project_name" | sed 's/[&/\]/\\&/g')
-            if [[ ! -f ".mcp.json" ]]; then
-                sed "s/__PROJECT_NAME__/$escaped_name/g" \
-                    "$FRAMEWORK_DIR/optional/engram/.mcp-config-snippet.json" > .mcp.json
-            fi
-            backup_if_exists "scripts/install-engram.sh"
-            cp "$FRAMEWORK_DIR/optional/engram/install-engram.sh" scripts/ 2>/dev/null || true
-            backup_if_exists "scripts/install-engram.ps1"
-            cp "$FRAMEWORK_DIR/optional/engram/install-engram.ps1" scripts/ 2>/dev/null || true
-            chmod +x scripts/install-engram.sh 2>/dev/null || true
-            if [[ -f "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" ]]; then
-                echo "" >> .gitignore
-                cat "$FRAMEWORK_DIR/optional/engram/.gitignore-snippet.txt" >> .gitignore
-            fi
-            echo -e "${GREEN}  ✓ Engram agregado (complementa Obsidian Brain)${NC}"
-            echo -e "  ${CYAN}Ejecuta: ./scripts/install-engram.sh para instalar el binario${NC}"
         fi
+    else
+        # Framework detected but optional/ dir not present - create basic memory structure
+        echo -e "  ${YELLOW}optional/ no disponible. Creando estructura básica de memoria...${NC}"
+        mkdir -p .project/Memory
+        touch .project/Memory/CONTEXT.md
+        touch .project/Memory/DECISIONS.md
+        touch .project/Memory/BLOCKERS.md
+        touch .project/Memory/KANBAN.md
+        echo -e "${GREEN}  ✓ Estructura básica .project/Memory/ creada${NC}"
     fi
 else
     echo -e "${GREEN}  ✓ Módulos ya configurados o no disponibles${NC}"

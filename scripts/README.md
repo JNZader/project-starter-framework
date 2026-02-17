@@ -9,7 +9,6 @@
 | Script | Descripción | Windows |
 |--------|-------------|---------|
 | `init-project.sh/ps1` | Setup inicial del proyecto | ✓ |
-| `new-wave.sh/ps1` | Gestión de oleadas de tareas | ✓ |
 | `sync-ai-config.sh/ps1` | Sincroniza config de AI CLIs | ✓ |
 | `add-skill.sh/ps1` | Agrega skills de Gentleman-Skills | ✓ |
 | `sync-skills.sh/ps1` | Valida y sincroniza skills | ✓ |
@@ -27,26 +26,6 @@ Configura un proyecto nuevo:
 ```bash
 ./scripts/init-project.sh   # Linux/Mac
 .\scripts\init-project.ps1  # Windows
-```
-
----
-
-## new-wave
-
-Gestiona oleadas de tareas paralelas:
-
-```bash
-# Ver oleada actual
-./scripts/new-wave.sh --list
-
-# Crear nueva oleada
-./scripts/new-wave.sh "T-001 T-002 T-003"
-
-# Crear branches para tareas
-./scripts/new-wave.sh --create-branches
-
-# Completar oleada
-./scripts/new-wave.sh --complete
 ```
 
 ---
@@ -135,6 +114,33 @@ Valida formato de skills y genera archivos multi-IDE:
 
 # Todo junto
 ./scripts/sync-skills.sh all
+```
+
+---
+
+## Oleadas (via módulos opcionales)
+
+Los siguientes scripts se instalan cuando se elige un módulo opcional de memoria de proyecto:
+
+| Script | Descripción | Instalado con |
+|--------|-------------|---------------|
+| `new-wave.sh` | Gestión de oleadas de tareas | `obsidian-brain` o `vibekanban` |
+| `new-wave.ps1` | Versión PowerShell | `obsidian-brain` o `vibekanban` |
+
+### Uso de new-wave (si está instalado)
+
+```bash
+# Ver oleada actual
+./scripts/new-wave.sh --list
+
+# Crear nueva oleada
+./scripts/new-wave.sh "T-001 T-002 T-003"
+
+# Crear branches para tareas
+./scripts/new-wave.sh --create-branches
+
+# Completar oleada
+./scripts/new-wave.sh --complete
 ```
 
 ---

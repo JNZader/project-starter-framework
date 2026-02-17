@@ -34,7 +34,7 @@ function List-Skills {
     Write-Host ("{0,-25} {1,-50} {2}" -f "SKILL", "DESCRIPTION", "SCOPE")
     Write-Host ("{0,-25} {1,-50} {2}" -f "-----", "-----------", "-----")
 
-    Get-ChildItem -Path $SkillsDir -Filter "*.md" -ErrorAction SilentlyContinue |
+    Get-ChildItem -Path $SkillsDir -Recurse -Filter "*.md" -ErrorAction SilentlyContinue |
         Where-Object { $_.BaseName -ne "_TEMPLATE" } |
         ForEach-Object {
             $skillName = $_.BaseName
@@ -60,7 +60,7 @@ function Validate-Skills {
     Write-Host "Validando skills..." -ForegroundColor Blue
     $errors = 0
 
-    Get-ChildItem -Path $SkillsDir -Filter "*.md" -ErrorAction SilentlyContinue |
+    Get-ChildItem -Path $SkillsDir -Recurse -Filter "*.md" -ErrorAction SilentlyContinue |
         Where-Object { $_.BaseName -ne "_TEMPLATE" } |
         ForEach-Object {
             $skillName = $_.BaseName
@@ -186,7 +186,7 @@ function Generate-Summary {
         $content += "`n### $category`n"
         $pattern = $categories[$category]
 
-        Get-ChildItem -Path $SkillsDir -Filter "*.md" -ErrorAction SilentlyContinue |
+        Get-ChildItem -Path $SkillsDir -Recurse -Filter "*.md" -ErrorAction SilentlyContinue |
             Where-Object { $_.BaseName -ne "_TEMPLATE" -and $_.BaseName -match $pattern } |
             ForEach-Object {
                 $skillName = $_.BaseName

@@ -132,6 +132,12 @@ function Add-GentlemanSkill {
 function Remove-Skill {
     param([string]$Name)
 
+    # Validate skill name (security: prevent path traversal)
+    if ($Name -notmatch '^[a-zA-Z0-9_-]+$') {
+        Write-Host "Error: Invalid skill name format. Use only alphanumeric, dash, underscore." -ForegroundColor Red
+        exit 1
+    }
+
     $skillPath = Join-Path $SkillsDir $Name
     $skillFile = Join-Path $SkillsDir "$Name.md"
 

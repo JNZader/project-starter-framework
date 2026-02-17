@@ -185,16 +185,22 @@ jobs:
 
 ## Consumo Estimado
 
-Con esta configuración:
+Los templates ejecutan CI en dos escenarios:
 
-| Acción | Minutos |
-|--------|---------|
-| PR a main | ~3 min |
-| Push a main | 0 min |
-| Release (tag) | ~8 min |
+| Evento | Qué ejecuta | Minutos aprox |
+|--------|-------------|---------------|
+| Push a main | Build + lint | ~1-2 min |
+| Pull Request | Build + lint + tests | ~3-5 min |
+| Release (tag) | Docker build & push | ~8 min |
+| Manual (workflow_dispatch) | Configurable | Variable |
+
+**Estrategia de triggers:**
+- **Push a main**: Verificación rápida post-merge (build + lint únicamente)
+- **Pull Requests**: CI completo para validación antes de merge
+- **Tags**: Publicación de releases con Docker
 
 **Free tier mensual:**
-- GitHub: 2,000 min → ~600+ PRs
+- GitHub: 2,000 min → ~600+ PRs (o ~1000+ pushes)
 - GitLab: 400 min → ~130+ PRs
 - Woodpecker: Self-hosted, sin limite de minutos
 

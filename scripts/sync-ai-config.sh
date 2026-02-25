@@ -18,8 +18,40 @@ source "$(cd "$(dirname "$0")" && pwd)/../lib/common.sh"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 AI_CONFIG_DIR="$PROJECT_DIR/.ai-config"
+SKILLIGNORE_FILE="$AI_CONFIG_DIR/.skillignore"
 
 echo -e "${CYAN}=== Sync AI Config ===${NC}"
+
+# =============================================================================
+# .skillignore helper
+# =============================================================================
+
+# Returns 0 (true) if a skill should be IGNORED for a given target
+# Usage: is_skill_ignored <skill_rel_path> <target>
+# skill_rel_path: relative to $AI_CONFIG_DIR/skills/, e.g. "backend/fastapi"
+is_skill_ignored() {
+    local skill="$1"
+    local target="$2"
+    [[ ! -f "$SKILLIGNORE_FILE" ]] && return 1
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        # strip comments and blank lines
+        line="${line%%#*}"
+        line="${line//[[:space:]]/}"
+        [[ -z "$line" ]] && continue
+
+        if [[ "$line" == *:* ]]; then
+            # target-specific: target:skill
+            local t="${line%%:*}"
+            local s="${line#*:}"
+            [[ "$t" == "$target" && "$s" == "$skill" ]] && return 0
+        else
+            # global ignore
+            [[ "$line" == "$skill" ]] && return 0
+        fi
+    done < "$SKILLIGNORE_FILE"
+    return 1
+}
 
 # =============================================================================
 # Funciones de generacion
@@ -130,6 +162,9 @@ HEADER
     while IFS= read -r -d '' skill; do
         name=$(grep "^name:" "$skill" | head -1 | sed 's/name: *//')
         [[ -z "$name" ]] && continue
+        rel="${skill#$AI_CONFIG_DIR/skills/}"
+        skill_key="${rel%/SKILL.md}"
+        is_skill_ignored "$skill_key" "claude" && continue
         echo "- $name" >> "$PROJECT_DIR/CLAUDE.md"
     done < <(find "$AI_CONFIG_DIR/skills" -type f -name "SKILL.md" -print0)
 
@@ -183,8 +218,10 @@ HEADER
     while IFS= read -r -d '' skill; do
         name=$(grep "^name:" "$skill" | head -1 | sed 's/name: *//')
         [[ -z "$name" ]] && continue
-        desc=$(grep "^description:" "$skill" | head -1 | sed 's/description: *//')
         rel="${skill#$AI_CONFIG_DIR/skills/}"
+        skill_key="${rel%/SKILL.md}"
+        is_skill_ignored "$skill_key" "opencode" && continue
+        desc=$(grep "^description:" "$skill" | head -1 | sed 's/description: *//')
         cat_dir=$(echo "$rel" | cut -d'/' -f1)
         if [[ "$cat_dir" != "$prev_skill_cat" ]]; then
             cat_label=$(echo "$cat_dir" | awk '{print toupper(substr($0,1,1)) substr($0,2)}' | tr '-' ' ')
@@ -321,6 +358,9 @@ HEADER
     while IFS= read -r -d '' skill; do
         name=$(grep "^name:" "$skill" | head -1 | sed 's/name: *//')
         [[ -z "$name" ]] && continue
+        rel="${skill#$AI_CONFIG_DIR/skills/}"
+        skill_key="${rel%/SKILL.md}"
+        is_skill_ignored "$skill_key" "gemini" && continue
         echo "- $name" >> "$PROJECT_DIR/GEMINI.md"
     done < <(find "$AI_CONFIG_DIR/skills" -type f -name "SKILL.md" -print0)
 
@@ -331,7 +371,38 @@ HEADER
 # Main
 # =============================================================================
 
-case "${1:-all}" in
+# Read targets from config.yaml if no argument given
+run_from_config() {
+    local config="$AI_CONFIG_DIR/config.yaml"
+    if [[ ! -f "$config" ]]; then
+        echo -e "${YELLOW}No config.yaml found, running all targets${NC}"
+        generate_claude; generate_opencode; generate_cursor; generate_aider; generate_gemini
+        return
+    fi
+
+    echo -e "${CYAN}Reading targets from .ai-config/config.yaml...${NC}"
+    local claude_mode
+    claude_mode=$(grep "claude_mode:" "$config" | sed 's/.*claude_mode: *//' | tr -d ' ')
+
+    while IFS= read -r target; do
+        target=$(echo "$target" | sed 's/^[ \t-]*//' | tr -d ' ')
+        [[ -z "$target" || "$target" == "#"* ]] && continue
+        case "$target" in
+            claude)   generate_claude "${claude_mode:-overwrite}" ;;
+            opencode) generate_opencode ;;
+            cursor)   generate_cursor ;;
+            aider)    generate_aider ;;
+            gemini)   generate_gemini ;;
+            continue) generate_continue ;;
+            *) echo -e "${YELLOW}Unknown target: $target (skipped)${NC}" ;;
+        esac
+    done < <(awk '/^targets:/,/^[a-z]/' "$config" | grep '^ *-')
+}
+
+case "${1:-config}" in
+    config)
+        run_from_config
+        ;;
     claude)
         generate_claude "$2"
         ;;
@@ -359,6 +430,7 @@ case "${1:-all}" in
         ;;
     *)
         echo "Usage: $0 {claude|opencode|cursor|aider|continue|gemini|all}"
+        echo "       $0           (reads targets from .ai-config/config.yaml)"
         exit 1
         ;;
 esac

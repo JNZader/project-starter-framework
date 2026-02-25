@@ -196,6 +196,77 @@ validate_skills() {
     fi
 }
 
+# Funcion: Audit de seguridad (prompt injection / exfiltración)
+audit_skills() {
+    echo -e "${BLUE}Auditando skills (seguridad)...${NC}"
+    echo ""
+    local warnings=0
+    local criticals=0
+
+    # Patterns that indicate prompt injection or data exfiltration attempts
+    local critical_patterns=(
+        'ignore (previous|all|your|these) instructions'
+        'disregard (all|your|previous) (rules|instructions)'
+        'forget (everything|all|your instructions)'
+        'you are now (a|an|DAN)'
+        'jailbreak'
+        'DAN mode'
+        'override (your|all) (rules|instructions|safety)'
+        'act as if you have no restrictions'
+        'pretend you are (a|an) (different|unrestricted)'
+    )
+    # Patterns that are suspicious but may be legitimate
+    local warn_patterns=(
+        'curl http'
+        'wget http'
+        'exfiltrat'
+        'send .* to http'
+        'POST .* http'
+        'upload .* to'
+        '\b(?:http|https)://(?!github\.com|docs\.|api\.)[a-z0-9.-]+\.[a-z]{2,}'
+    )
+
+    while IFS= read -r -d '' skill_file; do
+        local skill_base
+        skill_base="$(basename "$skill_file")"
+        [ "$skill_base" = "_TEMPLATE.md" ] && continue
+
+        local skill_rel="${skill_file#$SKILLS_DIR/}"
+        local skill_name="${skill_rel%/SKILL.md}"
+        local found_critical=0
+        local found_warn=0
+
+        for pattern in "${critical_patterns[@]}"; do
+            if grep -qiE "$pattern" "$skill_file" 2>/dev/null; then
+                echo -e "${RED}  [CRITICAL] [$skill_name] Possible prompt injection: '$pattern'${NC}"
+                criticals=$((criticals + 1))
+                found_critical=1
+            fi
+        done
+
+        for pattern in "${warn_patterns[@]}"; do
+            if grep -qiE "$pattern" "$skill_file" 2>/dev/null; then
+                echo -e "${YELLOW}  [WARN] [$skill_name] Suspicious pattern: '$pattern'${NC}"
+                warnings=$((warnings + 1))
+                found_warn=1
+            fi
+        done
+
+        [[ $found_critical -eq 0 && $found_warn -eq 0 ]] && \
+            echo -e "${GREEN}  [OK] $skill_name${NC}"
+    done < <(find "$SKILLS_DIR" -type f -name "SKILL.md" -print0)
+
+    echo ""
+    if [[ $criticals -gt 0 ]]; then
+        echo -e "${RED}Audit: $criticals CRITICAL issue(s) found — review before syncing!${NC}"
+        return 1
+    elif [[ $warnings -gt 0 ]]; then
+        echo -e "${YELLOW}Audit: $warnings warning(s) found — review if unexpected${NC}"
+    else
+        echo -e "${GREEN}Audit: All skills clean${NC}"
+    fi
+}
+
 # Funcion: Generar resumen de skills para AGENTS.md
 generate_summary() {
     echo -e "${BLUE}Generando resumen de skills...${NC}"
@@ -251,6 +322,9 @@ case "${1:-help}" in
     validate)
         validate_skills
         ;;
+    audit)
+        audit_skills
+        ;;
     symlinks|setup)
         setup_symlinks
         ;;
@@ -268,6 +342,8 @@ case "${1:-help}" in
     all)
         validate_skills
         echo ""
+        audit_skills
+        echo ""
         generate_summary
         echo ""
         setup_symlinks
@@ -277,7 +353,7 @@ case "${1:-help}" in
         echo ""
         echo "Comandos:"
         echo "  list      - Listar todos los skills disponibles"
-        echo "  validate  - Validar formato de skills"
+        echo "  audit    - Auditar skills por prompt injection y exfiltración de datos"
         echo "  symlinks  - Crear symlinks multi-IDE (CLAUDE.md, GEMINI.md, etc.)"
         echo "  summary   - Generar resumen de skills"
         echo "  scope     - Agregar scope a un skill"

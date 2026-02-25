@@ -18,23 +18,26 @@ echo ""
 list_skills() {
     echo -e "${GREEN}Skills disponibles:${NC}"
     echo ""
-    printf "%-25s %-50s %s\n" "SKILL" "DESCRIPTION" "SCOPE"
-    printf "%-25s %-50s %s\n" "-----" "-----------" "-----"
+    printf "%-35s %-50s\n" "SKILL" "DESCRIPTION"
+    printf "%-35s %-50s\n" "-----" "-----------"
 
     while IFS= read -r -d '' skill_file; do
-        [ "$(basename "$skill_file")" = "_TEMPLATE.md" ] && continue
+        skill_base="$(basename "$skill_file")"
+        [ "$skill_base" = "_TEMPLATE.md" ] && continue
 
         skill_rel="${skill_file#$SKILLS_DIR/}"
-        skill_name="${skill_rel%.md}"
+        # SKILL.md in folder → use parent dir name; flat .md → strip extension
+        if [ "$skill_base" = "SKILL.md" ]; then
+            skill_name="${skill_rel%/SKILL.md}"
+        else
+            skill_name="${skill_rel%.md}"
+        fi
 
         # Extraer descripcion del frontmatter
         description=$(sed -n '/^description:/,/^[a-z]/p' "$skill_file" | head -5 | grep -v "^description:" | grep -v "^[a-z]" | tr '\n' ' ' | cut -c1-50)
 
-        # Extraer scope si existe
-        scope=$(grep -A1 "^scope:" "$skill_file" 2>/dev/null | tail -1 | tr -d '  -' || echo "global")
-
-        printf "%-25s %-50s %s\n" "$skill_name" "${description:-No description}" "${scope:-global}"
-    done < <(find "$SKILLS_DIR" -type f -name "*.md" -print0)
+        printf "%-35s %-50s\n" "$skill_name" "${description:-No description}"
+    done < <(find "$SKILLS_DIR" -type f \( -name "SKILL.md" -o -name "*.md" \) -print0 | sort -z)
 }
 
 # Funcion: Agregar scope a un skill
@@ -152,10 +155,15 @@ validate_skills() {
     local errors=0
 
     while IFS= read -r -d '' skill_file; do
-        [ "$(basename "$skill_file")" = "_TEMPLATE.md" ] && continue
+        skill_base="$(basename "$skill_file")"
+        [ "$skill_base" = "_TEMPLATE.md" ] && continue
 
         skill_rel="${skill_file#$SKILLS_DIR/}"
-        skill_name="${skill_rel%.md}"
+        if [ "$skill_base" = "SKILL.md" ]; then
+            skill_name="${skill_rel%/SKILL.md}"
+        else
+            skill_name="${skill_rel%.md}"
+        fi
 
         # Verificar frontmatter
         if ! head -1 "$skill_file" | grep -q "^---"; then
@@ -179,7 +187,7 @@ validate_skills() {
         if ! grep -q "^## Related Skills" "$skill_file"; then
             echo -e "${YELLOW}  [$skill_name] Falta seccion 'Related Skills'${NC}"
         fi
-    done < <(find "$SKILLS_DIR" -type f -name "*.md" -print0)
+    done < <(find "$SKILLS_DIR" -type f -name "SKILL.md" -print0)
 
     if [ $errors -eq 0 ]; then
         echo -e "${GREEN}Todos los skills son validos${NC}"
@@ -220,10 +228,8 @@ EOF
 
         local count=0
         while IFS= read -r -d '' skill_file; do
-            [ "$(basename "$skill_file")" = "_TEMPLATE.md" ] && continue
-
             skill_rel="${skill_file#$SKILLS_DIR/}"
-            skill_name="${skill_rel%.md}"
+            skill_name="${skill_rel%/SKILL.md}"
             skill_base=$(basename "$skill_name")
 
             if echo "$skill_base" | grep -qE "$pattern"; then
@@ -231,7 +237,7 @@ EOF
                 echo "- \`$skill_name\`: $desc" >> "$summary_file"
                 count=$((count + 1))
             fi
-        done < <(find "$SKILLS_DIR" -type f -name "*.md" -print0)
+        done < <(find "$SKILLS_DIR" -type f -name "SKILL.md" -print0)
     done
 
     echo -e "${GREEN}Resumen generado: $summary_file${NC}"

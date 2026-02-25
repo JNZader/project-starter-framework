@@ -3,6 +3,12 @@
 # SKILL TEMPLATE (Gentleman-Skills Compatible)
 # =============================================================================
 # Formato compatible con: https://github.com/Gentleman-Programming/Gentleman-Skills
+#
+# ESTRUCTURA DE CARPETA:
+#   .ai-config/skills/{category}/{skill-name}/
+#   └── SKILL.md          ← este archivo
+#   └── assets/           ← opcional: templates, schemas, ejemplos
+#   └── references/       ← opcional: links a docs locales
 # =============================================================================
 
 name: mi-skill
@@ -15,7 +21,6 @@ metadata:
   version: "1.0"
   tags: [frontend, backend, testing]
   language: typescript  # typescript | python | go | rust | java
-  scope: [src/, components/]  # Carpetas donde aplica este skill (auto-invoke)
 ---
 
 # [Nombre del Skill]

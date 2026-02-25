@@ -66,11 +66,10 @@ HEADER
 
         echo -e "\n## Skills Disponibles\n" >> "$genfile"
         while IFS= read -r -d '' skill; do
-            [[ "$(basename "$skill")" == "_TEMPLATE.md" ]] && continue
             name=$(grep "^name:" "$skill" | head -1 | sed 's/name: *//')
             [[ -z "$name" ]] && continue
             echo "- $name" >> "$genfile"
-        done < <(find "$AI_CONFIG_DIR/skills" -type f -name "*.md" -print0)
+        done < <(find "$AI_CONFIG_DIR/skills" -type f -name "SKILL.md" -print0)
 
         # If existing file already contains our auto-generated marker, replace that section
         if grep -q "^## Auto-generated from \.ai-config/" "$PROJECT_DIR/CLAUDE.md" 2>/dev/null; then
@@ -129,11 +128,10 @@ HEADER
     # Agregar skills disponibles
     echo -e "\n## Skills Disponibles\n" >> "$PROJECT_DIR/CLAUDE.md"
     while IFS= read -r -d '' skill; do
-        [[ "$(basename "$skill")" == "_TEMPLATE.md" ]] && continue
         name=$(grep "^name:" "$skill" | head -1 | sed 's/name: *//')
         [[ -z "$name" ]] && continue
         echo "- $name" >> "$PROJECT_DIR/CLAUDE.md"
-    done < <(find "$AI_CONFIG_DIR/skills" -type f -name "*.md" -print0)
+    done < <(find "$AI_CONFIG_DIR/skills" -type f -name "SKILL.md" -print0)
 
     echo -e "${GREEN}Generated CLAUDE.md${NC}"
 }
@@ -144,27 +142,57 @@ generate_opencode() {
     # Backup existing file before overwrite
     backup_if_exists "$PROJECT_DIR/AGENTS.md"
 
-    # Generar AGENTS.md para OpenCode
+    # Header
     cat > "$PROJECT_DIR/AGENTS.md" << 'HEADER'
-# OpenCode Agents
+# AI Agents & Skills
 
-> Auto-generated from .ai-config/
+> Auto-generated catalog. Do not edit manually.
+> Run: ./scripts/sync-ai-config.sh opencode
 
 HEADER
 
-    # Agregar cada agente
+    # Base prompt (rules, workflow, etc.)
+    if [[ -f "$AI_CONFIG_DIR/prompts/base.md" ]]; then
+        cat "$AI_CONFIG_DIR/prompts/base.md" >> "$PROJECT_DIR/AGENTS.md"
+        echo -e "\n---\n" >> "$PROJECT_DIR/AGENTS.md"
+    fi
+
+    # Agents catalog grouped by category
+    echo -e "## Available Agents\n" >> "$PROJECT_DIR/AGENTS.md"
+    local prev_cat=""
     while IFS= read -r -d '' agent; do
         [[ "$(basename "$agent")" == "_TEMPLATE.md" ]] && continue
-        if grep -q "^name:" "$agent"; then
-            echo -e "\n---\n" >> "$PROJECT_DIR/AGENTS.md"
-            # Strip YAML frontmatter if present, otherwise include the whole file
-            if head -1 "$agent" | grep -q "^---"; then
-                awk 'BEGIN{n=0} /^---$/{n++; next} n>=2{print}' "$agent" >> "$PROJECT_DIR/AGENTS.md"
-            else
-                cat "$agent" >> "$PROJECT_DIR/AGENTS.md"
-            fi
+        name=$(grep "^name:" "$agent" | head -1 | sed 's/name: *//')
+        [[ -z "$name" ]] && continue
+        desc=$(grep "^description:" "$agent" | head -1 | sed 's/description: *//')
+        rel="${agent#$AI_CONFIG_DIR/agents/}"
+        cat_dir=$(dirname "$rel")
+        if [[ "$cat_dir" != "$prev_cat" ]]; then
+            cat_label=$(echo "$cat_dir" | awk '{print toupper(substr($0,1,1)) substr($0,2)}' | tr '-' ' ')
+            echo -e "\n### $cat_label\n" >> "$PROJECT_DIR/AGENTS.md"
+            prev_cat="$cat_dir"
         fi
-    done < <(find "$AI_CONFIG_DIR/agents" -type f -name "*.md" -print0)
+        echo "- **$name**: $desc" >> "$PROJECT_DIR/AGENTS.md"
+    done < <(find "$AI_CONFIG_DIR/agents" -type f -name "*.md" -print0 | sort -z)
+
+    # Skills catalog grouped by category
+    echo -e "\n---\n\n## Available Skills\n" >> "$PROJECT_DIR/AGENTS.md"
+    echo "> See \`.ai-config/AUTO_INVOKE.md\` for auto-loading rules." >> "$PROJECT_DIR/AGENTS.md"
+    echo "" >> "$PROJECT_DIR/AGENTS.md"
+    local prev_skill_cat=""
+    while IFS= read -r -d '' skill; do
+        name=$(grep "^name:" "$skill" | head -1 | sed 's/name: *//')
+        [[ -z "$name" ]] && continue
+        desc=$(grep "^description:" "$skill" | head -1 | sed 's/description: *//')
+        rel="${skill#$AI_CONFIG_DIR/skills/}"
+        cat_dir=$(echo "$rel" | cut -d'/' -f1)
+        if [[ "$cat_dir" != "$prev_skill_cat" ]]; then
+            cat_label=$(echo "$cat_dir" | awk '{print toupper(substr($0,1,1)) substr($0,2)}' | tr '-' ' ')
+            echo -e "\n### $cat_label\n" >> "$PROJECT_DIR/AGENTS.md"
+            prev_skill_cat="$cat_dir"
+        fi
+        echo "- **$name**: $desc" >> "$PROJECT_DIR/AGENTS.md"
+    done < <(find "$AI_CONFIG_DIR/skills" -type f -name "SKILL.md" -print0 | sort -z)
 
     echo -e "${GREEN}Generated AGENTS.md${NC}"
 }

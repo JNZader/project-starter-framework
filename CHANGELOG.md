@@ -6,6 +6,18 @@
 
 ### Bug Fixes
 
+* **ci:** parse config targets reliably in sync-ai-config ([04bf48f](https://github.com/JNZader/project-starter-framework/commit/04bf48f175fb213adba0944d0b93da75801a34f8))
+* **framework:** improve validation, docs freshness, and regression tests ([eb6d98f](https://github.com/JNZader/project-starter-framework/commit/eb6d98fedca03a0faca512a935424347cc500af2))
+* **skills:** add missing updated field to 3 workflow skills ([1d8873e](https://github.com/JNZader/project-starter-framework/commit/1d8873ec177e8c09bb1d558263995e19ab0c96d4))
+
+## [1.5.0](https://github.com/JNZader/project-starter-framework/compare/v1.4.0...v1.5.0) (2026-02-25)
+
+### Features
+
+* **framework:** add 10 new features from repo analysis ([dd402e1](https://github.com/JNZader/project-starter-framework/commit/dd402e184a724523e8a46e2420487a1694be1d9f))
+
+### Bug Fixes
+
 * **framework:** improve validation, docs freshness, and regression tests ([272cf09](https://github.com/JNZader/project-starter-framework/commit/272cf0920712d3a76135d3192c26151dd4dc91c2))
 * **skills:** add missing updated field to 3 workflow skills ([1d8873e](https://github.com/JNZader/project-starter-framework/commit/1d8873ec177e8c09bb1d558263995e19ab0c96d4))
 

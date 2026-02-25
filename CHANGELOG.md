@@ -1,3 +1,9 @@
+## [1.1.1](https://github.com/JNZader/project-starter-framework/compare/v1.1.0...v1.1.1) (2026-02-25)
+
+### Refactoring
+
+* **skills:** migrate to folder/SKILL.md structure and fix AGENTS.md generation ([1c538af](https://github.com/JNZader/project-starter-framework/commit/1c538afe0b178402d62100d89523be6558851cd2))
+
 ## [1.1.0](https://github.com/JNZader/project-starter-framework/compare/v1.0.1...v1.1.0) (2026-02-17)
 
 ### Features

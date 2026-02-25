@@ -1,3 +1,9 @@
+## [1.4.0](https://github.com/JNZader/project-starter-framework/compare/v1.3.0...v1.4.0) (2026-02-25)
+
+### Features
+
+* **framework:** add hooks, context modes, commands, and 3 workflow skills ([afa3b8a](https://github.com/JNZader/project-starter-framework/commit/afa3b8a977edd0bd11d378d8ba94dbafd5be9896))
+
 ## [1.3.0](https://github.com/JNZader/project-starter-framework/compare/v1.2.0...v1.3.0) (2026-02-25)
 
 ### Features

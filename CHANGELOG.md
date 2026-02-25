@@ -1,3 +1,9 @@
+## [1.2.0](https://github.com/JNZader/project-starter-framework/compare/v1.1.1...v1.2.0) (2026-02-25)
+
+### Features
+
+* **scripts:** add generate_gemini() for Gemini CLI support ([f4cde5b](https://github.com/JNZader/project-starter-framework/commit/f4cde5bfa3301bb48c4ca6dc34bec586c7a06982))
+
 ## [1.1.1](https://github.com/JNZader/project-starter-framework/compare/v1.1.0...v1.1.1) (2026-02-25)
 
 ### Refactoring

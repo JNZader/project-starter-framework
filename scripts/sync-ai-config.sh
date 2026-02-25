@@ -409,20 +409,35 @@ run_from_config() {
     local claude_mode
     claude_mode=$(grep "claude_mode:" "$config" | sed 's/.*claude_mode: *//' | tr -d ' ')
 
+    local executed=0
     while IFS= read -r target; do
         target=$(echo "$target" | sed 's/^[ \t-]*//' | tr -d ' ')
         [[ -z "$target" || "$target" == "#"* ]] && continue
         case "$target" in
-            claude)   generate_claude "${claude_mode:-overwrite}" ;;
-            opencode) generate_opencode ;;
-            cursor)   generate_cursor ;;
-            aider)    generate_aider ;;
-            gemini)   generate_gemini ;;
-            commands) generate_commands ;;
-            continue) generate_continue ;;
+            claude)   generate_claude "${claude_mode:-overwrite}"; executed=$((executed + 1)) ;;
+            opencode) generate_opencode; executed=$((executed + 1)) ;;
+            cursor)   generate_cursor; executed=$((executed + 1)) ;;
+            aider)    generate_aider; executed=$((executed + 1)) ;;
+            gemini)   generate_gemini; executed=$((executed + 1)) ;;
+            commands) generate_commands; executed=$((executed + 1)) ;;
+            continue) generate_continue; executed=$((executed + 1)) ;;
             *) echo -e "${YELLOW}Unknown target: $target (skipped)${NC}" ;;
         esac
-    done < <(awk '/^targets:/,/^[a-z]/' "$config" | grep '^ *-')
+    done < <(awk '
+        /^[[:space:]]*targets:[[:space:]]*$/ { in_targets=1; next }
+        in_targets && /^[[:space:]]*[A-Za-z0-9_-]+:[[:space:]]*$/ { in_targets=0 }
+        in_targets && /^[[:space:]]*-/ { print }
+    ' "$config")
+
+    if [[ "$executed" -eq 0 ]]; then
+        echo -e "${YELLOW}No valid targets found in config.yaml, running all targets${NC}"
+        generate_claude
+        generate_opencode
+        generate_cursor
+        generate_aider
+        generate_gemini
+        generate_commands
+    fi
 }
 
 case "${1:-config}" in

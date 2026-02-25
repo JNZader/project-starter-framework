@@ -10,6 +10,7 @@ metadata:
   author: project-starter-framework
   version: "1.0"
   tags: [git, workflow, branches, parallel]
+  updated: "2026-02"
 ---
 
 # Git Worktrees Skill

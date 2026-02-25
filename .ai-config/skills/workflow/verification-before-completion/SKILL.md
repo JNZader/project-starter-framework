@@ -10,6 +10,7 @@ metadata:
   author: project-starter-framework
   version: "1.0"
   tags: [workflow, quality, checklist, done]
+  updated: "2026-02"
 ---
 
 # Verification Before Completion Skill

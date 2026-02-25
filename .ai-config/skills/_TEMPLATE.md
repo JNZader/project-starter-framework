@@ -140,3 +140,18 @@ Usar este skill cuando:
 ## Changelog
 
 - **1.0** - Versión inicial
+
+---
+
+## Progressive Disclosure Pattern (Optional)
+
+For complex skills, split content into references/:
+```
+skills/my-skill/
+├── SKILL.md          # Core logic only (~150 lines max)
+└── references/
+    ├── examples.md   # Concrete examples (loaded on demand)
+    └── patterns.md   # Advanced patterns (loaded on demand)
+```
+In SKILL.md, reference them with:
+> For examples, see [references/examples.md](references/examples.md)

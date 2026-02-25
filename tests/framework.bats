@@ -210,7 +210,7 @@ setup() {
             echo "Missing frontmatter: $skill"
             missing=$((missing + 1))
         }
-    done < <(find "$FRAMEWORK_DIR/.ai-config/skills" -name "*.md" 2>/dev/null)
+    done < <(find "$FRAMEWORK_DIR/.ai-config/skills" -name "SKILL.md" 2>/dev/null)
     [ "$missing" -eq 0 ]
 }
 
@@ -257,7 +257,7 @@ setup() {
             echo "Invalid skill name (should be kebab-case): $skill -> $name"
             errors=$((errors + 1))
         fi
-    done < <(find "$FRAMEWORK_DIR/.ai-config/skills" -name "*.md" 2>/dev/null)
+    done < <(find "$FRAMEWORK_DIR/.ai-config/skills" -name "SKILL.md" 2>/dev/null)
     [ "$errors" -eq 0 ]
 }
 

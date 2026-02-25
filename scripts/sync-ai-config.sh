@@ -319,6 +319,31 @@ EOF
     echo -e "${GREEN}Generated ~/.continue/config.json${NC}"
 }
 
+generate_commands() {
+    echo -e "${YELLOW}Syncing commands to .claude/commands/...${NC}"
+
+    local src_dir="$AI_CONFIG_DIR/commands"
+    local dest_dir="$PROJECT_DIR/.claude/commands"
+
+    if [[ ! -d "$src_dir" ]]; then
+        echo -e "${YELLOW}No .ai-config/commands/ directory found, skipping${NC}"
+        return 0
+    fi
+
+    mkdir -p "$dest_dir"
+
+    local count=0
+    while IFS= read -r -d '' cmd_file; do
+        local rel="${cmd_file#$src_dir/}"
+        local dest_file="$dest_dir/$rel"
+        mkdir -p "$(dirname "$dest_file")"
+        cp "$cmd_file" "$dest_file"
+        count=$((count + 1))
+    done < <(find "$src_dir" -type f -name "*.md" -print0)
+
+    echo -e "${GREEN}Synced $count commands to .claude/commands/${NC}"
+}
+
 generate_gemini() {
     echo -e "${YELLOW}Generating Gemini CLI config...${NC}"
 
@@ -376,7 +401,7 @@ run_from_config() {
     local config="$AI_CONFIG_DIR/config.yaml"
     if [[ ! -f "$config" ]]; then
         echo -e "${YELLOW}No config.yaml found, running all targets${NC}"
-        generate_claude; generate_opencode; generate_cursor; generate_aider; generate_gemini
+        generate_claude; generate_opencode; generate_cursor; generate_aider; generate_gemini; generate_commands
         return
     fi
 
@@ -393,6 +418,7 @@ run_from_config() {
             cursor)   generate_cursor ;;
             aider)    generate_aider ;;
             gemini)   generate_gemini ;;
+            commands) generate_commands ;;
             continue) generate_continue ;;
             *) echo -e "${YELLOW}Unknown target: $target (skipped)${NC}" ;;
         esac
@@ -421,15 +447,19 @@ case "${1:-config}" in
     gemini)
         generate_gemini
         ;;
+    commands)
+        generate_commands
+        ;;
     all)
         generate_claude "$2"
         generate_opencode
         generate_cursor
         generate_aider
         generate_gemini
+        generate_commands
         ;;
     *)
-        echo "Usage: $0 {claude|opencode|cursor|aider|continue|gemini|all}"
+        echo "Usage: $0 {claude|opencode|cursor|aider|continue|gemini|commands|all}"
         echo "       $0           (reads targets from .ai-config/config.yaml)"
         exit 1
         ;;

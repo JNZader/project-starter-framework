@@ -1,3 +1,9 @@
+## [1.3.0](https://github.com/JNZader/project-starter-framework/compare/v1.2.0...v1.3.0) (2026-02-25)
+
+### Features
+
+* **skills:** add .skillignore, config.yaml, audit, JSON schema, collect ([58e7dbf](https://github.com/JNZader/project-starter-framework/commit/58e7dbf39fab0e0809fef176c6923a0eb8fa395e))
+
 ## [1.2.0](https://github.com/JNZader/project-starter-framework/compare/v1.1.1...v1.2.0) (2026-02-25)
 
 ### Features

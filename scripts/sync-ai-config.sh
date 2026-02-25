@@ -282,6 +282,51 @@ EOF
     echo -e "${GREEN}Generated ~/.continue/config.json${NC}"
 }
 
+generate_gemini() {
+    echo -e "${YELLOW}Generating Gemini CLI config...${NC}"
+
+    if [[ -f "$PROJECT_DIR/GEMINI.md" ]]; then
+        echo -e "${YELLOW}GEMINI.md already exists. Overwrite? [y/N]${NC}"
+        read -r OVERWRITE
+        if [[ "$OVERWRITE" != "y" && "$OVERWRITE" != "Y" ]]; then
+            echo -e "${GREEN}Skipping GEMINI.md${NC}"
+            return
+        fi
+    fi
+
+    backup_if_exists "$PROJECT_DIR/GEMINI.md"
+
+    cat > "$PROJECT_DIR/GEMINI.md" << 'HEADER'
+# Gemini CLI Instructions
+
+> Auto-generated from .ai-config/
+
+HEADER
+
+    if [[ -f "$AI_CONFIG_DIR/prompts/base.md" ]]; then
+        cat "$AI_CONFIG_DIR/prompts/base.md" >> "$PROJECT_DIR/GEMINI.md"
+        echo -e "\n---\n" >> "$PROJECT_DIR/GEMINI.md"
+    fi
+
+    echo -e "## Agentes Disponibles\n" >> "$PROJECT_DIR/GEMINI.md"
+    while IFS= read -r -d '' agent; do
+        [[ "$(basename "$agent")" == "_TEMPLATE.md" ]] && continue
+        name=$(grep "^name:" "$agent" | head -1 | sed 's/name: *//')
+        [[ -z "$name" ]] && continue
+        desc=$(grep "^description:" "$agent" | head -1 | sed 's/description: *//')
+        echo "- **$name**: $desc" >> "$PROJECT_DIR/GEMINI.md"
+    done < <(find "$AI_CONFIG_DIR/agents" -type f -name "*.md" -print0)
+
+    echo -e "\n## Skills Disponibles\n" >> "$PROJECT_DIR/GEMINI.md"
+    while IFS= read -r -d '' skill; do
+        name=$(grep "^name:" "$skill" | head -1 | sed 's/name: *//')
+        [[ -z "$name" ]] && continue
+        echo "- $name" >> "$PROJECT_DIR/GEMINI.md"
+    done < <(find "$AI_CONFIG_DIR/skills" -type f -name "SKILL.md" -print0)
+
+    echo -e "${GREEN}Generated GEMINI.md${NC}"
+}
+
 # =============================================================================
 # Main
 # =============================================================================
@@ -302,14 +347,18 @@ case "${1:-all}" in
     continue)
         generate_continue
         ;;
+    gemini)
+        generate_gemini
+        ;;
     all)
         generate_claude "$2"
         generate_opencode
         generate_cursor
         generate_aider
+        generate_gemini
         ;;
     *)
-        echo "Usage: $0 {claude|opencode|cursor|aider|continue|all}"
+        echo "Usage: $0 {claude|opencode|cursor|aider|continue|gemini|all}"
         exit 1
         ;;
 esac

@@ -104,8 +104,13 @@ if (Test-Path ".framework-version" -PathType Leaf) {
 Write-Host ""
 Write-Host "[2/6] AI Config" -ForegroundColor Cyan
 
-$agentFiles = @(Get-ChildItem -Path ".ai-config/agents" -Filter "*.md" -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "_TEMPLATE.md" })
-$skillFiles = @(Get-ChildItem -Path ".ai-config/skills" -Filter "*.md" -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "_TEMPLATE.md" })
+$agentFiles = @(
+    Get-ChildItem -Path ".ai-config/agents" -Filter "*.md" -File -Recurse -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -ne "_TEMPLATE.md" }
+)
+$skillFiles = @(
+    Get-ChildItem -Path ".ai-config/skills" -Filter "SKILL.md" -File -Recurse -ErrorAction SilentlyContinue
+)
 
 Write-Host "  Agents: $($agentFiles.Count), Skills: $($skillFiles.Count)"
 

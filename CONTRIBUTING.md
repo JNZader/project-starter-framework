@@ -72,7 +72,8 @@ Note: The repository CI (`ci-framework.yml`) runs Bats on Linux and Pester on Wi
 cp .ai-config/agents/_TEMPLATE.md .ai-config/agents/categoria/nuevo-agente.md
 
 # Para skills
-cp .ai-config/skills/_TEMPLATE.md .ai-config/skills/categoria/nuevo-skill.md
+mkdir -p .ai-config/skills/categoria/nuevo-skill
+cp .ai-config/skills/_TEMPLATE.md .ai-config/skills/categoria/nuevo-skill/SKILL.md
 ```
 
 #### Paso 2: Definir Metadata (YAML frontmatter)
@@ -88,6 +89,8 @@ cp .ai-config/skills/_TEMPLATE.md .ai-config/skills/categoria/nuevo-skill.md
 #### Paso 4: Validar y Testear
 ```bash
 ./scripts/sync-skills.sh validate
+./scripts/sync-skills.sh audit
+./scripts/validate-framework.sh
 ./scripts/sync-ai-config.sh all
 ```
 

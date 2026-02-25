@@ -35,7 +35,7 @@ done
 echo ""
 echo -e "${CYAN}[2/6] AI Config${NC}"
 agent_count=$(find .ai-config/agents -name "*.md" ! -name "_TEMPLATE.md" 2>/dev/null | wc -l)
-skill_count=$(find .ai-config/skills -name "*.md" ! -name "_TEMPLATE.md" 2>/dev/null | wc -l)
+skill_count=$(find .ai-config/skills -name "SKILL.md" 2>/dev/null | wc -l)
 echo -e "  Agents: $agent_count, Skills: $skill_count"
 
 # --- New: robust frontmatter validation using scripts/validate-frontmatter.py ---
@@ -55,7 +55,7 @@ if command -v python3 >/dev/null 2>&1; then
         else
             check_fail "Frontmatter schema invalid: $file"
         fi
-    done < <(find .ai-config/skills -name "*.md" ! -name "_TEMPLATE.md" -print0 2>/dev/null)
+    done < <(find .ai-config/skills -name "SKILL.md" -print0 2>/dev/null)
 else
     echo -e "  Python3 not found — using legacy checks (less strict)"
 fi
@@ -141,7 +141,7 @@ while IFS= read -r -d '' skill; do
             check_pass "Skill description present for $skill"
         fi
     fi
-done < <(find .ai-config/skills -name "*.md" ! -name "_TEMPLATE.md" -print0 2>/dev/null)
+done < <(find .ai-config/skills -name "SKILL.md" -print0 2>/dev/null)
 
 # --- Template Validation ---
 echo ""

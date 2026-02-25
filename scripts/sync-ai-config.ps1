@@ -4,8 +4,8 @@
 
 param(
     [Parameter(Position=0)]
-    [ValidateSet("claude", "opencode", "cursor", "aider", "continue", "all")]
-    [string]$Target = "all",
+    [ValidateSet("config", "claude", "opencode", "cursor", "aider", "continue", "gemini", "commands", "all")]
+    [string]$Target = "config",
 
     [Parameter(Position=1)]
     [string]$Mode = ""
@@ -14,10 +14,36 @@ param(
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectDir = Split-Path -Parent $ScriptDir
 $AiConfigDir = "$ProjectDir\.ai-config"
+$SkillIgnoreFile = "$AiConfigDir\.skillignore"
 
 Import-Module "$ScriptDir\..\lib\Common.psm1" -Force
 
 Write-Host "=== Sync AI Config ===" -ForegroundColor Cyan
+
+function Is-SkillIgnored {
+    param(
+        [Parameter(Mandatory=$true)][string]$SkillKey,
+        [Parameter(Mandatory=$true)][string]$TargetName
+    )
+
+    if (-not (Test-Path $SkillIgnoreFile)) { return $false }
+
+    foreach ($line in (Get-Content $SkillIgnoreFile -ErrorAction SilentlyContinue)) {
+        $clean = ($line -replace '#.*$', '').Trim()
+        if ([string]::IsNullOrWhiteSpace($clean)) { continue }
+
+        if ($clean -match ':') {
+            $parts = $clean.Split(':', 2)
+            if ($parts.Count -eq 2 -and $parts[0] -eq $TargetName -and $parts[1] -eq $SkillKey) {
+                return $true
+            }
+        } elseif ($clean -eq $SkillKey) {
+            return $true
+        }
+    }
+
+    return $false
+}
 
 function Generate-Claude {
     param(
@@ -56,10 +82,14 @@ function Generate-Claude {
         }
 
         $gen += "`n## Skills Disponibles`n`n"
-        Get-ChildItem "$AiConfigDir\skills" -Recurse -Filter "*.md" -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "_TEMPLATE.md" } | ForEach-Object {
-            $skillContent = Get-Content $_.FullName -Raw
-            if ($skillContent -match "name:\s*(.+)") { $sname = $matches[1].Trim() } else { $sname = '' }
-            if ($sname) { $gen += "- $sname`n" }
+        Get-ChildItem "$AiConfigDir\skills" -Recurse -Filter "SKILL.md" -File -ErrorAction SilentlyContinue | ForEach-Object {
+            $relativeSkillPath = $_.FullName.Substring((Join-Path $AiConfigDir "skills").Length + 1).Replace("\", "/")
+            $skillKey = $relativeSkillPath -replace "/SKILL\.md$", ""
+            if (-not (Is-SkillIgnored -SkillKey $skillKey -TargetName "claude")) {
+                $skillContent = Get-Content $_.FullName -Raw
+                if ($skillContent -match "name:\s*(.+)") { $sname = $matches[1].Trim() } else { $sname = '' }
+                if ($sname) { $gen += "- $sname`n" }
+            }
         }
 
         # If existing file already contains our auto-generated marker, replace that section
@@ -120,12 +150,16 @@ function Generate-Claude {
 
     # Agregar skills
     $content += "`n## Skills Disponibles`n`n"
-    Get-ChildItem "$AiConfigDir\skills" -Recurse -Filter "*.md" -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "_TEMPLATE.md" } | ForEach-Object {
-        $name = ""
-        $skillContent = Get-Content $_.FullName -Raw
-        if ($skillContent -match "name:\s*(.+)") { $name = $matches[1].Trim() }
-        if ($name) {
-            $content += "- $name`n"
+    Get-ChildItem "$AiConfigDir\skills" -Recurse -Filter "SKILL.md" -File -ErrorAction SilentlyContinue | ForEach-Object {
+        $relativeSkillPath = $_.FullName.Substring((Join-Path $AiConfigDir "skills").Length + 1).Replace("\", "/")
+        $skillKey = $relativeSkillPath -replace "/SKILL\.md$", ""
+        if (-not (Is-SkillIgnored -SkillKey $skillKey -TargetName "claude")) {
+            $name = ""
+            $skillContent = Get-Content $_.FullName -Raw
+            if ($skillContent -match "name:\s*(.+)") { $name = $matches[1].Trim() }
+            if ($name) {
+                $content += "- $name`n"
+            }
         }
     }
 
@@ -237,18 +271,167 @@ function Generate-Continue {
     }
 }
 
+function Generate-Commands {
+    Write-Host "Syncing commands to .claude/commands..." -ForegroundColor Yellow
+
+    $srcDir = Join-Path $AiConfigDir "commands"
+    $destDir = Join-Path $ProjectDir ".claude\commands"
+
+    if (-not (Test-Path $srcDir -PathType Container)) {
+        Write-Host "  No .ai-config/commands directory found, skipping" -ForegroundColor Yellow
+        return
+    }
+
+    New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+    $count = 0
+    Get-ChildItem -Path $srcDir -Recurse -Filter "*.md" -File -ErrorAction SilentlyContinue | ForEach-Object {
+        $relative = $_.FullName.Substring($srcDir.Length + 1)
+        $targetPath = Join-Path $destDir $relative
+        $targetParent = Split-Path -Parent $targetPath
+        if (-not (Test-Path $targetParent -PathType Container)) {
+            New-Item -ItemType Directory -Path $targetParent -Force | Out-Null
+        }
+        Copy-Item -Path $_.FullName -Destination $targetPath -Force
+        $count++
+    }
+
+    Write-Host "Done: Synced $count commands to .claude/commands" -ForegroundColor Green
+}
+
+function Generate-Gemini {
+    Write-Host "Generating Gemini CLI config..." -ForegroundColor Yellow
+
+    if (Test-Path "$ProjectDir\GEMINI.md") {
+        $overwrite = Read-Host "GEMINI.md already exists. Overwrite? [y/N]"
+        if ($overwrite -ne "y" -and $overwrite -ne "Y") {
+            Write-Host "Skipped GEMINI.md" -ForegroundColor Yellow
+            return
+        }
+    }
+
+    Backup-IfExists "$ProjectDir\GEMINI.md"
+
+    $content = @"
+# Gemini CLI Instructions
+
+> Auto-generated from .ai-config/
+
+"@
+
+    $basePath = "$AiConfigDir\prompts\base.md"
+    if (Test-Path $basePath) {
+        $content += Get-Content $basePath -Raw
+        $content += "`n---`n"
+    }
+
+    $content += "`n## Agentes Disponibles`n`n"
+    Get-ChildItem "$AiConfigDir\agents" -Recurse -Filter "*.md" -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "_TEMPLATE.md" } | ForEach-Object {
+        $name = ""
+        $desc = ""
+        $agentContent = Get-Content $_.FullName -Raw
+        if ($agentContent -match "name:\s*(.+)") { $name = $matches[1].Trim() }
+        if ($agentContent -match "description:\s*(.+)") { $desc = $matches[1].Trim() }
+        if ($name) {
+            $content += "- **$name**: $desc`n"
+        }
+    }
+
+    $content += "`n## Skills Disponibles`n`n"
+    Get-ChildItem "$AiConfigDir\skills" -Recurse -Filter "SKILL.md" -File -ErrorAction SilentlyContinue | ForEach-Object {
+        $relativeSkillPath = $_.FullName.Substring((Join-Path $AiConfigDir "skills").Length + 1).Replace("\", "/")
+        $skillKey = $relativeSkillPath -replace "/SKILL\.md$", ""
+        if (-not (Is-SkillIgnored -SkillKey $skillKey -TargetName "gemini")) {
+            $name = ""
+            $skillContent = Get-Content $_.FullName -Raw
+            if ($skillContent -match "name:\s*(.+)") { $name = $matches[1].Trim() }
+            if ($name) { $content += "- $name`n" }
+        }
+    }
+
+    $content | Out-File -FilePath "$ProjectDir\GEMINI.md" -Encoding utf8
+    Write-Host "Done: Generated GEMINI.md" -ForegroundColor Green
+}
+
+function Run-FromConfig {
+    $configPath = Join-Path $AiConfigDir "config.yaml"
+    if (-not (Test-Path $configPath -PathType Leaf)) {
+        Write-Host "No config.yaml found, running all targets" -ForegroundColor Yellow
+        Generate-Claude
+        Generate-OpenCode
+        Generate-Cursor
+        Generate-Aider
+        Generate-Gemini
+        Generate-Commands
+        return
+    }
+
+    Write-Host "Reading targets from .ai-config/config.yaml..." -ForegroundColor Cyan
+    $configLines = Get-Content $configPath -ErrorAction SilentlyContinue
+    $claudeMode = ""
+    foreach ($line in $configLines) {
+        if ($line -match '^\s*claude_mode:\s*([A-Za-z0-9_-]+)\s*$') {
+            $claudeMode = $matches[1]
+            break
+        }
+    }
+
+    $targets = @()
+    $inTargets = $false
+    foreach ($line in $configLines) {
+        if ($line -match '^\s*targets:\s*$') {
+            $inTargets = $true
+            continue
+        }
+        if ($inTargets -and $line -match '^[A-Za-z0-9_-]+\s*:') {
+            $inTargets = $false
+        }
+        if ($inTargets -and $line -match '^\s*-\s*([A-Za-z0-9_-]+)\s*$') {
+            $targets += $matches[1]
+        }
+    }
+
+    if ($targets.Count -eq 0) {
+        Write-Host "No targets found in config.yaml, running all targets" -ForegroundColor Yellow
+        Generate-Claude
+        Generate-OpenCode
+        Generate-Cursor
+        Generate-Aider
+        Generate-Gemini
+        Generate-Commands
+        return
+    }
+
+    foreach ($configuredTarget in $targets) {
+        switch ($configuredTarget) {
+            "claude" { Generate-Claude -MergeArg $claudeMode }
+            "opencode" { Generate-OpenCode }
+            "cursor" { Generate-Cursor }
+            "aider" { Generate-Aider }
+            "continue" { Generate-Continue }
+            "gemini" { Generate-Gemini }
+            "commands" { Generate-Commands }
+            default { Write-Host "Unknown target: $configuredTarget (skipped)" -ForegroundColor Yellow }
+        }
+    }
+}
+
 # Main
 switch ($Target) {
+    "config" { Run-FromConfig }
     "claude" { Generate-Claude -MergeArg $Mode }
     "opencode" { Generate-OpenCode }
     "cursor" { Generate-Cursor }
     "aider" { Generate-Aider }
     "continue" { Generate-Continue }
+    "gemini" { Generate-Gemini }
+    "commands" { Generate-Commands }
     "all" {
         Generate-Claude -MergeArg $Mode
         Generate-OpenCode
         Generate-Cursor
         Generate-Aider
+        Generate-Gemini
+        Generate-Commands
     }
 }
 
@@ -260,4 +443,5 @@ if (Test-Path "$ProjectDir\CLAUDE.md") { Write-Host "  - CLAUDE.md (Claude Code)
 if (Test-Path "$ProjectDir\AGENTS.md") { Write-Host "  - AGENTS.md (OpenCode)" }
 if (Test-Path "$ProjectDir\.cursorrules") { Write-Host "  - .cursorrules (Cursor)" }
 if (Test-Path "$ProjectDir\.aider.conf.yml") { Write-Host "  - .aider.conf.yml (Aider)" }
+if (Test-Path "$ProjectDir\GEMINI.md") { Write-Host "  - GEMINI.md (Gemini CLI)" }
 Write-Host ""

@@ -117,7 +117,7 @@ El script `init-project.sh` te permitirá elegir qué módulos instalar de forma
 ```
 project-starter-framework/
 │
-├── .ai-config/                   # Config para AI CLIs (79+ agentes)
+├── .ai-config/                   # Config para AI CLIs (90+ agentes, 80+ skills, hooks, commands y modos)
 │   ├── agents/                   # Agentes organizados por categoría
 │   ├── skills/                   # Skills reutilizables
 │   └── hooks/                    # Hooks de eventos
@@ -152,14 +152,15 @@ project-starter-framework/
 ├── scripts/                      # Automatización
 │   ├── init-project.ps1/sh       # Setup inicial
 │   ├── sync-ai-config.ps1/sh     # Sincronizar AI config
-│   └── add-skill.sh              # Agregar Gentleman-Skills
+│   ├── add-skill.sh              # Agregar Gentleman-Skills
+│   └── collect-skills.sh         # Importar skills desde otras herramientas
 │
 ├── lib/                          # Shared libraries
 │   ├── common.sh                 # Funciones compartidas (Bash)
 │   └── Common.psm1               # Funciones compartidas (PowerShell)
 │
-├── tests/                        # Framework tests (Bats)
-│   ├── framework.bats            # Tests de estructura y funciones
+├── tests/                        # Framework tests (Bats + Pester)
+│   ├── framework.bats            # Tests Bash (Linux/Mac)
 │   └── README.md                 # Guía de testing
 │
 ├── .framework-version            # Versión del framework (auto-updated)
@@ -233,10 +234,17 @@ Config centralizada para múltiples AI CLIs:
 | CLI | Config generada | Comando |
 |-----|-----------------|---------|
 | Claude Code | `CLAUDE.md` | `./scripts/sync-ai-config.sh claude` |
+| OpenCode | `AGENTS.md` | `./scripts/sync-ai-config.sh opencode` |
 | Cursor | `.cursorrules` | `./scripts/sync-ai-config.sh cursor` |
 | Aider | `.aider.conf.yml` | `./scripts/sync-ai-config.sh aider` |
+| Gemini CLI | `GEMINI.md` | `./scripts/sync-ai-config.sh gemini` |
+| Claude Commands | `.claude/commands/*` | `./scripts/sync-ai-config.sh commands` |
 
-**79+ agentes incluidos** organizados por categoría.
+**90+ agentes y 80+ skills incluidos** organizados por categoría.
+
+También soporta:
+- `.ai-config/config.yaml` para targets declarativos (`./scripts/sync-ai-config.sh` sin argumentos)
+- `.ai-config/.skillignore` para excluir skills por target (o globalmente)
 
 ### 4. Módulos Opcionales
 

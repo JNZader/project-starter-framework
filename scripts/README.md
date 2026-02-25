@@ -11,9 +11,10 @@
 | `init-project.sh/ps1` | Setup inicial del proyecto | ✓ |
 | `sync-ai-config.sh/ps1` | Sincroniza config de AI CLIs | ✓ |
 | `add-skill.sh/ps1` | Agrega skills de Gentleman-Skills | ✓ |
+| `collect-skills.sh` | Importa skills desde otras herramientas/repos | - |
 | `sync-skills.sh/ps1` | Valida y sincroniza skills | ✓ |
 | `doctor.sh/ps1` | Diagnóstico del entorno y framework | ✓ |
-| `validate-framework.sh` | Valida estructura y consistencia del framework | - |
+| `validate-framework.sh/ps1` | Valida estructura y consistencia del framework | ✓ |
 | `generate-agents-catalog.sh/ps1` | Genera catálogo AGENTS.md desde frontmatter | ✓ |
 
 ---
@@ -38,6 +39,9 @@ Configura un proyecto nuevo:
 Genera configuración para diferentes AI CLIs desde `.ai-config/`:
 
 ```bash
+# Sin argumentos: lee targets de .ai-config/config.yaml
+./scripts/sync-ai-config.sh
+
 # Para Claude Code
 ./scripts/sync-ai-config.sh claude
 ./scripts/sync-ai-config.sh claude merge   # Safe-merge: append/update only the auto-generated section
@@ -51,6 +55,12 @@ Genera configuración para diferentes AI CLIs desde `.ai-config/`:
 # Para Aider
 ./scripts/sync-ai-config.sh aider
 
+# Para Gemini
+./scripts/sync-ai-config.sh gemini
+
+# Sincronizar slash commands para Claude
+./scripts/sync-ai-config.sh commands
+
 # Para todos
 ./scripts/sync-ai-config.sh all
 ```
@@ -63,6 +73,8 @@ Genera configuración para diferentes AI CLIs desde `.ai-config/`:
 | OpenCode | `AGENTS.md` |
 | Cursor | `.cursorrules` |
 | Aider | `.aider.conf.yml` |
+| Gemini CLI | `GEMINI.md` |
+| Claude Commands | `.claude/commands/*` |
 
 ---
 
@@ -99,6 +111,23 @@ Agrega skills de [Gentleman-Skills](https://github.com/Gentleman-Programming/Gen
 
 ---
 
+## collect-skills
+
+Importa skills desde directorios externos o paths conocidos de otras herramientas AI:
+
+```bash
+# Importar desde directorio
+./scripts/collect-skills.sh /tmp/new-skills workflow
+
+# Importar desde target conocido
+./scripts/collect-skills.sh --from claude workflow
+
+# Ver targets conocidos
+./scripts/collect-skills.sh list-targets
+```
+
+---
+
 ## sync-skills
 
 Valida formato de skills y genera archivos multi-IDE:
@@ -109,6 +138,9 @@ Valida formato de skills y genera archivos multi-IDE:
 
 # Validar formato
 ./scripts/sync-skills.sh validate
+
+# Audit de seguridad (prompt injection/exfiltration patterns)
+./scripts/sync-skills.sh audit
 
 # Generar archivos multi-IDE (CLAUDE.md, AGENTS.md, etc.)
 ./scripts/sync-skills.sh symlinks

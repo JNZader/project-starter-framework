@@ -22,7 +22,7 @@
 .ai-config/
 ├── README.md                    # Esta documentación
 │
-├── agents/                      # 79 Agentes organizados por categoría
+├── agents/                      # 90+ agentes organizados por categoría
 │   ├── _TEMPLATE.md             # Template para crear agentes
 │   ├── business/                # Análisis de negocio y producto (6 agentes)
 │   ├── creative/                # Diseño y UX (1 agente)
@@ -52,12 +52,27 @@
 │       ├── skills-reference.md
 │       └── subagent-templates.md
 │
-├── hooks/                       # Hooks de eventos
+├── hooks/                       # Hooks de eventos (10+)
 │   ├── _TEMPLATE.md             # Template para crear hooks
-│   └── block-dangerous-commands.md # Bloqueo de comandos peligrosos
+│   ├── block-dangerous-commands.md
+│   ├── improve-prompt.md
+│   ├── model-router.md
+│   ├── skill-validator.md
+│   └── ...
 │
-└── prompts/                     # System prompts reutilizables
-    └── base.md                  # Prompt base del proyecto
+├── commands/                    # Slash commands para Claude Code
+│   ├── git/
+│   ├── testing/
+│   ├── refactoring/
+│   ├── workflow/
+│   └── workflows/
+│
+├── prompts/                     # System prompts reutilizables
+│   ├── base.md                  # Prompt base del proyecto
+│   └── modes/                   # Modos contextuales (debug/deploy/review/research)
+│
+├── config.yaml                  # Targets declarativos para sync-ai-config.sh
+└── .skillignore                 # Exclusión de skills por target/global
 ```
 
 ---
@@ -119,8 +134,10 @@ Orquestador:
 
 ```bash
 # Generar configuración para tu CLI
+./scripts/sync-ai-config.sh           # Lee targets desde .ai-config/config.yaml
 ./scripts/sync-ai-config.sh claude    # Para Claude Code
 ./scripts/sync-ai-config.sh opencode  # Para OpenCode
+./scripts/sync-ai-config.sh commands  # Sync .ai-config/commands -> .claude/commands
 ./scripts/sync-ai-config.sh all       # Para todos
 ```
 
@@ -139,7 +156,7 @@ Orquestador:
 
 ```bash
 # Copiar template
-cp .ai-config/agents/_TEMPLATE.md .ai-config/agents/mi-agente.md
+cp .ai-config/agents/_TEMPLATE.md .ai-config/agents/development/mi-agente.md
 
 # Editar y sincronizar
 ./scripts/sync-ai-config.sh
@@ -332,4 +349,4 @@ El script `sync-ai-config.sh` genera archivos específicos para cada CLI:
 
 ---
 
-*Compatible con Gentleman-Skills v1.0 • 79 agentes • 79 skills incluidos*
+*Compatible con Gentleman-Skills v1.0 • 90+ agentes • 80+ skills incluidos*

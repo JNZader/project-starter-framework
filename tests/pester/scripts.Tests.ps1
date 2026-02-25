@@ -120,6 +120,49 @@ Describe 'Scripts - PowerShell smoke tests' {
             (Get-Content (Join-Path $proj 'AGENTS.md') -Raw) | Should -Match 'opencode-agent'
             Pop-Location
         }
+
+        It 'gemini target generates GEMINI.md' {
+            $proj = Join-Path $TestRoot 'proj-syncai-gemini'
+            New-Item -Path $proj -ItemType Directory | Out-Null
+            New-Item -Path (Join-Path $proj '.ai-config\agents') -ItemType Directory -Force | Out-Null
+            New-Item -Path (Join-Path $proj '.ai-config\skills\workflow\demo-skill') -ItemType Directory -Force | Out-Null
+            New-Item -Path (Join-Path $proj 'scripts') -ItemType Directory | Out-Null
+            New-Item -Path (Join-Path $proj 'lib') -ItemType Directory | Out-Null
+
+            "---`nname: gemini-agent`ndescription: Gemini agent`n---`n" | Out-File -FilePath (Join-Path $proj '.ai-config\agents\gemini-agent.md') -Encoding utf8
+            "---`nname: demo-skill`ndescription: Demo skill`n---`n" | Out-File -FilePath (Join-Path $proj '.ai-config\skills\workflow\demo-skill\SKILL.md') -Encoding utf8
+            Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\scripts\sync-ai-config.ps1") -Destination (Join-Path $proj 'scripts\sync-ai-config.ps1') -Force
+            Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\lib\Common.psm1") -Destination (Join-Path $proj 'lib\Common.psm1') -Force
+
+            Push-Location $proj
+            try {
+                & .\scripts\sync-ai-config.ps1 -Target gemini *>&1 | Out-Null
+                Test-Path (Join-Path $proj 'GEMINI.md') | Should -BeTrue
+                (Get-Content (Join-Path $proj 'GEMINI.md') -Raw) | Should -Match 'demo-skill'
+            } finally {
+                Pop-Location
+            }
+        }
+
+        It 'commands target syncs .ai-config/commands to .claude/commands' {
+            $proj = Join-Path $TestRoot 'proj-syncai-commands'
+            New-Item -Path $proj -ItemType Directory | Out-Null
+            New-Item -Path (Join-Path $proj '.ai-config\commands\git') -ItemType Directory -Force | Out-Null
+            New-Item -Path (Join-Path $proj 'scripts') -ItemType Directory | Out-Null
+            New-Item -Path (Join-Path $proj 'lib') -ItemType Directory | Out-Null
+
+            "---`nname: demo-command`ndescription: Demo command`ncategory: git`n---`n" | Out-File -FilePath (Join-Path $proj '.ai-config\commands\git\demo-command.md') -Encoding utf8
+            Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\scripts\sync-ai-config.ps1") -Destination (Join-Path $proj 'scripts\sync-ai-config.ps1') -Force
+            Copy-Item -Path (Resolve-Path "$PSScriptRoot\..\..\lib\Common.psm1") -Destination (Join-Path $proj 'lib\Common.psm1') -Force
+
+            Push-Location $proj
+            try {
+                & .\scripts\sync-ai-config.ps1 -Target commands *>&1 | Out-Null
+                Test-Path (Join-Path $proj '.claude\commands\git\demo-command.md') | Should -BeTrue
+            } finally {
+                Pop-Location
+            }
+        }
     }
 
     Context 'doctor.ps1' {

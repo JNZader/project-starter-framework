@@ -493,3 +493,116 @@ EOF
 @test "lib/Common.psm1 exists as PowerShell counterpart" {
     [ -f "$FRAMEWORK_DIR/lib/Common.psm1" ]
 }
+
+@test "sync-ai-config without args reads .ai-config/config.yaml targets" {
+    tmpdir=$(mktemp -d)
+    mkdir -p "$tmpdir/.ai-config/agents" "$tmpdir/scripts" "$tmpdir/lib"
+
+    cat > "$tmpdir/.ai-config/agents/test-agent.md" <<'EOF'
+---
+name: test-agent
+description: Test agent
+---
+EOF
+
+    cat > "$tmpdir/.ai-config/config.yaml" <<'EOF'
+targets:
+  - opencode
+EOF
+
+    cp "$FRAMEWORK_DIR/scripts/sync-ai-config.sh" "$tmpdir/scripts/sync-ai-config.sh"
+    cp "$FRAMEWORK_DIR/lib/common.sh" "$tmpdir/lib/common.sh"
+    chmod +x "$tmpdir/scripts/sync-ai-config.sh"
+
+    (cd "$tmpdir" && ./scripts/sync-ai-config.sh)
+
+    [ -f "$tmpdir/AGENTS.md" ]
+    [ ! -f "$tmpdir/CLAUDE.md" ]
+
+    rm -rf "$tmpdir"
+}
+
+@test ".skillignore excludes target-specific skills from CLAUDE.md" {
+    tmpdir=$(mktemp -d)
+    mkdir -p "$tmpdir/.ai-config/skills/test/keep" "$tmpdir/.ai-config/skills/test/skip" "$tmpdir/scripts" "$tmpdir/lib"
+
+    cat > "$tmpdir/.ai-config/skills/test/keep/SKILL.md" <<'EOF'
+---
+name: keep-skill
+description: Keep me
+---
+EOF
+
+    cat > "$tmpdir/.ai-config/skills/test/skip/SKILL.md" <<'EOF'
+---
+name: skip-skill
+description: Skip me
+---
+EOF
+
+    cat > "$tmpdir/.ai-config/.skillignore" <<'EOF'
+claude:test/skip
+EOF
+
+    cp "$FRAMEWORK_DIR/scripts/sync-ai-config.sh" "$tmpdir/scripts/sync-ai-config.sh"
+    cp "$FRAMEWORK_DIR/lib/common.sh" "$tmpdir/lib/common.sh"
+    chmod +x "$tmpdir/scripts/sync-ai-config.sh"
+
+    (cd "$tmpdir" && ./scripts/sync-ai-config.sh claude)
+
+    grep -q "keep-skill" "$tmpdir/CLAUDE.md"
+    ! grep -q "skip-skill" "$tmpdir/CLAUDE.md"
+
+    rm -rf "$tmpdir"
+}
+
+@test "sync-ai-config commands target syncs .ai-config/commands to .claude/commands" {
+    tmpdir=$(mktemp -d)
+    mkdir -p "$tmpdir/.ai-config/commands/git" "$tmpdir/scripts" "$tmpdir/lib"
+
+    cat > "$tmpdir/.ai-config/commands/git/demo.md" <<'EOF'
+---
+name: demo
+description: Demo command
+category: git
+---
+EOF
+
+    cp "$FRAMEWORK_DIR/scripts/sync-ai-config.sh" "$tmpdir/scripts/sync-ai-config.sh"
+    cp "$FRAMEWORK_DIR/lib/common.sh" "$tmpdir/lib/common.sh"
+    chmod +x "$tmpdir/scripts/sync-ai-config.sh"
+
+    (cd "$tmpdir" && ./scripts/sync-ai-config.sh commands)
+
+    [ -f "$tmpdir/.claude/commands/git/demo.md" ]
+
+    rm -rf "$tmpdir"
+}
+
+@test "collect-skills imports SKILL.md from external directory (smoke)" {
+    tmpdir=$(mktemp -d)
+    srcdir=$(mktemp -d)
+    mkdir -p "$tmpdir/.ai-config/skills" "$tmpdir/scripts" "$tmpdir/lib" "$srcdir/workflow/my-imported-skill"
+
+    cat > "$srcdir/workflow/my-imported-skill/SKILL.md" <<'EOF'
+---
+name: my-imported-skill
+description: Imported skill
+---
+EOF
+
+    cp "$FRAMEWORK_DIR/scripts/collect-skills.sh" "$tmpdir/scripts/collect-skills.sh"
+    cp "$FRAMEWORK_DIR/lib/common.sh" "$tmpdir/lib/common.sh"
+    chmod +x "$tmpdir/scripts/collect-skills.sh"
+
+    (cd "$tmpdir" && ./scripts/collect-skills.sh "$srcdir" workflow)
+
+    [ -f "$tmpdir/.ai-config/skills/workflow/my-imported-skill/SKILL.md" ]
+
+    rm -rf "$tmpdir" "$srcdir"
+}
+
+@test "validate-framework ignores skills references markdown (validates SKILL.md only)" {
+    run grep -E 'find \.ai-config/skills -name "SKILL\.md"' "$FRAMEWORK_DIR/scripts/validate-framework.sh"
+    [ "$status" -eq 0 ]
+}

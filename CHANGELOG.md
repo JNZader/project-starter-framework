@@ -1,3 +1,9 @@
+## [1.7.6](https://github.com/JNZader/project-starter-framework/compare/v1.7.5...v1.7.6) (2026-02-26)
+
+### Bug Fixes
+
+* **global:** update Gemini TOML format and Codex model ([323acca](https://github.com/JNZader/project-starter-framework/commit/323accab8be58175cc7cc6ce54faf742d091624c))
+
 ## [1.7.5](https://github.com/JNZader/project-starter-framework/compare/v1.7.4...v1.7.5) (2026-02-26)
 
 ### Bug Fixes

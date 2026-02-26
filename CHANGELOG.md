@@ -1,3 +1,9 @@
+## [1.7.7](https://github.com/JNZader/project-starter-framework/compare/v1.7.6...v1.7.7) (2026-02-26)
+
+### Bug Fixes
+
+* **ci:** resolve ShellCheck SC2318 warning in setup-global.sh ([e853f54](https://github.com/JNZader/project-starter-framework/commit/e853f547d950fc9a4935bbe7652e01cd220ef895))
+
 ## [1.7.6](https://github.com/JNZader/project-starter-framework/compare/v1.7.5...v1.7.6) (2026-02-26)
 
 ### Bug Fixes

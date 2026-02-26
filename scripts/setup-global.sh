@@ -383,15 +383,28 @@ install_engram_binary() {
 
     if [[ "$DRY_RUN" == true ]]; then
         DRY_RUN_ACTIONS+=("Download Engram binary from $url to /usr/local/bin/engram")
-    else
-        curl -fsSL "$url" -o /tmp/engram && chmod +x /tmp/engram
-        if [[ -w /usr/local/bin ]]; then
-            mv /tmp/engram /usr/local/bin/engram
-        else
-            sudo mv /tmp/engram /usr/local/bin/engram
-        fi
-        log_ok "Engram installed to /usr/local/bin/engram"
+        return
     fi
+
+    # Download with proper error handling — Engram is optional
+    if ! curl -fsSL "$url" -o /tmp/engram 2>/dev/null; then
+        rm -f /tmp/engram
+        log_warn "Could not download Engram from $url (binary not available)"
+        log_info "Engram is optional — MCP features will use remote URLs as fallback"
+        return
+    fi
+
+    chmod +x /tmp/engram
+    if [[ -w /usr/local/bin ]]; then
+        mv /tmp/engram /usr/local/bin/engram
+    else
+        sudo mv /tmp/engram /usr/local/bin/engram || {
+            rm -f /tmp/engram
+            log_warn "Could not install Engram to /usr/local/bin — permission denied"
+            return
+        }
+    fi
+    log_ok "Engram installed to /usr/local/bin/engram"
 }
 
 # =============================================================================

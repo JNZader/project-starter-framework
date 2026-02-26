@@ -8,14 +8,100 @@
 
 | Script | Descripción | Windows |
 |--------|-------------|---------|
+| **`setup-global.sh`** | **Setup global de AI CLIs a nivel $HOME** | - |
 | `init-project.sh/ps1` | Setup inicial del proyecto | ✓ |
-| `sync-ai-config.sh/ps1` | Sincroniza config de AI CLIs | ✓ |
+| `sync-ai-config.sh/ps1` | Sincroniza config de AI CLIs por proyecto | ✓ |
 | `add-skill.sh/ps1` | Agrega skills de Gentleman-Skills | ✓ |
 | `collect-skills.sh` | Importa skills desde otras herramientas/repos | - |
 | `sync-skills.sh/ps1` | Valida y sincroniza skills | ✓ |
 | `doctor.sh/ps1` | Diagnóstico del entorno y framework | ✓ |
 | `validate-framework.sh/ps1` | Valida estructura y consistencia del framework | ✓ |
 | `generate-agents-catalog.sh/ps1` | Genera catálogo AGENTS.md desde frontmatter | ✓ |
+
+---
+
+## setup-global
+
+Configura 5 AI CLIs (Claude, OpenCode, Codex, Copilot, Gemini) a nivel `$HOME` con un solo comando. Instala CLIs, hooks, commands, skills, agents, SDD orchestration y MCP servers.
+
+```bash
+# Interactivo con smart defaults
+./scripts/setup-global.sh
+
+# No-interactivo, instala y configura todo
+./scripts/setup-global.sh --auto
+
+# Preview sin cambios
+./scripts/setup-global.sh --dry-run
+
+# Solo CLIs específicos con features específicas
+./scripts/setup-global.sh --clis=claude,gemini --features=hooks,sdd
+
+# Solo configurar (no instalar CLIs)
+./scripts/setup-global.sh --auto --skip-install
+```
+
+### Flags
+
+| Flag | Descripción |
+|------|-------------|
+| `--auto` | No-interactivo, instala y configura todo |
+| `--dry-run` | Preview sin hacer cambios |
+| `--clis=X,Y` | Seleccionar CLIs: `claude,opencode,codex,copilot,gemini` |
+| `--features=X,Y` | Seleccionar features: `hooks,commands,skills,agents,sdd,mcp` |
+| `--skip-install` | Solo configurar, no instalar CLIs |
+
+### Flujo de ejecución
+
+1. **Detectar** — Check de tools instalados (node, npm, CLIs, engram, docker)
+2. **Status** — Tabla con estado de cada herramienta
+3. **Seleccionar CLIs** — Menú interactivo (o `--clis=` / `--auto`)
+4. **Seleccionar features** — Menú interactivo (o `--features=` / `--auto`)
+5. **Instalar prerrequisitos** — nvm + Node.js si faltan
+6. **Instalar CLIs** — Cada uno verifica `command -v`, skip si ya existe
+7. **Instalar Engram** — via brew o binario de GitHub releases
+8. **Configurar cada CLI** — función dedicada por CLI
+9. **Configurar MCP** — Engram native + Docker MCP Toolkit
+10. **Doctor check** — Verifica que todos los archivos esperados existen
+11. **Summary** — Resumen de lo hecho + próximos pasos
+
+### Estrategias de merge por CLI
+
+| CLI | Settings | Instructions | Idempotencia |
+|-----|----------|-------------|--------------|
+| **Claude** | JSON merge: hooks por matcher dedup, permisos por unión | CLAUDE.md marker-based merge | ✓ |
+| **OpenCode** | JSON deep merge: MCP + agents + permissions | AGENTS.md overwrite | ✓ |
+| **Codex** | TOML create-if-absent (no sobreescribe) | AGENTS.md overwrite | ✓ |
+| **Copilot** | N/A | copilot-instructions.md marker merge | ✓ |
+| **Gemini** | JSON deep merge: context fileNames | GEMINI.md overwrite | ✓ |
+
+### Templates usados
+
+Los templates viven en `templates/global/`:
+
+```
+templates/global/
+├── claude-settings.json             # Hooks + permissions
+├── codex-config.toml                # model, approval_policy, sandbox
+├── gemini-settings.json             # context fileNames, codeStyle
+├── opencode-config.json             # permissions, MCP servers, SDD agent
+├── sdd-orchestrator-claude.md       # SDD section para CLAUDE.md
+├── sdd-orchestrator-copilot.md      # Copilot agent file
+├── sdd-instructions.md              # SDD genérico para Codex/Gemini
+├── copilot-instructions/
+│   ├── base-rules.instructions.md
+│   └── sdd-orchestrator.instructions.md
+└── gemini-commands/
+    ├── commit.toml, review.toml, plan.toml, tdd.toml
+    ├── cleanup.toml, dead-code.toml
+    └── sdd-new.toml, sdd-ff.toml, sdd-apply.toml, sdd-verify.toml
+```
+
+### MCP Configuration
+
+- **Engram**: `engram setup <cli>` para CLIs soportados
+- **Docker MCP Toolkit**: `docker mcp server enable context7` + `docker mcp client connect <cli>`
+- **Fallback**: URL remoto `https://mcp.context7.com/mcp` en configs JSON
 
 ---
 

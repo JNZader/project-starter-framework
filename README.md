@@ -13,10 +13,12 @@
 - Los equipos rompen CI repetidamente porque no pueden testear localmente
 - El desarrollo asistido por IA carece de contexto y memoria de proyecto
 - Cada nuevo proyecto requiere horas de setup repetitivo
+- Configurar 5 AI CLIs manualmente (Claude, OpenCode, Codex, Copilot, Gemini) es tedioso y propenso a errores
 
 ### La Solucion
 - **CI-Local**: Testea localmente en Docker, replicando tu CI remoto exactamente
 - **AI Config**: Configuracion centralizada de agentes para asistencia AI consistente
+- **Global CLI Setup**: Automatiza la configuracion de 5 AI CLIs a nivel `$HOME` con un solo comando
 - **Diseno Modular**: Usa solo lo que necesitas (memoria, code review, etc.)
 - **Framework, no template**: Copia y personaliza, no forkea
 
@@ -43,6 +45,52 @@
 # Instalar Semgrep (opcional)
 pip install semgrep
 ```
+
+---
+
+## Global CLI Setup (nuevo)
+
+Configura **5 AI CLIs** (Claude, OpenCode, Codex, Copilot, Gemini) a nivel `$HOME` con hooks, commands, skills, agents, SDD y MCP servers:
+
+```bash
+# Clonar el framework
+git clone https://github.com/JNZader/project-starter-framework.git
+cd project-starter-framework
+
+# Ver qué haría (sin cambios)
+./scripts/setup-global.sh --dry-run
+
+# Instalar + configurar todo (no-interactivo)
+./scripts/setup-global.sh --auto
+
+# Solo configurar CLIs ya instalados
+./scripts/setup-global.sh --auto --skip-install
+
+# Configurar solo CLIs específicos
+./scripts/setup-global.sh --clis=claude,gemini --features=hooks,sdd
+```
+
+**Flags disponibles:**
+
+| Flag | Descripción |
+|------|-------------|
+| `--auto` | No-interactivo, instala y configura todo |
+| `--dry-run` | Preview sin hacer cambios |
+| `--clis=X,Y` | Seleccionar CLIs: `claude,opencode,codex,copilot,gemini` |
+| `--features=X,Y` | Seleccionar features: `hooks,commands,skills,agents,sdd,mcp` |
+| `--skip-install` | Solo configurar, no instalar CLIs |
+
+**Qué configura por CLI:**
+
+| CLI | Directorio | Settings | Instructions | Commands | Agents/Skills |
+|-----|-----------|----------|-------------|---------|---------------|
+| Claude | `~/.claude/` | JSON merge (hooks + permisos) | CLAUDE.md marker merge | Subdirectorios | Subdirectorios |
+| OpenCode | `~/.config/opencode/` | JSON merge (MCP + agents) | AGENTS.md (overwrite) | Flatten con prefijo | Flatten con prefijo |
+| Codex | `~/.codex/` | TOML create-if-absent | AGENTS.md (overwrite) | Inline en AGENTS.md | - |
+| Copilot | `~/.copilot/` | - | copilot-instructions.md merge | - | Flatten + subdirs |
+| Gemini | `~/.gemini/` | JSON merge (context) | GEMINI.md (overwrite) | TOML files | - |
+
+> Ver [scripts/README.md](scripts/README.md) para documentación completa de `setup-global.sh`.
 
 ---
 
@@ -138,9 +186,18 @@ project-starter-framework/
 │       ├── reusable-release.yml
 │       └── auto-version.yml
 │
-├── templates/                    # CI templates para copiar
+├── templates/                    # CI + Global templates
 │   ├── github/                   # GitHub Actions (java, node, python, rust, monorepo)
 │   ├── gitlab/                   # GitLab CI (java, node, rust)
+│   ├── global/                   # Global AI CLI config templates
+│   │   ├── claude-settings.json  # Claude hooks + permissions
+│   │   ├── opencode-config.json  # OpenCode MCP + agents
+│   │   ├── codex-config.toml     # Codex model + sandbox
+│   │   ├── gemini-settings.json  # Gemini context fileNames
+│   │   ├── gemini-commands/      # 10 TOML commands (commit, review, plan, tdd, sdd-*)
+│   │   ├── copilot-instructions/ # Base rules + SDD orchestrator
+│   │   ├── sdd-*.md              # SDD orchestrator templates per CLI
+│   │   └── sdd-instructions.md   # Generic SDD instructions
 │   ├── renovate.json             # Config Renovate (dependency updates)
 │   └── dependabot.yml            # Config Dependabot (alternativa)
 │
@@ -150,8 +207,9 @@ project-starter-framework/
 │   └── memory-simple/            # Solo un archivo de notas
 │
 ├── scripts/                      # Automatización
-│   ├── init-project.ps1/sh       # Setup inicial
-│   ├── sync-ai-config.ps1/sh     # Sincronizar AI config
+│   ├── init-project.ps1/sh       # Setup inicial de proyecto
+│   ├── setup-global.sh           # Setup global de AI CLIs ($HOME level)
+│   ├── sync-ai-config.ps1/sh     # Sincronizar AI config por proyecto
 │   ├── add-skill.sh              # Agregar Gentleman-Skills
 │   └── collect-skills.sh         # Importar skills desde otras herramientas
 │
@@ -160,7 +218,8 @@ project-starter-framework/
 │   └── Common.psm1               # Funciones compartidas (PowerShell)
 │
 ├── tests/                        # Framework tests (Bats + Pester)
-│   ├── framework.bats            # Tests Bash (Linux/Mac)
+│   ├── framework.bats            # Tests Bash (45 tests)
+│   ├── setup-global.bats         # Tests setup-global.sh (36 tests)
 │   └── README.md                 # Guía de testing
 │
 ├── .framework-version            # Versión del framework (auto-updated)
@@ -319,7 +378,9 @@ Los hooks **bloquean automáticamente** cualquier referencia a IA:
 - [CI-Local Guide](.ci-local/README.md)
 - [CI Templates](templates/README.md)
 - [AI Config](.ai-config/README.md)
+- [Scripts Guide](scripts/README.md) — incluye `setup-global.sh`, `init-project.sh`, `sync-ai-config.sh`
 - [Optional Modules](optional/README.md)
+- [Testing Guide](tests/README.md)
 
 ---
 
@@ -357,4 +418,4 @@ El hook detectó una referencia a IA que debe removerse.
 
 ---
 
-*Framework Version: 2.1.0* - Modular: CI-Local + AI Config + CI Templates + Optional Modules
+*Framework Version: 2.1.0* - Modular: CI-Local + AI Config + Global CLI Setup + CI Templates + Optional Modules

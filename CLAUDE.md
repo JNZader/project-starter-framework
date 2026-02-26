@@ -17,12 +17,14 @@ Los componentes se copian a nuevos proyectos usando `scripts/init-project.sh`.
 ## Estructura del Framework
 
 ```
-.ai-config/         # 79 agentes + 40 skills para AI CLIs
+.ai-config/         # 90+ agentes + 80+ skills para AI CLIs
 .ci-local/          # CI local con git hooks (pre-commit, pre-push)
 .github/workflows/  # Reusable workflows para GitHub Actions
-templates/          # Templates CI para copiar a proyectos
-scripts/            # Automatización (init, sync, add-skill)
-optional/           # Obsidian Brain, VibeKanban (legacy) y memory-simple
+templates/          # Templates CI + Global AI CLI config templates
+templates/global/   # Templates para setup-global.sh (hooks, commands, settings)
+scripts/            # Automatización (setup-global, init, sync, add-skill)
+optional/           # Obsidian Brain, VibeKanban (legacy), memory-simple, Engram
+tests/              # Bats (81 tests) + Pester tests
 ```
 
 ## Project Memory (Obsidian Brain)
@@ -54,6 +56,11 @@ Funciona como markdown plano sin Obsidian. Con Obsidian agrega Kanban visual, qu
 ## Comandos Principales
 
 ```bash
+# Setup global de AI CLIs ($HOME level)
+./scripts/setup-global.sh --auto          # No-interactivo
+./scripts/setup-global.sh --dry-run       # Preview
+./scripts/setup-global.sh --clis=claude   # Solo Claude
+
 # Setup nuevo proyecto (interactivo)
 ./scripts/init-project.sh
 
@@ -61,7 +68,7 @@ Funciona como markdown plano sin Obsidian. Con Obsidian agrega Kanban visual, qu
 ./scripts/doctor.sh           # Linux/Mac
 .\scripts\doctor.ps1          # Windows
 
-# Sincronizar config AI
+# Sincronizar config AI por proyecto
 ./scripts/sync-ai-config.sh claude    # Solo Claude Code
 ./scripts/sync-ai-config.sh all       # Todos los CLIs
 
@@ -126,7 +133,11 @@ docs/descripcion
 
 | Archivo | Propósito |
 |---------|-----------|
+| `scripts/setup-global.sh` | Setup global de AI CLIs |
+| `templates/global/` | Templates para setup-global.sh |
 | `.ai-config/AUTO_INVOKE.md` | Reglas de auto-carga de skills |
 | `.ci-local/semgrep.yml` | Reglas de seguridad |
 | `templates/README.md` | Documentación de templates |
 | `optional/README.md` | Módulos opcionales |
+| `tests/framework.bats` | Tests del framework (45 tests) |
+| `tests/setup-global.bats` | Tests de setup-global.sh (36 tests) |

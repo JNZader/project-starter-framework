@@ -28,6 +28,16 @@ cd project-starter-framework
 
 #### Testing Your Changes
 
+```bash
+# Install bats-core
+git clone https://github.com/bats-core/bats-core.git /tmp/bats-core
+/tmp/bats-core/install.sh ~/.local
+
+# Run all tests (81 total)
+bats tests/framework.bats        # 45 framework tests
+bats tests/setup-global.bats     # 36 setup-global tests
+```
+
 Test across:
 - Multiple stacks (Java, Node, Python, Go, Rust)
 - Both Windows (PowerShell) and Linux/Mac (Bash) — the repo has Bats (Linux) and Pester (Windows) tests
@@ -49,6 +59,16 @@ Note: The repository CI (`ci-framework.yml`) runs Bats on Linux and Pester on Wi
    ```
 6. Push and create PR
 7. Wait for review
+
+### Adding New Global Templates
+
+When adding templates for `setup-global.sh`:
+
+1. Add template files to `templates/global/`
+2. Update the corresponding `configure_<cli>()` function in `scripts/setup-global.sh`
+3. Add tests in `tests/setup-global.bats`
+4. Run `bats tests/setup-global.bats` to verify
+5. Update `scripts/README.md` with the new template
 
 ### Adding New CI Templates
 

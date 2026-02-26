@@ -24,6 +24,7 @@ FRAMEWORK_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$FRAMEWORK_DIR/lib/common.sh"
 
 TEMPLATES_DIR="$FRAMEWORK_DIR/templates/global"
+AI_CONFIG_DIR="$FRAMEWORK_DIR/.ai-config"
 
 # =============================================================================
 # Argument Parsing
@@ -519,10 +520,17 @@ merge_markdown() {
         return
     fi
 
+    # Strip marker line from generated content if present (avoid duplication)
+    local stripped=""
+    while IFS= read -r line; do
+        [[ "$line" == "$marker" ]] && continue
+        stripped+="$line"$'\n'
+    done <<< "$generated_content"
+    generated_content="${stripped%$'\n'}"
+
     if [[ ! -f "$target" ]]; then
         # New file — write marker + content
         {
-            echo ""
             echo "$marker"
             echo ""
             echo "$generated_content"
@@ -533,7 +541,7 @@ merge_markdown() {
 
     backup_if_exists "$target"
 
-    if grep -q "^${marker}$" "$target" 2>/dev/null; then
+    if grep -qF "$marker" "$target" 2>/dev/null; then
         # Replace from marker to EOF
         local tmpfile
         tmpfile="$(mktemp)"
@@ -586,11 +594,11 @@ sync_skills_to_dir() {
 # Copy SDD skills (9 directories)
 sync_sdd_skills() {
     local dest_dir="$1"
-    local sdd_src="$FRAMEWORK_DIR/skills/workflow"
+    local sdd_src="$AI_CONFIG_DIR/skills/workflow"
 
     if [[ ! -d "$sdd_src" ]]; then
         # Try alternate location
-        sdd_src="$FRAMEWORK_DIR/skills"
+        sdd_src="$AI_CONFIG_DIR/skills"
     fi
 
     run_mkdir "$dest_dir"
@@ -601,7 +609,7 @@ sync_sdd_skills() {
     for phase in "${sdd_phases[@]}"; do
         # Search in skills tree for the directory
         local skill_dir
-        skill_dir=$(find "$FRAMEWORK_DIR/skills" -type d -name "$phase" 2>/dev/null | head -1)
+        skill_dir=$(find "$AI_CONFIG_DIR/skills" -type d -name "$phase" 2>/dev/null | head -1)
 
         if [[ -n "$skill_dir" && -d "$skill_dir" ]]; then
             if [[ "$DRY_RUN" == true ]]; then
@@ -617,7 +625,7 @@ sync_sdd_skills() {
     if [[ $found -gt 0 ]]; then
         log_ok "Synced $found SDD skills to $dest_dir"
     else
-        log_warn "No SDD skill directories found in $FRAMEWORK_DIR/skills"
+        log_warn "No SDD skill directories found in $AI_CONFIG_DIR/skills"
     fi
 }
 
@@ -675,20 +683,20 @@ configure_claude() {
     fi
 
     # Commands
-    if has_feature commands && [[ -d "$FRAMEWORK_DIR/commands" ]]; then
+    if has_feature commands && [[ -d "$AI_CONFIG_DIR/commands" ]]; then
         run_mkdir "$claude_dir/commands"
         if [[ "$DRY_RUN" == true ]]; then
             echo -e "  ${CYAN}[DRY-RUN]${NC} Would copy commands to $claude_dir/commands/"
             DRY_RUN_ACTIONS+=("Copy commands to $claude_dir/commands/")
         else
-            cp -r "$FRAMEWORK_DIR/commands"/* "$claude_dir/commands"/ 2>/dev/null || true
+            cp -r "$AI_CONFIG_DIR/commands"/* "$claude_dir/commands"/ 2>/dev/null || true
             log_ok "Synced commands to $claude_dir/commands/"
         fi
     fi
 
     # Skills
-    if has_feature skills && [[ -d "$FRAMEWORK_DIR/skills" ]]; then
-        sync_skills_to_dir "$FRAMEWORK_DIR/skills" "$claude_dir/skills"
+    if has_feature skills && [[ -d "$AI_CONFIG_DIR/skills" ]]; then
+        sync_skills_to_dir "$AI_CONFIG_DIR/skills" "$claude_dir/skills"
     fi
 
     # SDD Skills
@@ -715,13 +723,13 @@ configure_opencode() {
     merge_json "$TEMPLATES_DIR/opencode-config.json" "$opencode_dir/opencode.json" "deep"
 
     # Agents (flatten category/agent.md -> prefix-agent.md)
-    if has_feature agents && [[ -d "$FRAMEWORK_DIR/agents" ]]; then
-        sync_agents_to_flat_dir "$FRAMEWORK_DIR/agents" "$opencode_dir/agents"
+    if has_feature agents && [[ -d "$AI_CONFIG_DIR/agents" ]]; then
+        sync_agents_to_flat_dir "$AI_CONFIG_DIR/agents" "$opencode_dir/agents"
     fi
 
     # Skills (flatten with category prefix)
-    if has_feature skills && [[ -d "$FRAMEWORK_DIR/skills" ]]; then
-        sync_agents_to_flat_dir "$FRAMEWORK_DIR/skills" "$opencode_dir/skills"
+    if has_feature skills && [[ -d "$AI_CONFIG_DIR/skills" ]]; then
+        sync_agents_to_flat_dir "$AI_CONFIG_DIR/skills" "$opencode_dir/skills"
     fi
 
     # AGENTS.md (overwrite — auto-generated)
@@ -840,13 +848,13 @@ configure_copilot() {
     fi
 
     # Agents (flatten)
-    if has_feature agents && [[ -d "$FRAMEWORK_DIR/agents" ]]; then
-        sync_agents_to_flat_dir "$FRAMEWORK_DIR/agents" "$copilot_dir/agents"
+    if has_feature agents && [[ -d "$AI_CONFIG_DIR/agents" ]]; then
+        sync_agents_to_flat_dir "$AI_CONFIG_DIR/agents" "$copilot_dir/agents"
     fi
 
     # Skills (with dirs)
-    if has_feature skills && [[ -d "$FRAMEWORK_DIR/skills" ]]; then
-        sync_skills_to_dir "$FRAMEWORK_DIR/skills" "$copilot_dir/skills"
+    if has_feature skills && [[ -d "$AI_CONFIG_DIR/skills" ]]; then
+        sync_skills_to_dir "$AI_CONFIG_DIR/skills" "$copilot_dir/skills"
     fi
 
     # SDD agent

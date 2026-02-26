@@ -1,3 +1,9 @@
+## [1.7.0](https://github.com/JNZader/project-starter-framework/compare/v1.6.0...v1.7.0) (2026-02-26)
+
+### Features
+
+* **global:** add tests, fix path refs, update documentation ([51441f3](https://github.com/JNZader/project-starter-framework/commit/51441f3dacbbd5de10f2f0953f159bcab382197a))
+
 ## [1.6.0](https://github.com/JNZader/project-starter-framework/compare/v1.5.0...v1.6.0) (2026-02-26)
 
 ### Features

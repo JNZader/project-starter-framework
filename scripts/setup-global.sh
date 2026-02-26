@@ -642,9 +642,99 @@ sync_sdd_skills() {
     fi
 }
 
+# Sanitize agent frontmatter for OpenCode compatibility.
+# Converts: tools string -> object, color names -> theme colors,
+# strips fields OpenCode doesn't understand (trigger, category, metadata).
+sanitize_frontmatter_opencode() {
+    local src="$1" dest="$2"
+
+    if ! command -v python3 &>/dev/null; then
+        # Fallback: strip frontmatter entirely, keep content only
+        sed -n '/^---$/,/^---$/!p' "$src" > "$dest"
+        return
+    fi
+
+    python3 << PYEOF
+import re, sys
+
+with open("$src", "r") as f:
+    content = f.read()
+
+# Split frontmatter and body
+fm_match = re.match(r'^---\n(.*?)\n---\n?(.*)', content, re.DOTALL)
+if not fm_match:
+    # No frontmatter — copy as-is
+    with open("$dest", "w") as f:
+        f.write(content)
+    sys.exit(0)
+
+fm_text = fm_match.group(1)
+body = fm_match.group(2)
+
+lines = fm_text.split("\n")
+new_lines = []
+skip_multiline = False
+
+# Color name -> theme color mapping
+color_map = {
+    "gold": "warning", "red": "error", "blue": "info", "green": "success",
+    "purple": "accent", "orange": "warning", "yellow": "warning",
+    "cyan": "info", "teal": "info", "pink": "accent", "gray": "secondary",
+    "grey": "secondary", "white": "primary", "silver": "secondary",
+}
+
+for line in lines:
+    stripped = line.strip()
+
+    # Skip continuation/indented lines of multiline values we're removing
+    if skip_multiline:
+        # Indented line = continuation of the multiline value
+        if line.startswith("  ") or line.startswith("\t") or not stripped:
+            continue
+        # Non-indented line with a key = new field, stop skipping
+        skip_multiline = False
+
+    key = stripped.split(":")[0].strip() if ":" in stripped else ""
+
+    # Strip fields OpenCode doesn't understand
+    if key in ("trigger", "category", "metadata"):
+        val_part = stripped[len(key)+1:].strip()
+        if val_part in (">", "|", ">-", "|-", ""):
+            skip_multiline = True
+        continue
+
+    # Transform tools: "Write, Read" -> tools object
+    if key == "tools":
+        val = stripped[len("tools:"):].strip().strip('"').strip("'")
+        if val and not val.startswith("{"):
+            tool_names = [t.strip() for t in val.split(",")]
+            tools_obj = ", ".join(f'"{t}": true' for t in tool_names if t)
+            new_lines.append(f"tools: {{ {tools_obj} }}")
+            continue
+
+    # Transform color names -> theme colors or hex
+    if key == "color":
+        val = stripped[len("color:"):].strip().strip('"').strip("'")
+        if val and not val.startswith("#") and val not in ("primary", "secondary", "accent", "success", "warning", "error", "info"):
+            mapped = color_map.get(val.lower(), "primary")
+            new_lines.append(f"color: {mapped}")
+            continue
+
+    new_lines.append(line)
+
+with open("$dest", "w") as f:
+    f.write("---\n")
+    f.write("\n".join(new_lines))
+    f.write("\n---\n")
+    f.write(body)
+PYEOF
+}
+
 # Flatten agents: category/agent.md -> prefix-agent.md
+# Usage: sync_agents_to_flat_dir <src> <dest> [opencode]
+# Pass "opencode" as 3rd arg to sanitize frontmatter for OpenCode compatibility.
 sync_agents_to_flat_dir() {
-    local src_dir="$1" dest_dir="$2"
+    local src_dir="$1" dest_dir="$2" target_cli="${3:-}"
 
     if [[ ! -d "$src_dir" ]]; then
         log_warn "Agents source not found: $src_dir"
@@ -669,12 +759,17 @@ sync_agents_to_flat_dir() {
         # Skip templates
         [[ "$filename" == "_TEMPLATE.md" ]] && continue
 
+        local dest_file
         if [[ "$rel_path" == */* ]]; then
-            # Nested: category/agent.md -> category-agent.md
-            cp "$agent_file" "$dest_dir/${category}-${filename}"
+            dest_file="$dest_dir/${category}-${filename}"
         else
-            # Top-level agent
-            cp "$agent_file" "$dest_dir/$filename"
+            dest_file="$dest_dir/$filename"
+        fi
+
+        if [[ "$target_cli" == "opencode" ]]; then
+            sanitize_frontmatter_opencode "$agent_file" "$dest_file"
+        else
+            cp "$agent_file" "$dest_file"
         fi
     done < <(find "$src_dir" -type f -name "*.md" -print0)
 
@@ -735,14 +830,14 @@ configure_opencode() {
     # JSON merge (MCP + agents + permissions)
     merge_json "$TEMPLATES_DIR/opencode-config.json" "$opencode_dir/opencode.json" "deep"
 
-    # Agents (flatten category/agent.md -> prefix-agent.md)
+    # Agents (flatten category/agent.md -> prefix-agent.md, sanitize frontmatter)
     if has_feature agents && [[ -d "$AI_CONFIG_DIR/agents" ]]; then
-        sync_agents_to_flat_dir "$AI_CONFIG_DIR/agents" "$opencode_dir/agents"
+        sync_agents_to_flat_dir "$AI_CONFIG_DIR/agents" "$opencode_dir/agents" "opencode"
     fi
 
-    # Skills (flatten with category prefix)
+    # Skills (flatten with category prefix, sanitize frontmatter)
     if has_feature skills && [[ -d "$AI_CONFIG_DIR/skills" ]]; then
-        sync_agents_to_flat_dir "$AI_CONFIG_DIR/skills" "$opencode_dir/skills"
+        sync_agents_to_flat_dir "$AI_CONFIG_DIR/skills" "$opencode_dir/skills" "opencode"
     fi
 
     # AGENTS.md (overwrite — auto-generated)

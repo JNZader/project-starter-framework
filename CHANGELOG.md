@@ -1,3 +1,9 @@
+## [1.7.4](https://github.com/JNZader/project-starter-framework/compare/v1.7.3...v1.7.4) (2026-02-26)
+
+### Bug Fixes
+
+* **global:** whitelist OpenCode frontmatter fields, strip invalid model names ([bfd6dd2](https://github.com/JNZader/project-starter-framework/commit/bfd6dd25a44d4298d8395f150087f168b265fa91))
+
 ## [1.7.3](https://github.com/JNZader/project-starter-framework/compare/v1.7.2...v1.7.3) (2026-02-26)
 
 ### Bug Fixes

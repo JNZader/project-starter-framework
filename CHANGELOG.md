@@ -1,3 +1,9 @@
+## [1.6.0](https://github.com/JNZader/project-starter-framework/compare/v1.5.0...v1.6.0) (2026-02-26)
+
+### Features
+
+* **global:** add automated global CLI setup script and templates ([20c24c2](https://github.com/JNZader/project-starter-framework/commit/20c24c2124e3d22c6a499ffe9cd3fcfcc32e0024))
+
 ## [1.5.0](https://github.com/JNZader/project-starter-framework/compare/v1.4.0...v1.5.0) (2026-02-25)
 
 ### Features

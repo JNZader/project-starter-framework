@@ -1,3 +1,9 @@
+## [1.7.5](https://github.com/JNZader/project-starter-framework/compare/v1.7.4...v1.7.5) (2026-02-26)
+
+### Bug Fixes
+
+* **global:** use valid Codex approval_policy value ([8a70ecc](https://github.com/JNZader/project-starter-framework/commit/8a70eccae81a36dec0a2c589511d387523a48b3f))
+
 ## [1.7.4](https://github.com/JNZader/project-starter-framework/compare/v1.7.3...v1.7.4) (2026-02-26)
 
 ### Bug Fixes

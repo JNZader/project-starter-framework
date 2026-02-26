@@ -1,0 +1,11 @@
+# Codex CLI Configuration
+# https://developers.openai.com/codex/config-reference/
+
+# Model
+model = "o4-mini"
+
+# Approval mode: "suggest" | "auto-edit" | "full-auto"
+approval_policy = "suggest"
+
+# Sandbox: "sandbox" | "supervised" | "full-auto"
+sandbox_mode = "sandbox"

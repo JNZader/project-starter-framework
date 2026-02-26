@@ -96,7 +96,8 @@ run_mkdir() {
 }
 
 run_write() {
-    local dest="$1" desc="${2:-$dest}"
+    local dest="$1"
+    local desc="${2:-$dest}"
     if [[ "$DRY_RUN" == true ]]; then
         cat > /dev/null  # consume stdin
         echo -e "  ${CYAN}[DRY-RUN]${NC} Would write file: $dest"

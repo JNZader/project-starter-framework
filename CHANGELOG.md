@@ -1,3 +1,9 @@
+## [1.7.1](https://github.com/JNZader/project-starter-framework/compare/v1.7.0...v1.7.1) (2026-02-26)
+
+### Bug Fixes
+
+* **global:** handle Engram download failure gracefully ([f5510e4](https://github.com/JNZader/project-starter-framework/commit/f5510e42c99382a019f5091569266a4270f47681))
+
 ## [1.7.0](https://github.com/JNZader/project-starter-framework/compare/v1.6.0...v1.7.0) (2026-02-26)
 
 ### Features

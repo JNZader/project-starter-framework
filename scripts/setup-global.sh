@@ -673,7 +673,7 @@ body = fm_match.group(2)
 
 lines = fm_text.split("\n")
 new_lines = []
-skip_multiline = False
+skip_until = -1  # Skip lines up to this index
 
 # Color name -> theme color mapping
 color_map = {
@@ -683,16 +683,15 @@ color_map = {
     "grey": "secondary", "white": "primary", "silver": "secondary",
 }
 
-for line in lines:
+for i, line in enumerate(lines):
+    if i < skip_until:
+        continue
+
     stripped = line.strip()
 
-    # Skip continuation/indented lines of multiline values we're removing
-    if skip_multiline:
-        # Indented line = continuation of the multiline value
-        if line.startswith("  ") or line.startswith("\t") or not stripped:
-            continue
-        # Non-indented line with a key = new field, stop skipping
-        skip_multiline = False
+    # Skip comment lines
+    if stripped.startswith("#"):
+        continue
 
     key = stripped.split(":")[0].strip() if ":" in stripped else ""
 
@@ -700,17 +699,39 @@ for line in lines:
     if key in ("trigger", "category", "metadata"):
         val_part = stripped[len(key)+1:].strip()
         if val_part in (">", "|", ">-", "|-", ""):
-            skip_multiline = True
+            # Multiline value — skip continuation lines
+            j = i + 1
+            while j < len(lines) and (lines[j].startswith("  ") or lines[j].startswith("\t") or not lines[j].strip()):
+                j += 1
+            skip_until = j
         continue
 
-    # Transform tools: "Write, Read" -> tools object
+    # Transform tools to object format
     if key == "tools":
         val = stripped[len("tools:"):].strip().strip('"').strip("'")
-        if val and not val.startswith("{"):
+        if val.startswith("{"):
+            # Already object format — keep as-is
+            new_lines.append(line)
+            continue
+        if val:
+            # Inline string: "Write, Read, MultiEdit" -> object
             tool_names = [t.strip() for t in val.split(",")]
             tools_obj = ", ".join(f'"{t}": true' for t in tool_names if t)
             new_lines.append(f"tools: {{ {tools_obj} }}")
             continue
+        # Empty value = YAML array on next lines (- Write, - Read)
+        tool_items = []
+        j = i + 1
+        while j < len(lines) and (lines[j].startswith("  ") or lines[j].startswith("\t")):
+            item = lines[j].strip()
+            if item.startswith("- "):
+                tool_items.append(item[2:].strip())
+            j += 1
+        skip_until = j
+        if tool_items:
+            tools_obj = ", ".join(f'"{t}": true' for t in tool_items)
+            new_lines.append(f"tools: {{ {tools_obj} }}")
+        continue
 
     # Transform color names -> theme colors or hex
     if key == "color":
@@ -750,6 +771,9 @@ sync_agents_to_flat_dir() {
         DRY_RUN_ACTIONS+=("Flatten $count agents to $dest_dir")
         return
     fi
+
+    # Clean destination to remove stale files from previous runs
+    find "$dest_dir" -maxdepth 1 -name "*.md" -type f -delete 2>/dev/null || true
 
     while IFS= read -r -d '' agent_file; do
         local rel_path="${agent_file#"$src_dir"/}"

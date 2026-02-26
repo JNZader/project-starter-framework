@@ -4,8 +4,5 @@
 # Model
 model = "o4-mini"
 
-# Approval mode: "suggest" | "auto-edit" | "full-auto"
-approval_policy = "suggest"
-
-# Sandbox: "sandbox" | "supervised" | "full-auto"
-sandbox_mode = "sandbox"
+# Approval policy: "on-request" | "on-failure" | "never" | "untrusted" | "reject"
+approval_policy = "on-request"

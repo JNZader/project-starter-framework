@@ -1,10 +1,6 @@
-[command]
 description = "Create an implementation plan for a feature or change"
-
-[[steps]]
-type = "prompt"
-text = """
-Create an implementation plan for: $ARGUMENTS
+prompt = """
+Create an implementation plan for: {{args}}
 
 Process:
 1. Understand the requirement — ask clarifying questions if ambiguous

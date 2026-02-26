@@ -1,10 +1,6 @@
-[command]
 description = "Implement SDD tasks following specs and design"
-
-[[steps]]
-type = "prompt"
-text = """
-Implement SDD tasks for: $ARGUMENTS
+prompt = """
+Implement SDD tasks for: {{args}}
 
 Process:
 1. Read the task list from the current SDD change

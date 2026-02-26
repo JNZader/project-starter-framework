@@ -1,10 +1,6 @@
-[command]
 description = "Start a new SDD change: explore the idea and create a proposal"
-
-[[steps]]
-type = "prompt"
-text = """
-Start a new SDD change for: $ARGUMENTS
+prompt = """
+Start a new SDD change for: {{args}}
 
 Execute the EXPLORE + PROPOSE phases:
 

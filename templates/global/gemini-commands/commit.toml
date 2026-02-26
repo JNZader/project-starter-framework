@@ -1,9 +1,5 @@
-[command]
 description = "Create a conventional commit from staged changes"
-
-[[steps]]
-type = "prompt"
-text = """
+prompt = """
 Create a git commit from the currently staged changes.
 
 Process:

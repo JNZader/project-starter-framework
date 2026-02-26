@@ -1,10 +1,6 @@
-[command]
-description = "Fast-forward SDD: create all planning artifacts (proposal → spec → design → tasks)"
-
-[[steps]]
-type = "prompt"
-text = """
-Fast-forward SDD planning for: $ARGUMENTS
+description = "Fast-forward SDD: create all planning artifacts (proposal, spec, design, tasks)"
+prompt = """
+Fast-forward SDD planning for: {{args}}
 
 Execute ALL planning phases in sequence:
 

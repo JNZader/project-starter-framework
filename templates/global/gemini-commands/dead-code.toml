@@ -1,10 +1,6 @@
-[command]
 description = "Identify and remove dead code"
-
-[[steps]]
-type = "prompt"
-text = """
-Identify and safely remove dead code in: $ARGUMENTS
+prompt = """
+Identify and safely remove dead code in: {{args}}
 
 Types of dead code:
 - Functions/methods never called

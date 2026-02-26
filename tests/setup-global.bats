@@ -67,16 +67,12 @@ teardown() {
 
 @test "gemini command TOMLs have valid structure" {
     for toml in "$TEMPLATES_DIR"/gemini-commands/*.toml; do
-        grep -q '^\[command\]' "$toml" || {
-            echo "Missing [command] in: $(basename "$toml")"
-            return 1
-        }
-        grep -q 'description = ' "$toml" || {
+        grep -q '^description = ' "$toml" || {
             echo "Missing description in: $(basename "$toml")"
             return 1
         }
-        grep -q '\[\[steps\]\]' "$toml" || {
-            echo "Missing [[steps]] in: $(basename "$toml")"
+        grep -q '^prompt = ' "$toml" || {
+            echo "Missing prompt in: $(basename "$toml")"
             return 1
         }
     done
@@ -322,7 +318,7 @@ EOF
     run bash "$SETUP_SCRIPT" --auto --skip-install --clis=codex
     [ "$status" -eq 0 ]
     [ -f "$TEST_HOME/.codex/config.toml" ]
-    grep -q 'model = "o4-mini"' "$TEST_HOME/.codex/config.toml"
+    grep -q 'model = "gpt-5.3-codex"' "$TEST_HOME/.codex/config.toml"
 }
 
 @test "codex config.toml is NOT overwritten when present" {

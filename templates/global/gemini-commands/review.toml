@@ -1,10 +1,6 @@
-[command]
 description = "Review code changes for quality, security, and best practices"
-
-[[steps]]
-type = "prompt"
-text = """
-Review code changes in: $ARGUMENTS
+prompt = """
+Review code changes in: {{args}}
 
 If no path specified, review unstaged changes (`git diff`).
 
@@ -16,6 +12,6 @@ Review checklist:
 5. **Testing**: Missing test coverage for new/changed behavior
 6. **Architecture**: SOLID violations, tight coupling, wrong abstraction level
 
-Format: List issues by severity (critical → warning → suggestion).
+Format: List issues by severity (critical > warning > suggestion).
 For each issue: file:line, description, suggested fix.
 """

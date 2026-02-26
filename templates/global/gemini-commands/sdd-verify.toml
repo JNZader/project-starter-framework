@@ -1,10 +1,6 @@
-[command]
 description = "Validate SDD implementation against specs and acceptance criteria"
-
-[[steps]]
-type = "prompt"
-text = """
-Verify SDD implementation for: $ARGUMENTS
+prompt = """
+Verify SDD implementation for: {{args}}
 
 Validation checklist:
 1. **Acceptance Criteria** — Check each criterion from the spec

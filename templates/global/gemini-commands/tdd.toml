@@ -1,10 +1,6 @@
-[command]
 description = "Implement a feature using Test-Driven Development"
-
-[[steps]]
-type = "prompt"
-text = """
-Implement using TDD: $ARGUMENTS
+prompt = """
+Implement using TDD: {{args}}
 
 Follow the Red-Green-Refactor cycle strictly:
 

@@ -1,10 +1,6 @@
-[command]
 description = "Clean up code: fix lint issues, improve readability, remove smells"
-
-[[steps]]
-type = "prompt"
-text = """
-Clean up code in: $ARGUMENTS
+prompt = """
+Clean up code in: {{args}}
 
 Focus areas:
 1. Fix lint/formatting issues

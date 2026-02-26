@@ -695,15 +695,28 @@ for i, line in enumerate(lines):
 
     key = stripped.split(":")[0].strip() if ":" in stripped else ""
 
-    # Strip fields OpenCode doesn't understand
-    if key in ("trigger", "category", "metadata"):
-        val_part = stripped[len(key)+1:].strip()
-        if val_part in (">", "|", ">-", "|-", ""):
-            # Multiline value — skip continuation lines
+    # Valid OpenCode frontmatter fields
+    valid_fields = {"description", "mode", "model", "temperature", "top_p",
+                    "tools", "permission", "color", "disable", "hidden", "steps"}
+
+    # Strip any field OpenCode doesn't understand
+    if key and key not in valid_fields:
+        val_part = stripped[len(key)+1:].strip() if ":" in stripped else ""
+        if val_part in (">", "|", ">-", "|-", "") or not val_part:
+            # Multiline or block value — skip continuation lines
             j = i + 1
             while j < len(lines) and (lines[j].startswith("  ") or lines[j].startswith("\t") or not lines[j].strip()):
                 j += 1
             skip_until = j
+        continue
+
+    # Transform model: short names are not valid for OpenCode — strip them
+    if key == "model":
+        val = stripped[len("model:"):].strip().strip('"').strip("'")
+        # Only keep if it's a full provider/model ID
+        if "/" in val:
+            new_lines.append(line)
+        # Short names (haiku, sonnet, opus) → strip, let OpenCode use default
         continue
 
     # Transform tools to object format

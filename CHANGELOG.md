@@ -1,3 +1,9 @@
+## [1.7.3](https://github.com/JNZader/project-starter-framework/compare/v1.7.2...v1.7.3) (2026-02-26)
+
+### Bug Fixes
+
+* **global:** handle YAML array tools format and clean stale agents ([9e99a89](https://github.com/JNZader/project-starter-framework/commit/9e99a89ffb621f1b8da445f831af353227472a3e))
+
 ## [1.7.2](https://github.com/JNZader/project-starter-framework/compare/v1.7.1...v1.7.2) (2026-02-26)
 
 ### Bug Fixes

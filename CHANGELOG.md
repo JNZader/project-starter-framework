@@ -1,3 +1,9 @@
+## [1.7.2](https://github.com/JNZader/project-starter-framework/compare/v1.7.1...v1.7.2) (2026-02-26)
+
+### Bug Fixes
+
+* **global:** sanitize agent frontmatter for OpenCode compatibility ([a8fc332](https://github.com/JNZader/project-starter-framework/commit/a8fc3323dfbd804eae90995a95e74031d4e3232c))
+
 ## [1.7.1](https://github.com/JNZader/project-starter-framework/compare/v1.7.0...v1.7.1) (2026-02-26)
 
 ### Bug Fixes
